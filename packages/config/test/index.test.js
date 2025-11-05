@@ -112,6 +112,7 @@ describe('config', function configSuite() {
       await config.consume({
         path: file,
         connector: 'claude-code',
+        scope: 'project',
         parse(raw, filepath) {
           return claudeCode.parse(raw, filepath);
         }
@@ -122,6 +123,7 @@ describe('config', function configSuite() {
       await config.consume({
         path: file,
         connector: 'claude-code',
+        scope: 'project',
         parse(raw, filepath) {
           return claudeCode.parse(raw, filepath);
         }
@@ -146,7 +148,7 @@ describe('config', function configSuite() {
       assert.equal(entry?.connector, 'claude-code');
     });
 
-    it('adds new servers when provided with connector/file', async function upsertNewCase() {
+    it('adds new servers when provided with connector', async function upsertNewCase() {
       const dir = await tempdir('claude-upsert-new-');
       const file = path.join(dir, '.mcp.json');
       await fs.copyFile(fixture('claude/project/.mcp.json'), file);
@@ -154,12 +156,32 @@ describe('config', function configSuite() {
       const info = await load(undefined, dir);
       await assert.rejects(info.add({ name: 'brand', config: { command: 'brand' } }), /Connector is required/);
 
-      await info.add({ name: 'brand', config: { command: 'brand' } }, { connector: 'claude-code', file });
+      await info.add({ name: 'brand', config: { command: 'brand' } }, { connector: 'claude-code' });
       const doc = JSON.parse(await fs.readFile(file, 'utf8'));
       assert.deepEqual(doc.mcpServers.brand, { command: 'brand' });
       const brandEntry = info.get('brand');
       assert.equal(brandEntry?.connector, 'claude-code');
       assert.equal(brandEntry?.config.command, 'brand');
+    });
+
+    it('selects scoped files when provided', async function scopedAddCase() {
+      const projectDir = await tempdir('claude-scope-project-');
+      await fs.copyFile(fixture('claude/project/.mcp.json'), path.join(projectDir, '.mcp.json'));
+
+      const homeDir = await tempdir('claude-scope-home-');
+      await fs.mkdir(homeDir, { recursive: true });
+      await fs.copyFile(fixture('claude/home/.mcp.json'), path.join(homeDir, '.mcp.json'));
+
+      const config = await load(undefined, { start: projectDir, homeDir, env: {} });
+
+      await config.add({ name: 'home-only', config: { command: 'home-only' } }, { connector: 'claude-code', scope: 'home' });
+
+      const projectDoc = JSON.parse(await fs.readFile(path.join(projectDir, '.mcp.json'), 'utf8'));
+      assert.deepEqual(projectDoc.mcpServers, { demo: { command: 'demo' } });
+
+      const homeDoc = JSON.parse(await fs.readFile(path.join(homeDir, '.mcp.json'), 'utf8'));
+      assert.equal(Object.hasOwn(homeDoc.mcpServers, 'home-only'), true);
+      assert.deepEqual(homeDoc.mcpServers['home-only'], { command: 'home-only' });
     });
 
     it('removes server entries when requested', async function removeCase() {

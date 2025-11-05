@@ -53,7 +53,7 @@ export class Config {
 
   /**
    * Consume a candidate configuration file.
-   * @param {{ path: string, connector?: string, parse?: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, data?: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }} candidate
+   * @param {{ path: string, connector?: string, scope?: 'project' | 'home', parse?: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, data?: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }} candidate
    * @returns {Promise<void>}
    */
   async consume(candidate) {
@@ -80,9 +80,15 @@ export class Config {
       return entry.path === candidate.path;
     });
     if (existing) {
+      if (candidate.connector) {
+        existing.connector = candidate.connector;
+      }
+      if (candidate.scope) {
+        existing.scope = candidate.scope;
+      }
       existing.data = { servers, metadata };
     } else {
-      this.list.push({ path: candidate.path, data: { servers, metadata } });
+      this.list.push({ path: candidate.path, connector: candidate.connector, scope: candidate.scope, data: { servers, metadata } });
     }
     this.registerServers(servers, candidate.path, candidate.connector);
   }
@@ -90,7 +96,7 @@ export class Config {
   /**
    * Upsert a server definition into the underlying configuration files.
    * @param {{ name: string, config: Record<string, unknown> }} entry
-   * @param {{ connector?: string, file?: string, metadata?: Record<string, unknown> }} [options]
+   * @param {{ connector?: string, file?: string, scope?: 'project' | 'home', metadata?: Record<string, unknown> }} [options]
    * @returns {Promise<void>}
    */
   async add(entry, options = {}) {
@@ -105,7 +111,20 @@ export class Config {
       throw new Error(`Connector "${connectorName}" does not support write operations`);
     }
 
-    const file = typeof options.file === 'string' ? options.file : existing?.source;
+    let file = typeof options.file === 'string' ? options.file : existing?.source;
+    if (!file) {
+      const matches = this.list.filter(function locateByConnector(item) {
+        return item.connector === connectorName;
+      });
+      if (typeof options.scope === 'string') {
+        const scoped = matches.find(function byScope(item) {
+          return item.scope === options.scope;
+        });
+        file = scoped?.path ?? (matches.length > 0 ? matches[0].path : undefined);
+      } else if (matches.length > 0) {
+        file = matches[0].path;
+      }
+    }
     if (!file) {
       throw new Error(`File path is required to add server "${entry.name}"`);
     }
@@ -118,9 +137,10 @@ export class Config {
       return item.path === file;
     });
     if (listEntry) {
+      listEntry.connector = connectorName;
       listEntry.data = { servers: parsed.servers, metadata: parsed.metadata ?? {} };
     } else {
-      this.list.push({ path: file, data: { servers: parsed.servers, metadata: parsed.metadata ?? {} } });
+      this.list.push({ path: file, connector: connectorName, scope: options.scope, data: { servers: parsed.servers, metadata: parsed.metadata ?? {} } });
     }
   }
 
@@ -164,6 +184,7 @@ export class Config {
       return item.path === file;
     });
     if (entry) {
+      entry.connector = connectorName;
       entry.data = { servers: doc.servers, metadata: doc.metadata ?? {} };
     }
   }
@@ -240,7 +261,7 @@ export async function load(document, opts = {}) {
   const candidates = await locate(options);
 
   for (const item of candidates) {
-    await config.consume({ ...item, connector: item.source?.connector });
+    await config.consume({ ...item, connector: item.source?.connector, scope: item.source?.scope });
   }
 
   return config;

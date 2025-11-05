@@ -54,7 +54,7 @@ const config = await load({
 }, '/virtual/config');
 ```
 
-When working with a `Config` instance returned by `load`, call `config.add(entry, options)`/`config.remove(name)` to update the underlying files. Existing servers automatically reuse their original connector and file path; new servers require a `connector` name (one of the entries in the table above) and a target `file` path:
+When working with a `Config` instance returned by `load`, call `config.add(entry, options)`/`config.remove(name)` to update the underlying files. Existing servers automatically reuse their original connector and file path; when adding a brand-new server you only need to supply a `connector` name (one of the entries in the table above). The loader keeps track of the files it discovered for each connector, so `config.add` will pick the right document automatically. If a tool supports both workspace and user scopes you can steer that choice with `scope: 'project' | 'home'`, or fall back to an explicit `file` when you want to point at a custom path:
 
 ```js
 await config.add(
@@ -67,13 +67,19 @@ await config.add(
   },
   {
     connector: 'claude-code',
-    file: '/path/to/project/.mcp.json'
+    scope: 'project'
   }
 );
 
 await config.remove('new-server');
 ```
-```
+
+The optional `options` bag accepted by `config.add` supports:
+
+- `connector` *(required for new servers)* — connector name exported by this package.
+- `scope` — hint whether to target the connector's project (`'project'`) or global (`'home'`) configuration when both exist.
+- `file` — explicit path override when you need to write somewhere discovery did not cover.
+- `metadata` — connector-specific metadata to persist (for example VS Code `inputs`).
 
 The second argument can be either a string (treated as `start`) or an options object with the following fields:
 
