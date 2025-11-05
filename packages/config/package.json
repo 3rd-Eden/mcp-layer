@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/config",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Discover and load MCP server configurations.",
   "type": "module",
   "main": "src/index.js",
@@ -19,6 +19,9 @@
   "files": [
     "src"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node --test --experimental-test-coverage \"./test/**/*.js\""
   },
