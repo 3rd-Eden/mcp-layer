@@ -1,0 +1,33 @@
+{
+  "name": "mcp-layer",
+  "version": "0.0.0",
+  "description": "Layers of functionality that can be add to any MCP server. ",
+  "keywords": [
+    "mcp",
+    "layer",
+    "mcp-layer",
+    "communication",
+    "cli",
+    "api",
+    "http",
+    "graphql",
+    "openapi",
+    "swagger",
+    "protocol",
+    "ui",
+    "rendering"
+  ],
+  "license": "MIT",
+  "author": "Arnout Kazemier",
+  "packageManager": "pnpm@8.15.4",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"packages/**/*.test.js\""
+  },
+  "dependencies": {
+    "@mcp-layer/config": "workspace:*",
+    "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/test-server": "workspace:*"
+  }
+}

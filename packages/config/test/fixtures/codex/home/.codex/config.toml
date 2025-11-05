@@ -1,0 +1,6 @@
+[mcp_servers.demo]
+command = "codex"
+args = ["--flag"]
+
+[mcp_servers.demo.env]
+TOKEN = "secret"

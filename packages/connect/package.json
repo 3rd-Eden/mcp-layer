@@ -1,0 +1,20 @@
+{
+  "name": "@mcp-layer/connect",
+  "version": "0.1.0",
+  "description": "Connect to MCP servers using the official SDK with sane defaults.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.2"
+  }
+}

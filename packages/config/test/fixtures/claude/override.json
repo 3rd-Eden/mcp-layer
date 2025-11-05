@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "override": {
+      "command": "override"
+    }
+  }
+}

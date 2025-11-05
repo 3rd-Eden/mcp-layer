@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sample": {
+      "command": "cline",
+      "disabled": false
+    }
+  },
+  "defaultMode": "all"
+}

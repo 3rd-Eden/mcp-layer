@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "home-demo": {
+      "command": "cursor-home"
+    }
+  }
+}

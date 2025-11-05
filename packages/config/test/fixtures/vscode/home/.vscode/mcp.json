@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "home-store": {
+      "type": "stdio",
+      "command": "home"
+    }
+  }
+}

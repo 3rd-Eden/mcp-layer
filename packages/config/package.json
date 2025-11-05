@@ -1,0 +1,28 @@
+{
+  "name": "@mcp-layer/config",
+  "version": "0.1.0",
+  "description": "Discover and load MCP server configurations.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./claude-code": "./src/connectors/claude-code.js",
+    "./codex": "./src/connectors/codex.js",
+    "./cursor": "./src/connectors/cursor.js",
+    "./vscode": "./src/connectors/vscode.js",
+    "./cline": "./src/connectors/cline.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage \"./test/**/*.js\""
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5"
+  }
+}

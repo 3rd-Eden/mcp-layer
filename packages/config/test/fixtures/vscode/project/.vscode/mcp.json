@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "store": {
+      "type": "http",
+      "url": "https://example.test/mcp"
+    }
+  },
+  "inputs": [
+    {
+      "id": "token",
+      "type": "promptString",
+      "description": "API token",
+      "password": true
+    }
+  ]
+}
