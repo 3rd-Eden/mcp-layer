@@ -1,0 +1,22 @@
+export const manual = [
+  '# MCP Test Server Manual',
+  '',
+  '## Tools',
+  '- echo: text echo with loud mode for uppercase coverage.',
+  '- add: deterministic math returning structured totals.',
+  '- files: emits ResourceLinks for manual and note resources.',
+  '- summaries: requests sampling/createMessage from the client.',
+  '- booking: demonstrates elicitation/create workflows.',
+  '- roots: requests roots/list from capable clients.',
+  '- logs: streams notifications/message entries at configurable levels.',
+  '- progress: emits notifications/progress updates tied to request tokens.',
+  '- note-update: mutates note:// resources and emits notifications/resources/updated.',
+  '- rebalance: toggles tool registrations to showcase notification debouncing.',
+  '',
+  '## Resources',
+  '- resource://manual exposes this manual.',
+  '- note://{topic}/{detail} template lists summaries and usage guidance for every feature.',
+  '',
+  '## Prompts',
+  '- welcome prompt provides name and tone completions for guided prompting.'
+].join('\n');
