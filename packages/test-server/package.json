@@ -1,8 +1,15 @@
 {
   "name": "@mcp-layer/test-server",
-  "version": "0.1.0",
-  "description": "Feature-rich MCP server for integration testing.",
+  "version": "0.0.0",
+  "description": "Feature-rich MCP server for integration testing and local development.",
   "type": "module",
+  "keywords": [
+    "mcp",
+    "server",
+    "testing",
+    "integration",
+    "model-context-protocol"
+  ],
   "bin": {
     "mcp-test-server": "src/bin.js"
   },
@@ -17,6 +24,9 @@
   "files": [
     "src"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",
     "zod": "^3.25.76"
