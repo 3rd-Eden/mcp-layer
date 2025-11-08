@@ -13,9 +13,12 @@ yarn add @mcp-layer/config
 ```
 
 ## Packages
-- `@mcp-layer/config` — walks upward from a starting directory to find `.mcp.json` (Claude Code project scope), `.cursor/mcp.json` (Cursor project scope), `.vscode/mcp.json` (VS Code workspace scope), `cline_mcp_settings.json` (Cline global storage), and `~/.codex/config.toml` (Codex user scope). Each connector parses its documented format (`mcpServers`, `servers`, or `[mcp_servers.*]`) and normalises the result into a shared `{ servers, metadata }` shape before the loader merges them into a `Config` instance keyed by server name.
-- `@mcp-layer/connect` — accepts the `Config` emitted by `@mcp-layer/config`, instantiates the MCP SDK `Client`, and connects to servers via stdio using their declared `command`, `args`, `cwd`, and `env`.
-- `@mcp-layer/test-server` — provides a feature-rich MCP server (`build` and `start`) for local integration tests, exposing multiple tools, resources, prompts, and instructions.
+
+| Package | Description |
+| --- | --- |
+| [`@mcp-layer/config`](packages/config/README.md) | Walks upward from a starting directory to find `.mcp.json` (Claude Code project scope), `.cursor/mcp.json` (Cursor project scope), `.vscode/mcp.json` (VS Code workspace scope), `cline_mcp_settings.json` (Cline global storage), and `~/.codex/config.toml` (Codex user scope). Each connector parses its documented format (`mcpServers`, `servers`, or `[mcp_servers.*]`) and normalises the result into a shared `{ servers, metadata }` shape before the loader merges them into a `Config` instance keyed by server name. |
+| [`@mcp-layer/connect`](packages/connect/README.md) | Accepts the `Config` emitted by `@mcp-layer/config`, instantiates the MCP SDK `Client`, and connects to servers via stdio using their declared `command`, `args`, `cwd`, and `env`. |
+| [`@mcp-layer/test-server`](packages/test-server/README.md) | Provides a feature-rich MCP server (`build` and `start`) for local integration tests, exposing multiple tools, resources, prompts, and instructions. |
 
 Import the scoped packages directly:
 
