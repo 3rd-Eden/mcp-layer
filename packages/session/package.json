@@ -1,0 +1,26 @@
+{
+  "name": "@mcp-layer/session",
+  "version": "0.0.0",
+  "description": "Shared MCP session wrapper used by connect and attach.",
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "session",
+    "client",
+    "transport"
+  ],
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
