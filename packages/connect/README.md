@@ -1,6 +1,6 @@
 # @mcp-layer/connect
 
-`@mcp-layer/connect` turns normalized MCP server definitions into live client connections using the official MCP SDK. It is the transport layer for the workspace: given a server entry, it spawns the stdio process, completes the MCP handshake, and returns a `Link` you can close deterministically.
+`@mcp-layer/connect` turns normalized MCP server definitions into live client connections using the official MCP SDK. It is the transport layer for the workspace: given a server entry, it spawns the stdio process, completes the MCP handshake, and returns a `Session` you can close deterministically.
 
 ## Why this exists
 
@@ -27,15 +27,15 @@ import { load } from '@mcp-layer/config';
 import { connect } from '@mcp-layer/connect';
 
 const config = await load(undefined, process.cwd());
-const link = await connect(config, 'demo');
+const session = await connect(config, 'demo');
 
-await link.client.ping();
-await link.close();
+await session.client.ping();
+await session.close();
 ```
 
 ## Core concepts
 
-- **Link**: an object that owns the MCP client + transport and exposes a `close()` helper.
+- **Session**: an object that owns the MCP client + transport and exposes a `close()` helper.
 - **Entry**: a normalized server entry returned by `@mcp-layer/config`.
 - **Source**: a `Config` instance or any object that exposes `get(name)` (including `Map`).
 
@@ -57,14 +57,14 @@ It also adds the `MCP_CLIENT_AGENT` header derived from this package version.
 
 ### `connect(source, name, options?)`
 
-Creates a `Client` and `StdioClientTransport`, runs MCP initialization, and returns a `Link`.
+Creates a `Client` and `StdioClientTransport`, runs MCP initialization, and returns a `Session`.
 
 Options:
 - `cwd` -- override working directory
 - `env` -- environment overrides
 - `info` -- overrides for client `name`/`version`
 
-### `Link`
+### `Session` (re-exported from `@mcp-layer/session`)
 
 Properties:
 - `.client` -- MCP SDK client
@@ -86,8 +86,8 @@ Method:
 ## Responsibilities & lifecycle
 
 - This package is responsible for connection lifecycle only.
-- Use `@mcp-layer/schema` to extract tools/resources/prompts after you have a `Link`.
-- Always call `link.close()` when you're done.
+- Use `@mcp-layer/schema` to extract tools/resources/prompts after you have a `Session`.
+- Always call `session.close()` when you're done.
 
 ## Testing
 

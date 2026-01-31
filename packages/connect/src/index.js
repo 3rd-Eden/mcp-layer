@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { createRequire } from 'node:module';
+import { Session } from '@mcp-layer/session';
 import path from 'node:path';
 
 const read = createRequire(import.meta.url);
@@ -55,39 +56,14 @@ export function setup(item, opts = {}) {
   return { command: cmd, args: list, cwd, env };
 }
 
-/**
- * Wrapper around the MCP client and transport so callers can close both artefacts with a single call.
- * @class
- */
-export class Link {
-  /**
-   * @param {{ name: string, source: string, entry: { name: string, source: string, config: Record<string, unknown> }, client: Client, transport: StdioClientTransport, info: { name: string, version: string } }} data
-   */
-  constructor(data) {
-    this.name = data.name;
-    this.source = data.source;
-    this.entry = data.entry;
-    this.client = data.client;
-    this.transport = data.transport;
-    this.info = data.info;
-  }
-
-  /**
-   * Close the client and transport.
-   * @returns {Promise<void>}
-   */
-  async close() {
-    await this.client.close();
-    await this.transport.close();
-  }
-}
+export { Session };
 
 /**
  * Connect to a configured MCP server using the official SDK.
  * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src
  * @param {string} name
  * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, info?: { name: string, version: string } }} [opts]
- * @returns {Promise<Link>}
+ * @returns {Promise<Session>}
  */
 export async function connect(src, name, opts = {}) {
   if (typeof name !== 'string' || name.length === 0) {
@@ -107,7 +83,7 @@ export async function connect(src, name, opts = {}) {
   // We rely on the official client to orchestrate handshake semantics.
   await client.connect(transport);
 
-  return new Link({
+  return new Session({
     name,
     source: item.source,
     entry: item,

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { load } from '@mcp-layer/config';
-import { connect, Link } from '../src/index.js';
+import { connect, Session } from '../src/index.js';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
@@ -60,7 +60,7 @@ describe('connect', function connectSuite() {
         await link.close();
       });
 
-      assert.equal(link instanceof Link, true);
+      assert.equal(link instanceof Session, true);
       const status = await link.client.ping();
       assert.equal(typeof status, 'object');
       assert.equal(link.transport.pid !== null, true);
