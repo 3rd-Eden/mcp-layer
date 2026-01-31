@@ -15,11 +15,16 @@ yarn add @mcp-layer/attach
 ## Usage
 
 ```js
-import { build } from '@mcp-layer/test-server';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { attach } from '@mcp-layer/attach';
 
-const server = build();
-const session = await attach(server, 'local-test-server');
+const server = new McpServer({ name: 'my-server', version: '1.0.0' });
+
+// Register tools/resources/prompts on the server before attaching.
+// server.registerTool(...)
+// server.registerResource(...)
+
+const session = await attach(server, 'my-server');
 
 await session.client.ping();
 await session.close();
