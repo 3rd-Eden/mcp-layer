@@ -1,39 +1,13 @@
 # @mcp-layer/test-server
 
-Feature-complete MCP server used by the workspace integration tests. It mirrors the tooling, resource, prompt, sampling, elicitation, and notification capabilities documented in the [Model Context Protocol TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), giving clients a single target that exercises the entire stack end to end.
+`@mcp-layer/test-server` is a feature-complete MCP server used for integration tests and local experiments. It mirrors the tool, resource, prompt, sampling, elicitation, notification, and MCP Apps features expected by the official SDK so clients can validate end-to-end behavior against a single, real server.
 
-## Provided capabilities
+## Why this exists
 
-- **Tools** – `echo`, `add`, `files`, `summaries`, `booking`, `roots`, `note-update`, `logs`, `progress`, and `rebalance` cover plain IO, structured output, `resource_link` payloads, sampling, elicitation, roots, mutable resources, logging notifications, progress updates, and notification debouncing.
-- **Resources** – `resource://manual` ships a markdown manual and the `note://{topic}/{detail}` template lists per-feature notes plus context-aware completions.
-- **Prompts & completions** – The `welcome` prompt exposes named/tone arguments with `completable` helpers so completion/complete requests return rich suggestions.
-- **Sampling & elicitation** – `summaries` calls `sampling/createMessage` when the client declares support, while `booking` requests input through `elicitation/create`.
-- **Notification debouncing** – `rebalance` rapidly toggles tool registrations to assert that only a single `notifications/tools/list_changed` event is emitted for a batch.
-
-## Structure
-
-- `src/tools/*` — feature folders for each tool implementation.
-- `src/resources/*` — manual and note resources plus their completion helpers.
-- `src/prompts/*` — prompt definitions such as the completable welcome prompt.
-- `src/data/*` — shared manual text, references, and note metadata.
-- `src/shared/*` — reusable utilities like the capability checker.
-
-## Spec support matrix
-
-| Feature | Status | Notes |
-| --- | --- | --- |
-| Tools (structured outputs, resource links) | ✅ | `echo`, `add`, `files`, `summaries`, `booking`, `roots`, `logs`, `progress`, `rebalance`. |
-| Resources & dynamic templates | ✅ | `resource://manual`, `note://{topic}/{detail}` with completions. |
-| Prompts & completion API | ✅ | `welcome` prompt plus `completable` args; `completion/complete` exercised in tests. |
-| Sampling (`sampling/createMessage`) | ✅ | `summaries` tool proxies sampling and validates responses. |
-| Elicitation (`elicitation/create`) | ✅ | `booking` tool requests alternate booking info. |
-| Roots (`roots/list`) | ✅ | `roots` tool lists file URIs from capable clients. |
-| Resource subscriptions/updates | ✅ | `resources/subscribe` + `note-update` tool emit `notifications/resources/updated`. |
-| Logging notifications | ✅ | `logs` tool emits `notifications/message`, README explains setLevel usage. |
-| Progress notifications | ✅ | `progress` tool requires `_meta.progressToken` and streams `notifications/progress`. |
-| Debounced list notifications | ✅ | `rebalance` tool toggles registrations to coalesce events. |
-| Alternate transports (Streamable HTTP / SSE) | ✅ | `mcp-test-server-http` boots Express with Streamable HTTP + SSE endpoints. |
-| Auth/OAuth proxying | ⛔️ | Out of scope for this test fixture. |
+The rest of this workspace depends on a real MCP server to validate protocols. This server:
+- Runs over stdio (and optional HTTP/SSE transports)
+- Exercises all major MCP capabilities
+- Exposes stable fixtures for tests and demos
 
 ## Installation
 
@@ -46,25 +20,14 @@ pnpm add @mcp-layer/test-server
 yarn add @mcp-layer/test-server
 ```
 
-Requirements: Node.js 20+ (or Deno/Bun with Node compatibility) so the included binaries and ESM modules run without flags.
+Requirements: Node.js 20+ (or Deno/Bun with Node compatibility).
 
-## Usage
+## Quick start
 
 ### Stdio transport
 
 ```bash
 npx mcp-test-server
-```
-
-This command launches the server over stdio, which is what most MCP clients expect when spawning local tools. For example, with Claude Code or VS Code MCP configuration you can point the client at the binary:
-
-```json
-{
-  "name": "mcp-layer-test-server",
-  "type": "stdio",
-  "command": "npx",
-  "args": ["mcp-test-server"]
-}
 ```
 
 ### Streamable HTTP + SSE transport
@@ -73,9 +36,85 @@ This command launches the server over stdio, which is what most MCP clients expe
 npx mcp-test-server-http --port 3333
 ```
 
-This starts the Express-based Streamable HTTP endpoint on `/mcp` and SSE compatibility endpoints on `/sse` + `/sse/messages`. Configure MCP clients that support HTTP transports (Claude Desktop, VS Code, Cursor, MCP Inspector, etc.) to point at `http://localhost:3333/mcp`.
+This exposes:
+- Streamable HTTP on `/mcp`
+- SSE compatibility on `/sse` and `/sse/messages`
 
-Both binaries emit server `info` and `instructions` metadata so clients immediately learn which tools/resources/prompts are available.
+## What it provides
+
+### Tools
+
+- `echo` -- returns text, structured output
+- `add` -- arithmetic + structured output
+- `annotated` -- tool annotations + `_meta` coverage
+- `dashboard` -- MCP Apps UI metadata via `_meta.ui`
+- `files` -- emits `resource_link` payloads
+- `summaries` -- sampling support
+- `booking` -- elicitation support
+- `roots` -- roots capability
+- `note-update` -- mutable resources
+- `logs` -- logging notifications
+- `progress` -- progress notifications
+- `rebalance` -- debounced list updates
+
+### Resources
+
+- `resource://manual` -- markdown manual
+- `note://{topic}/{detail}` -- template-backed resources with completions
+- `ui://dashboard/app.html` -- MCP Apps HTML UI
+
+### Prompts
+
+- `welcome` -- prompt arguments with completions
+
+### MCP Apps
+
+- `dashboard` tool advertises `_meta.ui.resourceUri`
+- `ui://dashboard/app.html` serves HTML and `_meta.ui` settings (`csp`, `permissions`)
+
+## Structure
+
+- `src/tools/*` -- tool implementations
+- `src/resources/*` -- resource + template handlers
+- `src/prompts/*` -- prompt definitions
+- `src/data/*` -- shared manual text and fixtures
+- `src/shared/*` -- utilities and capability checks
+
+## Spec support matrix
+
+| Feature | Status | Notes |
+| --- | --- | --- |
+| Tools (structured outputs, resource links) | yes | `echo`, `add`, `files`, `summaries`, `booking`, `roots`, `logs`, `progress`, `rebalance`. |
+| Tool annotations + metadata | yes | `annotated` exposes `annotations` + `_meta`. |
+| MCP Apps (UI resources) | yes | `dashboard` tool exposes `_meta.ui.resourceUri`, `ui://dashboard/app.html` serves HTML. |
+| Resources & dynamic templates | yes | `resource://manual`, `note://{topic}/{detail}` with completions. |
+| Prompts & completion API | yes | `welcome` prompt + `completion/complete`. |
+| Sampling (`sampling/createMessage`) | yes | `summaries` tool proxies sampling and validates responses. |
+| Elicitation (`elicitation/create`) | yes | `booking` tool requests alternate booking info. |
+| Roots (`roots/list`) | yes | `roots` tool lists file URIs from capable clients. |
+| Resource subscriptions/updates | yes | `resources/subscribe` + `note-update` tool emit `notifications/resources/updated`. |
+| Logging notifications | yes | `logs` tool emits `notifications/message`. |
+| Progress notifications | yes | `progress` tool streams `notifications/progress`. |
+| Debounced list notifications | yes | `rebalance` tool coalesces updates. |
+| Alternate transports (Streamable HTTP / SSE) | yes | `mcp-test-server-http` bootstraps both. |
+| Auth/OAuth proxying | no | Out of scope for this fixture. |
+
+## Usage in tests
+
+Use it as the real server target for integration tests:
+
+```js
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const transport = new StdioClientTransport({
+  command: process.execPath,
+  args: [require.resolve('@mcp-layer/test-server/src/bin.js')]
+});
+
+const client = new Client({ name: 'demo', version: '0.0.0' });
+await client.connect(transport);
+```
 
 ## Testing
 
@@ -83,4 +122,15 @@ Both binaries emit server `info` and `instructions` metadata so clients immediat
 pnpm test --filter @mcp-layer/test-server
 ```
 
-The `node:test` suite boots the published binary, configures real MCP clients (including sampling and elicitation handlers), exercises every tool/resource/prompt, and asserts completions plus notification debouncing so coverage remains aligned with the upstream SDK README.
+The suite boots the real binary, exercises all tools/resources/prompts, verifies notifications, and asserts MCP Apps metadata so this fixture remains trustworthy.
+
+## Extending the server
+
+When adding capabilities:
+1) Implement the feature in `src/*`.
+2) Add or update a test in `test/index.test.js`.
+3) Document it in this README.
+
+## License
+
+MIT

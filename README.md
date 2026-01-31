@@ -1,44 +1,57 @@
 # MCP Layer
 
-`mcp-layer` helps engineers bolt extra behaviours on top of existing MCP servers without reimplementing transport details. This repository currently ships discovery and connection helpers built on top of the official [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk).
+`mcp-layer` helps engineers bolt extra behaviors on top of existing MCP servers without reimplementing transport or schema parsing. It is a small, focused toolbox for discovering MCP configs, connecting to servers, and extracting a unified schema that can drive CLIs, REST APIs, UI renderers, or additional MCP layers.
 
-## Installation
+## What you can build with this repo
 
-```sh
-pnpm add @mcp-layer/config
-# or
-npm install @mcp-layer/config
-# or
-yarn add @mcp-layer/config
-```
+- **CLI layers** that expose MCP tools as commands with validated input.
+- **REST gateways** that generate endpoints and schemas from MCP tool definitions.
+- **UI renderers** that surface MCP Apps resources using `_meta.ui` metadata.
+- **New MCP layers** that programmatically reason about tool/resource catalogs.
 
 ## Packages
 
-| Package | Description |
+| Package | Purpose |
 | --- | --- |
-| [`@mcp-layer/config`](packages/config/README.md) | Walks upward from a starting directory to find `.mcp.json` (Claude Code project scope), `.cursor/mcp.json` (Cursor project scope), `.vscode/mcp.json` (VS Code workspace scope), `cline_mcp_settings.json` (Cline global storage), and `~/.codex/config.toml` (Codex user scope). Each connector parses its documented format (`mcpServers`, `servers`, or `[mcp_servers.*]`) and normalises the result into a shared `{ servers, metadata }` shape before the loader merges them into a `Config` instance keyed by server name. |
-| [`@mcp-layer/connect`](packages/connect/README.md) | Accepts the `Config` emitted by `@mcp-layer/config`, instantiates the MCP SDK `Client`, and connects to servers via stdio using their declared `command`, `args`, `cwd`, and `env`. |
-| [`@mcp-layer/test-server`](packages/test-server/README.md) | Provides a feature-rich MCP server (`build` and `start`) for local integration tests, exposing multiple tools, resources, prompts, and instructions. |
+| [`@mcp-layer/config`](packages/config/README.md) | Discover and normalize MCP server configs across editors/clients. |
+| [`@mcp-layer/connect`](packages/connect/README.md) | Connect to MCP servers over stdio and return a closeable Link. |
+| [`@mcp-layer/schema`](packages/schema/README.md) | Extract tools/resources/prompts/templates into a unified Zod-backed schema (including MCP Apps metadata). |
+| [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration tests and local exploration. |
 
-Import the scoped packages directly:
+## Quick start (end-to-end)
 
 ```js
-import { connect } from '@mcp-layer/connect';
 import { load } from '@mcp-layer/config';
+import { connect } from '@mcp-layer/connect';
+import { extract } from '@mcp-layer/schema';
 
-const cfg = await load(undefined, process.cwd());
-const link = await connect(cfg, 'demo');
-await link.client.ping();
+const config = await load(undefined, process.cwd());
+const link = await connect(config, 'demo');
+
+const schema = await extract(link);
+console.log(schema.items.map((item) => item.name));
+
 await link.close();
 ```
 
-Spin up the bundled test server over stdio for quick manual exploration:
+## Design principles
 
-```sh
-pnpm exec mcp-test-server
-```
+- **Single source of truth**: normalized schemas flow from the MCP server, not from tool-specific parsing.
+- **Minimal surface area**: each package does one job and composes cleanly with the others.
+- **Real integration tests**: no mocks; the test server is used as a real MCP target.
+- **Documentation first**: if you have questions after reading the README, the docs are incomplete.
 
 ## Development
-- Install dependencies with `pnpm install`.
-- Run tests with `pnpm test`; the suite exercises real stdio handshakes against a fixture MCP server powered by the official SDK.
-- Follow the guidelines in `AGENTS.md` for naming, documentation, testing, and dependency choices. Every contribution must add or update `node:test` coverage and document behavioural changes here in the README.
+
+```sh
+pnpm install
+pnpm test
+```
+
+## Repository guidelines
+
+See `AGENTS.md` for coding style, testing requirements, and documentation expectations.
+
+## License
+
+MIT
