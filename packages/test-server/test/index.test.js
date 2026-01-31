@@ -66,8 +66,22 @@ describe('test-server', function serverSuite() {
       });
       assert.deepEqual(
         toolNames.sort(),
-        ['add', 'booking', 'echo', 'files', 'logs', 'note-update', 'progress', 'rebalance', 'roots', 'summaries']
+        ['add', 'annotated', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'progress', 'rebalance', 'roots', 'summaries']
       );
+
+      const annotated = tools.tools.find(function findAnnotated(item) {
+        return item.name === 'annotated';
+      });
+      assert.ok(annotated);
+      assert.equal(annotated.annotations?.title, 'Annotated Tool');
+      assert.equal(annotated.annotations?.readOnlyHint, true);
+      assert.equal(annotated._meta?.owner, 'mcp-layer-schema');
+
+      const dashboard = tools.tools.find(function findDashboard(item) {
+        return item.name === 'dashboard';
+      });
+      assert.ok(dashboard);
+      assert.equal(dashboard._meta?.ui?.resourceUri, 'ui://dashboard/app.html');
 
       const prompts = await session.client.listPrompts({});
       const promptNames = prompts.prompts.map(function pickPromptName(prompt) {
@@ -80,12 +94,32 @@ describe('test-server', function serverSuite() {
         return item.uri;
       });
       assert.equal(resourceUris.includes('resource://manual'), true);
+      assert.equal(resourceUris.includes('ui://dashboard/app.html'), true);
+      const manual = resources.resources.find(function findManual(item) {
+        return item.uri === 'resource://manual';
+      });
+      assert.ok(manual);
+      assert.equal(Array.isArray(manual.icons), true);
+      assert.equal(manual._meta?.owner, 'mcp-layer-schema');
+
+      const ui = resources.resources.find(function findUi(item) {
+        return item.uri === 'ui://dashboard/app.html';
+      });
+      assert.ok(ui);
+      assert.equal(ui._meta?.ui?.csp, "default-src 'self'");
+      assert.equal(Array.isArray(ui._meta?.ui?.permissions), true);
 
       const templates = await session.client.listResourceTemplates({});
       const templateNames = templates.resourceTemplates.map(function pickTemplateName(item) {
         return item.name;
       });
       assert.equal(templateNames.includes('notes'), true);
+      const notes = templates.resourceTemplates.find(function findNotes(item) {
+        return item.name === 'notes';
+      });
+      assert.ok(notes);
+      assert.equal(Array.isArray(notes.icons), true);
+      assert.equal(notes._meta?.owner, 'mcp-layer-schema');
     });
 
     it('runs core tools with structured and linked outputs', async function toolsCase(t) {
@@ -106,6 +140,9 @@ describe('test-server', function serverSuite() {
         return entry.type === 'resource_link';
       });
       assert.equal(typeof resourceLink?.uri, 'string');
+
+      const dashboard = await session.client.callTool({ name: 'dashboard', arguments: { name: 'Ada' } });
+      assert.equal(dashboard.structuredContent?.resourceUri, 'ui://dashboard/app.html');
     });
 
     it('supports sampling and elicitation workflows', async function advancedCapabilitiesCase(t) {
@@ -190,6 +227,9 @@ describe('test-server', function serverSuite() {
 
       const note = await session.client.readResource({ uri: 'note://echo/summary' });
       assert.equal(note.contents?.[0]?.text.includes('Echo repeats'), true);
+
+      const ui = await session.client.readResource({ uri: 'ui://dashboard/app.html' });
+      assert.equal(ui.contents?.[0]?.text.includes('Dashboard'), true);
     });
 
     it('emits logging and progress notifications', async function loggingProgressCase(t) {

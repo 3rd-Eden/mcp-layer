@@ -1,5 +1,6 @@
 import { registerManualResource } from './manual.js';
 import { registerNotesResource } from './notes.js';
+import { registerUi } from './ui.js';
 
 /**
  * Register all resources exposed by the server.
@@ -9,4 +10,5 @@ import { registerNotesResource } from './notes.js';
 export function registerResources(server, context) {
   registerManualResource(server, context);
   registerNotesResource(server, context);
+  registerUi(server);
 }

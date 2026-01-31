@@ -1,5 +1,7 @@
 import { registerAdd } from './add.js';
+import { registerAnnotated } from './annotated.js';
 import { registerBooking } from './booking.js';
+import { registerDashboard } from './dashboard.js';
 import { registerEcho } from './echo.js';
 import { registerFiles } from './files.js';
 import { registerLogs } from './logs.js';
@@ -18,6 +20,8 @@ import { registerSummaries } from './summaries.js';
 export function registerTools(server, context, capabilities, notifier) {
   const echoHandle = registerEcho(server);
   const addHandle = registerAdd(server);
+  registerAnnotated(server);
+  registerDashboard(server);
   registerFiles(server, context);
   registerSummaries(server, capabilities);
   registerBooking(server, capabilities);

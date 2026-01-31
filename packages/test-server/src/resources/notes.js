@@ -87,7 +87,17 @@ export function registerNotesResource(server, context) {
     {
       title: 'Feature Notes',
       description: 'Dynamic notes for each feature, including summaries and usage guidance.',
-      mimeType: 'text/plain'
+      mimeType: 'text/plain',
+      icons: [
+        {
+          src: 'https://example.test/assets/notes.svg',
+          mimeType: 'image/svg+xml',
+          sizes: ['any']
+        }
+      ],
+      _meta: {
+        owner: 'mcp-layer-schema'
+      }
     },
     noteRead
   );

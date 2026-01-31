@@ -26,7 +26,17 @@ export function registerManualResource(server, context) {
     {
       title: 'Server Manual',
       description: 'Describes how to interact with the test server.',
-      mimeType: 'text/markdown'
+      mimeType: 'text/markdown',
+      icons: [
+        {
+          src: 'https://example.test/assets/manual.png',
+          mimeType: 'image/png',
+          sizes: ['48x48']
+        }
+      ],
+      _meta: {
+        owner: 'mcp-layer-schema'
+      }
     },
     manualRead
   );
