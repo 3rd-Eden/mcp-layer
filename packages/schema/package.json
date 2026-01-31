@@ -33,6 +33,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@mcp-layer/attach": "workspace:*",
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/test-server": "workspace:*"

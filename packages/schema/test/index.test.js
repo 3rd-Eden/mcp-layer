@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { load } from '@mcp-layer/config';
 import { connect } from '@mcp-layer/connect';
+import { attach } from '@mcp-layer/attach';
+import { build } from '@mcp-layer/test-server';
 import { extract } from '../src/index.js';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
@@ -58,6 +60,14 @@ function finditem(list, type, name) {
   return list.find(function match(item) {
     return item.type === type && item.name === name;
   });
+}
+
+/**
+ * Build an in-process test server for attach coverage.
+ * @returns {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer}
+ */
+function buildserver() {
+  return build();
 }
 
 describe('schema', function schemaSuite() {
@@ -149,6 +159,24 @@ describe('schema', function schemaSuite() {
       await assert.rejects(async function run() {
         await extract({});
       }, /Expected a Session/);
+    });
+  });
+
+  describe('attach', function attachSuite() {
+    it('extracts from an attached in-process server', async function attachCase() {
+      const server = buildserver();
+      const session = await attach(server, 'demo');
+      let out;
+
+      try {
+        out = await extract(session);
+      } finally {
+        await session.close();
+      }
+
+      const tool = finditem(out.items, 'tool', 'echo');
+      assert.equal(Boolean(tool), true);
+      assert.equal(out.server.info?.name, 'mcp-test-server');
     });
   });
 });

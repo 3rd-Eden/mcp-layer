@@ -65,6 +65,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      '@mcp-layer/attach':
+        specifier: workspace:*
+        version: link:../attach
       '@mcp-layer/config':
         specifier: workspace:*
         version: link:../config
