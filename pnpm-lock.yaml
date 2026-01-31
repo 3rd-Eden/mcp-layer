@@ -18,6 +18,19 @@ importers:
         specifier: workspace:*
         version: link:packages/test-server
 
+  packages/attach:
+    dependencies:
+      '@mcp-layer/session':
+        specifier: workspace:*
+        version: link:../session
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.20.2
+        version: 1.20.2
+    devDependencies:
+      '@mcp-layer/test-server':
+        specifier: workspace:*
+        version: link:../test-server
+
   packages/config:
     dependencies:
       '@iarna/toml':
@@ -29,6 +42,9 @@ importers:
 
   packages/connect:
     dependencies:
+      '@mcp-layer/session':
+        specifier: workspace:*
+        version: link:../session
       '@modelcontextprotocol/sdk':
         specifier: ^1.20.2
         version: 1.20.2
@@ -58,6 +74,8 @@ importers:
       '@mcp-layer/test-server':
         specifier: workspace:*
         version: link:../test-server
+
+  packages/session: {}
 
   packages/test-server:
     dependencies:
