@@ -1,0 +1,167 @@
+/**
+ * Determine whether the provided value represents a usable MCP server definition.
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isServerConfig(value) {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+/**
+ * Check that a server definition exposes a connection primitive.
+ * @param {Record<string, unknown>} config
+ * @returns {boolean}
+ */
+function hasConnection(config) {
+  const command = config.command;
+  const url = config.url;
+  const endpoint = config.endpoint;
+  return (typeof command === 'string' && command.length > 0)
+    || (typeof url === 'string' && url.length > 0)
+    || (typeof endpoint === 'string' && endpoint.length > 0);
+}
+
+/**
+ * Extract server entries from the standard MCP schema.
+ * @param {Record<string, unknown>} doc
+ * @param {string} file
+ * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
+ */
+export function extractServers(doc, file) {
+  if (!doc || typeof doc !== 'object') {
+    throw new Error(`${file} must contain an object with server definitions`);
+  }
+
+  const servers = [];
+
+  /**
+   * @param {Record<string, unknown>} node
+   * @param {boolean} strict
+   */
+  function consume(node, strict) {
+    for (const [name, value] of Object.entries(node)) {
+      if (!isServerConfig(value)) {
+        continue;
+      }
+
+      if (!hasConnection(value)) {
+        if (strict) {
+          throw new Error(`Server "${name}" in ${file} must declare "command", "url", or "endpoint"`);
+        }
+        continue;
+      }
+
+      servers.push({ name, config: /** @type {Record<string, unknown>} */ (value) });
+    }
+  }
+
+  if (doc.mcpServers && typeof doc.mcpServers === 'object') {
+    consume(/** @type {Record<string, unknown>} */ (doc.mcpServers), true);
+  } else if (doc.servers && typeof doc.servers === 'object') {
+    consume(/** @type {Record<string, unknown>} */ (doc.servers), true);
+  } else {
+    consume(/** @type {Record<string, unknown>} */ (doc), false);
+  }
+
+  const metadata = {};
+  if (Array.isArray(doc.inputs)) {
+    metadata.inputs = doc.inputs;
+  }
+  if (typeof doc.defaultMode === 'string') {
+    metadata.defaultMode = doc.defaultMode;
+  }
+  if (Array.isArray(doc.autoApprove)) {
+    metadata.autoApprove = doc.autoApprove;
+  }
+
+  return { servers, metadata };
+}
+
+/**
+ * Parse a JSON or YAML configuration document into normalised server entries.
+ * @param {string} raw
+ * @param {string} file
+ * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
+ */
+export function parseDocument(raw, file) {
+  let doc;
+  const ext = path.extname(file).toLowerCase();
+
+  try {
+    if (ext === '.yaml' || ext === '.yml') {
+      doc = YAML.parse(raw) ?? {};
+    } else {
+      doc = JSON.parse(raw);
+    }
+  } catch (error) {
+    const type = ext === '.yaml' || ext === '.yml' ? 'YAML' : 'JSON';
+    throw new Error(`Failed to parse ${type} for ${file}: ${(error instanceof Error ? error.message : 'unknown error')}`);
+  }
+
+  return extractServers(doc ?? {}, file);
+}
+
+/**
+ * Serialize server definitions into JSON or YAML while preserving metadata.
+ * @param {string} file
+ * @param {{ name: string, config: Record<string, unknown> } | null} entry
+ * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> } & Record<string, unknown>} [metadata]
+ * @returns {Promise<void>}
+ */
+export async function writeDocument(file, entry, metadata = {}) {
+  const dir = path.dirname(file);
+  await fs.mkdir(dir, { recursive: true });
+
+  const ext = path.extname(file).toLowerCase();
+  const isYaml = ext === '.yaml' || ext === '.yml';
+
+  let doc;
+  try {
+    const raw = await fs.readFile(file, 'utf8');
+    doc = isYaml ? YAML.parse(raw) : JSON.parse(raw);
+  } catch {
+    doc = {};
+  }
+
+  const body = doc && typeof doc === 'object' ? /** @type {Record<string, unknown>} */ (doc) : {};
+  let key = 'mcpServers';
+  if (body.mcpServers && typeof body.mcpServers === 'object') {
+    key = 'mcpServers';
+  } else if (body.servers && typeof body.servers === 'object') {
+    key = 'servers';
+  }
+
+  if (!body[key] || typeof body[key] !== 'object') {
+    body[key] = {};
+  }
+
+  const serversNode = /** @type {Record<string, unknown>} */ (body[key]);
+
+  if (entry) {
+    serversNode[entry.name] = entry.config;
+  } else if (Array.isArray(metadata.servers)) {
+    for (const name of Object.keys(serversNode)) {
+      delete serversNode[name];
+    }
+    for (const item of metadata.servers) {
+      serversNode[item.name] = item.config;
+    }
+  }
+
+  if (metadata && typeof metadata === 'object') {
+    for (const [metaKey, value] of Object.entries(metadata)) {
+      if (metaKey === 'servers') {
+        continue;
+      }
+      body[metaKey] = value;
+    }
+  }
+
+  const output = isYaml
+    ? YAML.stringify(body)
+    : `${JSON.stringify(body, null, 2)}\n`;
+  await fs.writeFile(file, output, 'utf8');
+}
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import YAML from 'yaml';

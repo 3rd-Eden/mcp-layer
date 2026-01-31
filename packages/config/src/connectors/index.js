@@ -4,6 +4,13 @@ import { cursor } from './cursor.js';
 import { codex } from './codex.js';
 import { vscode } from './vscode.js';
 import { cline } from './cline.js';
+import { windsurf } from './windsurf.js';
+import { claudeDesktop } from './claude-desktop.js';
+import { gemini } from './gemini.js';
+import { neovim } from './neovim.js';
+import { helix } from './helix.js';
+import { zed } from './zed.js';
+import { generic } from './generic.js';
 
 /**
  * Generate ancestry list from cwd to root for priority evaluation.
@@ -24,7 +31,20 @@ function ascend(dir) {
   return list;
 }
 
-export const CONNECTORS = [claudeCode, cursor, codex, vscode, cline];
+export const CONNECTORS = [
+  claudeCode,
+  cursor,
+  codex,
+  vscode,
+  cline,
+  gemini,
+  windsurf,
+  claudeDesktop,
+  neovim,
+  helix,
+  zed,
+  generic
+];
 
 /**
  * Locate a connector definition by name.

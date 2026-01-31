@@ -9,7 +9,14 @@ import { cursor } from '../src/connectors/cursor.js';
 import { codex } from '../src/connectors/codex.js';
 import { vscode } from '../src/connectors/vscode.js';
 import { cline } from '../src/connectors/cline.js';
+import { windsurf } from '../src/connectors/windsurf.js';
+import { claudeDesktop } from '../src/connectors/claude-desktop.js';
+import { gemini } from '../src/connectors/gemini.js';
+import { neovim } from '../src/connectors/neovim.js';
+import { helix } from '../src/connectors/helix.js';
+import { zed } from '../src/connectors/zed.js';
 import { collectCandidates } from '../src/connectors/index.js';
+import { generic } from '../src/connectors/generic.js';
 
 const fixturesRoot = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const fixture = (...segments) => path.join(fixturesRoot, ...segments);
@@ -349,6 +356,111 @@ command = "codex"
 
       const doc = JSON.parse(await fs.readFile(file, 'utf8'));
       assert.deepEqual(doc.servers.new, { type: 'stdio', command: 'new' });
+    });
+  });
+
+  describe('generic', function genericSuite() {
+    it('detects glob-style project files', function genericProjectCase() {
+      const dir = fixture('generic/project');
+      const list = generic.project(dir);
+      assert.equal(list.includes(path.join(dir, 'mcp.tools.yaml')), true);
+      assert.equal(list.includes(path.join(dir, 'fallback.mcp.json')), true);
+    });
+
+    it('expands documented global config locations', function genericHomeCase() {
+      const homeDir = '/Users/dev';
+      const ctx = {
+        home: homeDir,
+        env: { MCP_CONFIG_PATH: '~/custom/mcp.json' },
+        platform: 'darwin'
+      };
+      const list = generic.home(ctx);
+      assert.equal(list.includes(path.join(homeDir, '.config', 'mcp', 'servers.json')), true);
+      assert.equal(list.includes(path.join(homeDir, '.config', 'mcp.json')), true);
+      assert.equal(list.includes(path.join(homeDir, '.config', 'mcp.yaml')), true);
+      assert.equal(list.includes(path.join(homeDir, 'custom', 'mcp.json')), true);
+    });
+
+    it('parses yaml servers using either servers or top-level blocks', async function genericParseCase() {
+      const yamlFile = fixture('generic/project/mcp.tools.yaml');
+      const yaml = await fs.readFile(yamlFile, 'utf8');
+      const parsedYaml = generic.parse(yaml, yamlFile);
+      assert.deepEqual(parsedYaml.servers, [
+        { name: 'yaml-server', config: { url: 'https://example.test/yaml', headers: { Authorization: 'Bearer token' } } }
+      ]);
+      assert.deepEqual(parsedYaml.metadata.inputs, [{ id: 'yaml', type: 'promptString' }]);
+
+      const jsonFile = fixture('generic/project/fallback.mcp.json');
+      const json = await fs.readFile(jsonFile, 'utf8');
+      const parsedJson = generic.parse(json, jsonFile);
+      assert.equal(parsedJson.servers.some((entry) => entry.name === 'json-server'), true);
+    });
+
+    it('writes generic JSON documents', async function genericWriteCase() {
+      const dir = await tempdir('generic-write-');
+      const file = path.join(dir, 'mcp.extra.json');
+      await generic.write(file, { name: 'new', config: { command: 'new-cli' } }, { inputs: [{ id: 'token', type: 'promptString' }] });
+      const parsed = generic.parse(await fs.readFile(file, 'utf8'), file);
+      const newEntry = parsed.servers.find((entry) => entry.name === 'new');
+      assert.deepEqual(newEntry?.config, { command: 'new-cli' });
+      assert.deepEqual(parsed.metadata.inputs, [{ id: 'token', type: 'promptString' }]);
+    });
+  });
+
+  describe('windsurf', function windsurfSuite() {
+    it('returns home path for windsuf config', function windsurfHomeCase() {
+      const homeDir = '/Users/dev';
+      const list = windsurf.home({ home: homeDir });
+      assert.deepEqual(list, [path.join(homeDir, '.codeium', 'windsurf', 'mcp_config.json')]);
+    });
+  });
+
+  describe('claude desktop', function claudeDesktopSuite() {
+    it('returns platform specific paths', function claudeDesktopPathsCase() {
+      const homeDir = '/Users/dev';
+      const ctx = { home: homeDir, platform: 'darwin' };
+      const list = claudeDesktop.home(ctx);
+      assert.equal(list.includes(path.join(homeDir, '.claude', 'settings.json')), true);
+      assert.equal(list.includes(path.join(homeDir, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json')), true);
+    });
+  });
+
+  describe('gemini', function geminiSuite() {
+    it('discovers project and home settings', function geminiPathsCase() {
+      const dir = fixture('gemini/project');
+      const project = gemini.project(dir);
+      assert.equal(project.includes(path.join(dir, '.gemini', 'settings.json')), true);
+
+      const list = gemini.home({ home: '/Users/dev' });
+      assert.equal(list.includes(path.join('/Users/dev', '.gemini', 'settings.json')), true);
+    });
+
+    it('parses gemini configurations', async function geminiParseCase() {
+      const file = fixture('gemini/project/.gemini/settings.json');
+      const raw = await fs.readFile(file, 'utf8');
+      const parsed = gemini.parse(raw, file);
+      assert.deepEqual(parsed.servers, [{ name: 'gemini', config: { command: 'gemini-cli' } }]);
+    });
+  });
+
+  describe('neovim', function neovimSuite() {
+    it('returns neovim path', function neovimPathCase() {
+      const list = neovim.home({ home: '/Users/dev' });
+      assert.deepEqual(list, [path.join('/Users/dev', '.config', 'nvim', 'mcp.json')]);
+    });
+  });
+
+  describe('helix', function helixSuite() {
+    it('returns helix path', function helixPathCase() {
+      const list = helix.home({ home: '/Users/dev' });
+      assert.deepEqual(list, [path.join('/Users/dev', '.config', 'helix', 'mcp.json')]);
+    });
+  });
+
+  describe('zed', function zedSuite() {
+    it('returns zed path', function zedPathCase() {
+      const list = zed.home({ home: '/Users/dev' });
+      assert.deepEqual(list, [path.join('/Users/dev', '.config', 'zed', 'mcp.json')]);
     });
   });
 

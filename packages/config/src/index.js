@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { collectCandidates, findConnector } from './connectors/index.js';
+import { extractServers } from './schema.js';
 
 /**
  * Aggregate configuration data discovered on disk.
@@ -273,26 +274,9 @@ export async function load(document, opts = {}) {
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
  */
 function parseInlineDocument(doc) {
-  const serversNode = doc && typeof doc === 'object' ? doc.mcpServers : undefined;
-  if (!serversNode || typeof serversNode !== 'object') {
-    throw new Error('Inline configuration must include a "mcpServers" object');
+  const parsed = extractServers(doc, '<inline>');
+  if (parsed.servers.length === 0) {
+    throw new Error('Inline configuration must declare at least one server using "mcpServers", "servers", or top-level objects with connection settings');
   }
-
-  const servers = [];
-  for (const [name, value] of Object.entries(serversNode)) {
-    if (!value || typeof value !== 'object') {
-      continue;
-    }
-    servers.push({ name, config: /** @type {Record<string, unknown>} */ (value) });
-  }
-
-  const metadata = {};
-  if (Array.isArray(doc.inputs)) {
-    metadata.inputs = doc.inputs;
-  }
-  if (typeof doc.defaultMode === 'string') {
-    metadata.defaultMode = doc.defaultMode;
-  }
-
-  return { servers, metadata };
+  return parsed;
 }

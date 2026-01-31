@@ -1,0 +1,7 @@
+{
+  "json-server": {
+    "command": "json-cli",
+    "args": ["--stdio"]
+  },
+  "metadata": "ignore"
+}

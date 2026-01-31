@@ -24,6 +24,13 @@
     "./cursor": "./src/connectors/cursor.js",
     "./vscode": "./src/connectors/vscode.js",
     "./cline": "./src/connectors/cline.js",
+    "./windsurf": "./src/connectors/windsurf.js",
+    "./claude-desktop": "./src/connectors/claude-desktop.js",
+    "./gemini-cli": "./src/connectors/gemini.js",
+    "./neovim": "./src/connectors/neovim.js",
+    "./helix": "./src/connectors/helix.js",
+    "./zed": "./src/connectors/zed.js",
+    "./generic": "./src/connectors/generic.js",
     "./package.json": "./package.json"
   },
   "files": [
@@ -36,6 +43,7 @@
     "test": "node --test --experimental-test-coverage \"./test/**/*.js\""
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5"
+    "@iarna/toml": "^2.2.5",
+    "yaml": "^2.8.1"
   }
 }

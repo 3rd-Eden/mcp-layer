@@ -74,7 +74,7 @@ describe('config', function configSuite() {
 
     it('uses inline configuration when provided', async function loadInlineCase() {
       const info = await load({
-        mcpServers: {
+        servers: {
           manual: {
             command: '/usr/local/bin/manual'
           },
@@ -91,7 +91,33 @@ describe('config', function configSuite() {
     });
 
     it('throws when inline document lacks mcpServers', async function loadInlineMissingServersCase() {
-      await assert.rejects(load({ inputs: [] }, '/virtual/empty'), /"mcpServers"/);
+      await assert.rejects(load({ inputs: [] }, '/virtual/empty'), /declare at least one server/);
+    });
+
+    it('loads generic YAML and JSON configs via glob discovery', async function loadGenericCase() {
+      const dir = fixture('generic/project');
+      const info = await load(undefined, dir);
+
+      const yamlFile = path.join(dir, 'mcp.tools.yaml');
+      const yamlServer = info.get('yaml-server');
+      assert.equal(yamlServer?.source, yamlFile);
+      assert.deepEqual(yamlServer?.config, { url: 'https://example.test/yaml', headers: { Authorization: 'Bearer token' } });
+
+      const jsonFile = path.join(dir, 'fallback.mcp.json');
+      const jsonServer = info.get('json-server');
+      assert.equal(jsonServer?.source, jsonFile);
+      assert.deepEqual(jsonServer?.config, { command: 'json-cli', args: ['--stdio'] });
+    });
+
+    it('discovers gemini CLI settings', async function loadGeminiCase() {
+      const dir = fixture('gemini/project');
+      const info = await load(undefined, dir);
+
+      const file = path.join(dir, '.gemini', 'settings.json');
+      const geminiServer = info.get('gemini');
+      assert.equal(geminiServer?.connector, 'gemini-cli');
+      assert.equal(geminiServer?.source, file);
+      assert.deepEqual(geminiServer?.config, { command: 'gemini-cli' });
     });
   });
 

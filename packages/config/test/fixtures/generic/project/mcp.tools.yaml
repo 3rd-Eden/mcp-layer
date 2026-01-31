@@ -1,0 +1,8 @@
+inputs:
+  - id: yaml
+    type: promptString
+servers:
+  yaml-server:
+    url: https://example.test/yaml
+    headers:
+      Authorization: Bearer token

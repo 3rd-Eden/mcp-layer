@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "gemini": {
+      "command": "gemini-cli"
+    }
+  }
+}
