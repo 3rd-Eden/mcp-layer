@@ -1,0 +1,36 @@
+{
+  "name": "@mcp-layer/attach",
+  "version": "0.0.0",
+  "description": "Attach to an in-process MCP server instance and return a Session.",
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "attach",
+    "session",
+    "in-memory"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/session": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.20.2"
+  },
+  "devDependencies": {
+    "@mcp-layer/test-server": "workspace:*"
+  }
+}
