@@ -101,7 +101,9 @@ describe('schema', function schemaSuite() {
 
       const prompt = finditem(out.items, 'prompt', 'welcome');
       assert.equal(Boolean(prompt), true);
-      assert.equal(Array.isArray(prompt.detail.arguments), true);
+      assert.equal(prompt.detail.input.json.type, 'object');
+      assert.equal(Object.hasOwn(prompt.detail.input.json.properties, 'name'), true);
+      assert.equal(Object.hasOwn(prompt.detail.input.json.properties, 'tone'), true);
 
       const dashboard = finditem(out.items, 'tool', 'dashboard');
       assert.equal(Boolean(dashboard), true);

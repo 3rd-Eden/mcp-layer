@@ -346,11 +346,50 @@ function templateitem(template) {
 }
 
 /**
+ * Build a JSON schema from prompt arguments so prompts share the input schema shape.
+ * @param {Record<string, unknown>} prompt
+ * @returns {{ schema: import('zod').ZodTypeAny, json: Record<string, unknown> | undefined, error?: string }}
+ */
+function promptinput(prompt) {
+  if (!Array.isArray(prompt.arguments)) {
+    return wrapschema(undefined);
+  }
+
+  const properties = {};
+  const required = [];
+
+  for (const item of prompt.arguments) {
+    if (!isrecord(item)) {
+      continue;
+    }
+    if (typeof item.name !== 'string' || item.name.length === 0) {
+      continue;
+    }
+    properties[item.name] = {
+      description: typeof item.description === 'string' ? item.description : undefined
+    };
+    if (item.required === true) {
+      required.push(item.name);
+    }
+  }
+
+  const json = {
+    type: 'object',
+    properties,
+    required: required.length > 0 ? required : undefined,
+    additionalProperties: true
+  };
+
+  return wrapschema(json);
+}
+
+/**
  * Normalize a prompt definition into the unified schema.
  * @param {Record<string, unknown>} prompt
  * @returns {Record<string, unknown>}
  */
 function promptitem(prompt) {
+  const input = promptinput(prompt);
   return {
     type: 'prompt',
     name: typeof prompt.name === 'string' ? prompt.name : 'prompt',
@@ -358,7 +397,7 @@ function promptitem(prompt) {
     description: typeof prompt.description === 'string' ? prompt.description : undefined,
     meta: meta(prompt),
     detail: {
-      arguments: Array.isArray(prompt.arguments) ? prompt.arguments : []
+      input
     }
   };
 }

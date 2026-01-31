@@ -34,6 +34,7 @@ await link.close();
 2) Calls MCP list endpoints (`tools/list`, `resources/list`, `resources/templates/list`, `prompts/list`) using pagination.
 3) Normalizes everything into a unified, type-discriminated schema so generators can consume a single list.
 4) Wraps tool input/output JSON Schemas into Zod validators backed by Ajv, while preserving the original JSON Schema.
+5) Converts prompt arguments into a lightweight JSON Schema so prompts and tools share the same `detail.input` shape.
 
 ## Output shape (authoritative)
 
@@ -101,7 +102,11 @@ detail: {
 
 ```js
 detail: {
-  arguments // prompt argument definitions from the server
+  input: {
+    schema, // Zod schema derived from prompt arguments
+    json,   // JSON Schema derived from prompt arguments
+    error   // optional Ajv compile error message
+  }
 }
 ```
 
