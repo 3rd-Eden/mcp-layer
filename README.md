@@ -14,7 +14,9 @@
 | Package | Purpose |
 | --- | --- |
 | [`@mcp-layer/config`](packages/config/README.md) | Discover and normalize MCP server configs across editors/clients. |
-| [`@mcp-layer/connect`](packages/connect/README.md) | Connect to MCP servers over stdio and return a closeable Link. |
+| [`@mcp-layer/session`](packages/session/README.md) | Shared Session handle used by connect and attach. |
+| [`@mcp-layer/connect`](packages/connect/README.md) | Connect to MCP servers over stdio and return a closeable Session. |
+| [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP servers and return a Session. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract tools/resources/prompts/templates into a unified Zod-backed schema (including MCP Apps metadata). |
 | [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration tests and local exploration. |
 
@@ -26,12 +28,12 @@ import { connect } from '@mcp-layer/connect';
 import { extract } from '@mcp-layer/schema';
 
 const config = await load(undefined, process.cwd());
-const link = await connect(config, 'demo');
+const session = await connect(config, 'demo');
 
-const schema = await extract(link);
+const schema = await extract(session);
 console.log(schema.items.map((item) => item.name));
 
-await link.close();
+await session.close();
 ```
 
 ## Design principles
