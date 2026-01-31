@@ -4,12 +4,15 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { load } from '../../config/src/index.js';
+import { createRequire } from 'node:module';
+import { load } from '@mcp-layer/config';
 import { connect, Link } from '../src/index.js';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
-const entry = fileURLToPath(new URL('../../test-server/src/bin.js', import.meta.url));
+const read = createRequire(import.meta.url);
+const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
+const entry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
 
 /**
  * Create a temporary directory for connector tests.
