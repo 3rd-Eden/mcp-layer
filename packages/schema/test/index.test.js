@@ -145,10 +145,10 @@ describe('schema', function schemaSuite() {
       assert.equal(input.success, true);
     });
 
-    it('throws when extract is called without a Link', async function missingLinkCase() {
+    it('throws when extract is called without a Session', async function missingLinkCase() {
       await assert.rejects(async function run() {
         await extract({});
-      }, /Expected a Link/);
+      }, /Expected a Session/);
     });
   });
 });

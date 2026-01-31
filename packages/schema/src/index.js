@@ -439,12 +439,12 @@ function normalize(data) {
 
 /**
  * Extract MCP tool/resource/prompt schemas into a unified Zod-backed format.
- * @param {import('@mcp-layer/connect').Link} link
+ * @param {import('@mcp-layer/session').Session} link
  * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
  */
 export async function extract(link) {
   if (!link || !link.client) {
-    throw new Error('Expected a Link instance from @mcp-layer/connect.');
+    throw new Error('Expected a Session instance.');
   }
 
   const client = link.client;

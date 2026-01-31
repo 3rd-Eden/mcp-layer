@@ -20,12 +20,12 @@ import { connect } from '@mcp-layer/connect';
 import { extract } from '@mcp-layer/schema';
 
 const config = await load(undefined, process.cwd());
-const link = await connect(config, 'demo');
-const output = await extract(link);
+const session = await connect(config, 'demo');
+const output = await extract(session);
 
 console.log(output.server.info);
 console.log(output.items[0]);
-await link.close();
+await session.close();
 ```
 
 ## What this package does
@@ -130,8 +130,8 @@ Suggested uses for the unified schema:
 
 ## Responsibilities and lifecycle
 
-- This package does not open or close connections. It expects a live `Link` from `@mcp-layer/connect`.
-- You are responsible for calling `link.close()` after extraction.
+- This package does not open or close connections. It expects a live `Session` from `@mcp-layer/connect` or `@mcp-layer/attach`.
+- You are responsible for calling `session.close()` after extraction.
 - If the server doesn't advertise a capability (tools/resources/prompts), extraction skips that surface.
 
 ## JSON Schema vs Zod
