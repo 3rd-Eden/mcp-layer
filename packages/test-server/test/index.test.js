@@ -66,7 +66,7 @@ describe('test-server', function serverSuite() {
       });
       assert.deepEqual(
         toolNames.sort(),
-        ['add', 'annotated', 'batch', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'progress', 'rebalance', 'roots', 'summaries']
+        ['add', 'annotated', 'batch', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'present', 'progress', 'rebalance', 'roots', 'summaries']
       );
 
       const annotated = tools.tools.find(function findAnnotated(item) {
@@ -150,6 +150,19 @@ describe('test-server', function serverSuite() {
       });
       assert.equal(batch.structuredContent?.count, 2);
       assert.equal(batch.structuredContent?.tag, 'alpha');
+
+      const present = await session.client.callTool({
+        name: 'present',
+        arguments: { title: 'Demo' }
+      });
+      const types = present.content?.map(function mapType(item) {
+        return item.type;
+      });
+      assert.equal(types?.includes('text'), true);
+      assert.equal(types?.includes('image'), true);
+      assert.equal(types?.includes('audio'), true);
+      assert.equal(types?.includes('resource_link'), true);
+      assert.equal(types?.includes('resource'), true);
     });
 
     it('supports sampling and elicitation workflows', async function advancedCapabilitiesCase(t) {

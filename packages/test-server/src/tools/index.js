@@ -8,6 +8,7 @@ import { registerFiles } from './files.js';
 import { registerLogs } from './logs.js';
 import { registerNoteUpdate } from './note-update.js';
 import { registerProgress } from './progress.js';
+import { registerPresent } from './present.js';
 import { registerRebalance } from './rebalance.js';
 import { registerRoots } from './roots.js';
 import { registerSummaries } from './summaries.js';
@@ -30,6 +31,7 @@ export function registerTools(server, context, capabilities, notifier) {
   registerRoots(server, capabilities);
   registerNoteUpdate(server, context, notifier);
   registerLogs(server);
+  registerPresent(server);
   registerProgress(server);
   registerRebalance(server, { echo: echoHandle, add: addHandle });
 }
