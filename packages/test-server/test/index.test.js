@@ -66,7 +66,7 @@ describe('test-server', function serverSuite() {
       });
       assert.deepEqual(
         toolNames.sort(),
-        ['add', 'annotated', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'progress', 'rebalance', 'roots', 'summaries']
+        ['add', 'annotated', 'batch', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'progress', 'rebalance', 'roots', 'summaries']
       );
 
       const annotated = tools.tools.find(function findAnnotated(item) {
@@ -143,6 +143,13 @@ describe('test-server', function serverSuite() {
 
       const dashboard = await session.client.callTool({ name: 'dashboard', arguments: { name: 'Ada' } });
       assert.equal(dashboard.structuredContent?.resourceUri, 'ui://dashboard/app.html');
+
+      const batch = await session.client.callTool({
+        name: 'batch',
+        arguments: { items: ['one', 'two'], meta: { tag: 'alpha' } }
+      });
+      assert.equal(batch.structuredContent?.count, 2);
+      assert.equal(batch.structuredContent?.tag, 'alpha');
     });
 
     it('supports sampling and elicitation workflows', async function advancedCapabilitiesCase(t) {

@@ -30,8 +30,8 @@ export function select(src, name) {
 /**
  * Derive transport parameters from a server entry so the SDK spawns processes with the intended cwd and env.
  * @param {{ name: string, source: string, config: Record<string, unknown> }} item
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv }} [opts]
- * @returns {{ command: string, args?: string[], cwd?: string, env?: NodeJS.ProcessEnv }}
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit' }} [opts]
+ * @returns {{ command: string, args?: string[], cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit' }}
  */
 export function setup(item, opts = {}) {
   const cfg = item.config ?? {};
@@ -53,7 +53,8 @@ export function setup(item, opts = {}) {
     MCP_CLIENT_AGENT: `${base.name}/${base.version}`
   };
 
-  return { command: cmd, args: list, cwd, env };
+  const stderr = typeof opts.stderr === 'string' ? opts.stderr : undefined;
+  return { command: cmd, args: list, cwd, env, stderr };
 }
 
 export { Session };
@@ -62,7 +63,7 @@ export { Session };
  * Connect to a configured MCP server using the official SDK.
  * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src
  * @param {string} name
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, info?: { name: string, version: string } }} [opts]
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string } }} [opts]
  * @returns {Promise<Session>}
  */
 export async function connect(src, name, opts = {}) {

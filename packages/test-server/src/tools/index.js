@@ -1,5 +1,6 @@
 import { registerAdd } from './add.js';
 import { registerAnnotated } from './annotated.js';
+import { registerBatch } from './batch.js';
 import { registerBooking } from './booking.js';
 import { registerDashboard } from './dashboard.js';
 import { registerEcho } from './echo.js';
@@ -20,6 +21,7 @@ import { registerSummaries } from './summaries.js';
 export function registerTools(server, context, capabilities, notifier) {
   const echoHandle = registerEcho(server);
   const addHandle = registerAdd(server);
+  registerBatch(server);
   registerAnnotated(server);
   registerDashboard(server);
   registerFiles(server, context);

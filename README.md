@@ -11,6 +11,8 @@
 
 ## Packages
 
+### Infrastructure and utilities
+
 | Package | Purpose |
 | --- | --- |
 | [`@mcp-layer/config`](packages/config/README.md) | Discover and normalize MCP server configs across editors/clients. |
@@ -19,6 +21,12 @@
 | [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP servers and return a Session. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract tools/resources/prompts/templates into a unified Zod-backed schema (including MCP Apps metadata). |
 | [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration tests and local exploration. |
+
+### Layers and interfaces
+
+| Package | Purpose |
+| --- | --- |
+| [`@mcp-layer/cli`](packages/cli/README.md) | CLI framework for turning MCP schemas into commands. |
 
 ## Quick start (end-to-end)
 
@@ -41,7 +49,6 @@ await session.close();
 - **Single source of truth**: normalized schemas flow from the MCP server, not from tool-specific parsing.
 - **Minimal surface area**: each package does one job and composes cleanly with the others.
 - **Real integration tests**: no mocks; the test server is used as a real MCP target.
-- **Documentation first**: if you have questions after reading the README, the docs are incomplete.
 
 ## Development
 
