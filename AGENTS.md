@@ -47,5 +47,6 @@
   - Tests should be written using `node:test`
 - Always document your work in the README of the project.
 - Documentation is the most critical deliverable. It must be self-contained, cohesive, and detailed enough that a developer can implement the package in a different project without unanswered questions. If you cannot follow a README and achieve a successful implementation, that is a documentation bug and must be fixed in the relevant README.
+- Allocate effort intentionally: 20% code, 40% documentation, 40% testing. Code can be replaced, but only if documentation (inputs) and validation of outputs (tests) exist.
 - Always exercise real implementations and public APIs in tests; obtain explicit user approval before introducing any mocks or stubs.
 - Do not ask the user to verify things you can verify yourself. If verification requires permissions, request them. Prioritize self-sufficient verification: decide how your changes should be verified and ensure that verification is performed.

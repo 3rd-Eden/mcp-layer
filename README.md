@@ -28,6 +28,16 @@
 | --- | --- |
 | [`@mcp-layer/cli`](packages/cli/README.md) | CLI framework for turning MCP schemas into commands. |
 
+## CLI quick try
+
+If you already have an MCP config on disk, you can try the CLI immediately:
+
+```sh
+mcp-layer servers list
+mcp-layer tools list --server <name>
+mcp-layer tools <tool> --help
+```
+
 ## Quick start (end-to-end)
 
 ```js

@@ -55,6 +55,7 @@ Array and object inputs support a few additional forms:
 - Arrays can be JSON: `--items '["one","two"]'`
 - Objects can use dot notation: `--meta.tag alpha`
 - Objects can be JSON: `--meta '{"tag":"alpha"}'`
+- Scalar values are coerced using the schema type (e.g., `--count 5`, `--enabled true`).
 
 If a parameter clashes with a CLI flag (like `--help`), pass tool arguments after `--`:
 
@@ -67,20 +68,27 @@ mcp-layer tools echo -- --help "not a real help flag"
 The CLI formats MCP responses for readability by default:
 
 - Text content prints as plain text.
-- Markdown content renders as ANSI Markdown when stdout is a TTY.
+- Markdown content renders as ANSI Markdown when stdout is a TTY (pipes receive plain text).
 - Images and audio show a short hint with MIME type and size.
 - Resource links show name, description, and URI.
+- Unsupported content types render as a labeled JSON fallback.
 
-Use `--raw` to emit the raw MCP JSON response (or raw binary bytes when a single binary payload is returned). This makes piping to files straightforward:
+Use `--raw` to emit the raw MCP JSON response (or raw binary bytes when a single binary payload is returned). If multiple content items are present, `--raw` returns JSON. This makes piping to files straightforward:
 
 ```sh
-mcp-layer tools present --raw > output.json
-mcp-layer tools present --raw > image.png
+mcp-layer tools <tool> --raw > output.json
+mcp-layer tools <tool> --raw > payload.bin
 ```
 
 Disable markdown rendering with `--no-markdown`.
 
 Server-provided text is sanitized to strip ANSI escape sequences by default. If you trust the server and want to preserve ANSI output, pass `--allow-ansi`.
+
+Example:
+
+```sh
+mcp-layer tools <tool> --allow-ansi
+```
 
 ## Color output
 
@@ -106,7 +114,7 @@ mcp-layer tools list --format json
 mcp-layer resources list --format json
 ```
 
-Run/read/render commands return the raw MCP JSON result. For resources, non-JSON output will print the text content when available.
+Run/read/render commands render formatted output by default. Use `--raw` for JSON (or binary bytes when a single binary payload is returned).
 
 ## Configuration and server selection
 
@@ -183,6 +191,19 @@ Registers a custom command.
 ### `cli().render([argv])`
 
 Executes the CLI. If `argv` is omitted, it uses `process.argv`.
+
+## Global flags
+
+- `--server <name>`: select a configured server.
+- `--config <path>`: point at a config file or directory.
+- `--format <json>`: use JSON for list output.
+- `--json <string>`: supply inline JSON input.
+- `--input <path>`: supply JSON input from a file.
+- `--raw`: emit raw JSON (or binary bytes for a single binary payload).
+- `--no-markdown`: disable markdown rendering.
+- `--allow-ansi`: preserve ANSI escape sequences from server text.
+- `--no-spinner`: disable the loading spinner.
+- `--no-color`: disable color output.
 
 ## Development
 
