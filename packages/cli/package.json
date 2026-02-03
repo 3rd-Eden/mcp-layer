@@ -1,0 +1,44 @@
+{
+  "name": "@mcp-layer/cli",
+  "version": "0.0.0",
+  "description": "CLI framework for interacting with MCP servers using discovered schemas.",
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "cli",
+    "tools",
+    "resources",
+    "prompts"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "mcp-layer": "./bin/cli.js"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/config": "workspace:*",
+    "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/schema": "workspace:*",
+    "@socketregistry/yocto-spinner": "^1.0.21",
+    "argh": "^1.0.0",
+    "cli-table3": "^0.6.5"
+  },
+  "devDependencies": {
+    "@mcp-layer/test-server": "workspace:*"
+  }
+}
