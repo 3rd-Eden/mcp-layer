@@ -23,7 +23,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node --test \"packages/**/*.test.js\""
+    "test": "node --test \"packages/**/*.test.js\"",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.2"
   },
   "dependencies": {
     "@mcp-layer/config": "workspace:*",

@@ -18,7 +18,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "src"
+    "src",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"

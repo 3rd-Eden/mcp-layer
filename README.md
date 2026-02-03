@@ -67,6 +67,18 @@ pnpm install
 pnpm test
 ```
 
+## Releasing
+
+We use Changesets to manage versions and a GitHub Actions release workflow to publish packages. In short:
+
+1) Add a changeset: `pnpm changeset`
+2) Merge the Changesets PR
+3) GitHub Actions publishes via npm Trusted Publishing (OIDC)
+
+Before publishing, configure npm Trusted Publishers for each package in the npm registry and ensure the release workflow has `id-token: write` permissions.
+
+See `.github/workflows/release.yml` for the pipeline details.
+
 ## Repository guidelines
 
 See `AGENTS.md` for coding style, testing requirements, and documentation expectations.

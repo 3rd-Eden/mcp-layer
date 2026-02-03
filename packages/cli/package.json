@@ -25,7 +25,9 @@
     "mcp-layer": "./bin/cli.js"
   },
   "files": [
-    "src"
+    "src",
+    "bin",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
