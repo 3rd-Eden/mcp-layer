@@ -49,6 +49,7 @@ This exposes:
 - `annotated` -- tool annotations + `_meta` coverage
 - `dashboard` -- MCP Apps UI metadata via `_meta.ui`
 - `files` -- emits `resource_link` payloads
+- `present` -- mixed content types (text/markdown/image/audio/resource/resource_link)
 - `summaries` -- sampling support
 - `booking` -- elicitation support
 - `roots` -- roots capability
@@ -87,6 +88,7 @@ This exposes:
 | Tools (structured outputs, resource links) | yes | `echo`, `add`, `files`, `summaries`, `booking`, `roots`, `logs`, `progress`, `rebalance`. |
 | Tool annotations + metadata | yes | `annotated` exposes `annotations` + `_meta`. |
 | MCP Apps (UI resources) | yes | `dashboard` tool exposes `_meta.ui.resourceUri`, `ui://dashboard/app.html` serves HTML. |
+| Mixed content outputs | yes | `present` emits text/markdown/image/audio/resource/resource_link. |
 | Resources & dynamic templates | yes | `resource://manual`, `note://{topic}/{detail}` with completions. |
 | Prompts & completion API | yes | `welcome` prompt + `completion/complete`. |
 | Sampling (`sampling/createMessage`) | yes | `summaries` tool proxies sampling and validates responses. |

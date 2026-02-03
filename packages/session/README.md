@@ -30,6 +30,23 @@ A Session instance contains:
 
 Always call `session.close()` when you are done to close the client and transport.
 
+## Common usage pattern
+
+```js
+import { load } from '@mcp-layer/config';
+import { connect } from '@mcp-layer/connect';
+
+const config = await load(undefined, process.cwd());
+const session = await connect(config, 'demo');
+
+try {
+  const tools = await session.client.listTools({});
+  console.log(tools.tools.map((tool) => tool.name));
+} finally {
+  await session.close();
+}
+```
+
 ## License
 
 MIT

@@ -134,6 +134,11 @@ Suggested uses for the unified schema:
 - You are responsible for calling `session.close()` after extraction.
 - If the server doesn't advertise a capability (tools/resources/prompts), extraction skips that surface.
 
+## Error handling
+
+- Schema compilation uses Ajv under the hood. If a tool exposes an invalid JSON Schema, extraction still succeeds but `detail.input.error` or `detail.output.error` will be populated for that item.
+- Servers that return empty lists produce an empty `items` array (not an error).
+
 ## JSON Schema vs Zod
 
 Zod validators are produced to allow direct runtime validation, but the original JSON Schema is preserved in `detail.input.json` and `detail.output.json` so generators can emit OpenAPI, JSON Schema, or other schema formats without losing fidelity.

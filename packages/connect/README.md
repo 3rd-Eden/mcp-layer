@@ -62,6 +62,7 @@ Creates a `Client` and `StdioClientTransport`, runs MCP initialization, and retu
 Options:
 - `cwd` -- override working directory
 - `env` -- environment overrides
+- `stderr` -- control stderr handling (`pipe`, `inherit`, `overlapped`)
 - `info` -- overrides for client `name`/`version`
 
 ### `Session` (re-exported from `@mcp-layer/session`)

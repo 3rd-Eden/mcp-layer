@@ -30,6 +30,11 @@ await session.client.ping();
 await session.close();
 ```
 
+## When to use attach vs connect
+
+- Use `attach` when you already have an in-process `McpServer` instance and want to layer new behavior (REST/GraphQL/UI) without spawning another process.
+- Use `@mcp-layer/connect` when you only have a configuration entry and need to spawn a stdio process.
+
 ## API (authoritative)
 
 ### `attach(server, name, options?)`
@@ -48,6 +53,7 @@ Returns a `Session` (from `@mcp-layer/session`) with:
 - **In-memory transport**: attach uses the SDK’s in-memory transport to connect client and server inside one process.
 - **Single transport**: the target server must not already be connected. If it is, `attach` throws.
 - **Lifecycle**: `session.close()` closes the client and the in-memory transport. The server instance remains yours to manage.
+- **Errors**: if the server fails during handshake, the attach call will throw; you are still responsible for server cleanup.
 
 ## Testing
 
