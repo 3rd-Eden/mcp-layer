@@ -80,6 +80,8 @@ mcp-layer tools present --raw > image.png
 
 Disable markdown rendering with `--no-markdown`.
 
+Server-provided text is sanitized to strip ANSI escape sequences by default. If you trust the server and want to preserve ANSI output, pass `--allow-ansi`.
+
 ## Color output
 
 Color output is enabled by default when stdout is a TTY. Disable it with `--no-color` or by setting `NO_COLOR=1`. You can customize the colors via `accent` and `subtle` in `cli()` options.
@@ -166,6 +168,7 @@ Options:
 - `subtle`: hex color for flag names (default `#696969`).
 - `spinner`: enable the loading spinner.
 - `markdown`: enable markdown rendering for text output.
+- `ansi`: allow ANSI escape sequences in server-provided text.
 - `server`: default server name.
 - `config`: default config path.
 

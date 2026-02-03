@@ -32,11 +32,17 @@ export function spinner(enabled, text) {
 export async function catalog(opts) {
   const gate = spinner(opts.spinner, 'Loading MCP schema');
   gate.start();
+  let session;
   try {
     const info = await select(opts);
-    const session = await connect(info.config, info.name);
+    session = await connect(info.config, info.name);
     const output = await extract(session);
     return { session, output };
+  } catch (error) {
+    if (session) {
+      await session.close();
+    }
+    throw error;
   } finally {
     gate.stop();
   }

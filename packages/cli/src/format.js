@@ -38,17 +38,18 @@ function ismarkdown(text, mimeType) {
 /**
  * Render a text block with optional Markdown formatting.
  * @param {string} text
- * @param {{ markdown: boolean, tty: boolean }} options
+ * @param {{ markdown: boolean, tty: boolean, ansi: boolean }} options
  * @param {string | undefined} mimeType
  * @returns {string[]}
  */
 function rendertext(text, options, mimeType) {
-  if (options.markdown && options.tty && ismarkdown(text, mimeType)) {
+  const safe = sanitize(text, options);
+  if (options.markdown && options.tty && ismarkdown(safe, mimeType)) {
     setupmarkdown();
-    const output = marked.parse(text);
+    const output = marked.parse(safe);
     return String(output).trimEnd().split('\n');
   }
-  return String(text).split('\n');
+  return String(safe).split('\n');
 }
 
 /**
@@ -77,6 +78,27 @@ function bytes(size) {
   return `${mb.toFixed(1)} MB`;
 }
 
+/**
+ * Strip ANSI escape sequences from text.
+ * @param {string} text
+ * @returns {string}
+ */
+function stripansi(text) {
+  return text.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b\][^\u0007]*\u0007/g, '');
+}
+
+/**
+ * Sanitize text content unless ANSI is explicitly allowed.
+ * @param {string} text
+ * @param {{ ansi: boolean }} options
+ * @returns {string}
+ */
+function sanitize(text, options) {
+  if (options.ansi) {
+    return text;
+  }
+  return stripansi(text);
+}
 /**
  * Check if a content item is an image payload.
  * @param {Record<string, unknown>} item
@@ -156,9 +178,10 @@ function renderlink(item, color) {
  * @param {{ subtle: (text: string) => string }} color
  * @returns {string[]}
  */
-function renderbinary(label, mimeType, size, color) {
+function renderbinary(label, mimeType, size, color, multi) {
   const mime = mimeType ? ` ${mimeType}` : '';
-  return [`${label}:${mime} ${color.subtle(`(${bytes(size)})`)} Use --raw to pipe.`];
+  const hint = multi ? 'Use --raw when a single binary payload is returned.' : 'Use --raw to pipe.';
+  return [`${label}:${mime} ${color.subtle(`(${bytes(size)})`)} ${hint}`];
 }
 
 /**
@@ -223,7 +246,7 @@ function singleblob(items) {
 /**
  * Format content array into CLI-friendly lines.
  * @param {Array<Record<string, unknown>>} items
- * @param {{ raw: boolean, markdown: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
  * @returns {Promise<string[]>}
  */
 async function rendercontent(items, options) {
@@ -252,10 +275,10 @@ async function rendercontent(items, options) {
           const output = await terminalImage.buffer(data);
           lines.push(...String(output).trimEnd().split('\n'));
         } catch {
-          lines.push(...renderbinary('Image', mime, data.length, color));
+          lines.push(...renderbinary('Image', mime, data.length, color, multi));
         }
       } else {
-        lines.push(...renderbinary('Image', mime, data.length, color));
+        lines.push(...renderbinary('Image', mime, data.length, color, multi));
       }
       lines.push('');
       continue;
@@ -264,7 +287,7 @@ async function rendercontent(items, options) {
     if (isaudio(item)) {
       const mime = typeof item.mimeType === 'string' ? item.mimeType : undefined;
       const data = decode(String(item.data));
-      lines.push(...renderbinary('Audio', mime, data.length, color));
+      lines.push(...renderbinary('Audio', mime, data.length, color, multi));
       lines.push('');
       continue;
     }
@@ -284,11 +307,17 @@ async function rendercontent(items, options) {
         lines.push(...rendertext(res.text, options, mime));
       } else if (typeof res.blob === 'string') {
         const data = decode(res.blob);
-        lines.push(...renderbinary('Binary', mime, data.length, color));
+        lines.push(...renderbinary('Binary', mime, data.length, color, multi));
       }
       lines.push('');
       continue;
     }
+
+    const fallback = JSON.stringify(item, null, 2);
+    const type = typeof item.type === 'string' ? item.type : 'unknown';
+    lines.push(color.title(`Unsupported content type: ${type}`));
+    lines.push(fallback);
+    lines.push('');
   }
 
   return lines.filter(function filterEmpty(line, index, arr) {
@@ -302,7 +331,7 @@ async function rendercontent(items, options) {
 /**
  * Format a readResource result into CLI-friendly lines.
  * @param {Array<Record<string, unknown>>} items
- * @param {{ markdown: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {{ markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
  * @returns {Promise<string[]>}
  */
 async function renderresources(items, options) {
@@ -319,7 +348,7 @@ async function renderresources(items, options) {
       lines.push(...rendertext(item.text, options, mime));
     } else if (typeof item.blob === 'string') {
       const data = decode(item.blob);
-      lines.push(...renderbinary('Binary', mime, data.length, color));
+      lines.push(...renderbinary('Binary', mime, data.length, color, multi));
     }
     if (multi) {
       lines.push('');
@@ -336,7 +365,7 @@ async function renderresources(items, options) {
 /**
  * Format tool/prompt results and write to stdout.
  * @param {Record<string, unknown>} result
- * @param {{ raw: boolean, markdown: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
  * @returns {Promise<void>}
  */
 export async function outputresult(result, options) {
@@ -366,7 +395,7 @@ export async function outputresult(result, options) {
 /**
  * Format readResource results and write to stdout.
  * @param {Record<string, unknown>} result
- * @param {{ raw: boolean, markdown: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
  * @returns {Promise<void>}
  */
 export async function outputresource(result, options) {

@@ -29,7 +29,7 @@ export function parse(args) {
 /**
  * Build global CLI options from parsed argv.
  * @param {Record<string, unknown>} parsed
- * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean }}
+ * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean, ansi: boolean }}
  */
 export function globals(parsed) {
   const help = Boolean(parsed.help || parsed.h);
@@ -43,7 +43,8 @@ export function globals(parsed) {
   const spinner = parsed.spinner === false ? false : true;
   const raw = Boolean(parsed.raw);
   const markdown = parsed.markdown === false ? false : true;
-  return { server, config, format, json, input, help, version, colors, spinner, raw, markdown };
+  const ansi = Boolean(parsed['allow-ansi']);
+  return { server, config, format, json, input, help, version, colors, spinner, raw, markdown, ansi };
 }
 
 /**

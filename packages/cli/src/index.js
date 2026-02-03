@@ -184,6 +184,7 @@ function statichelp() {
       '--input <path>': 'Provide JSON input from a file.',
       '--raw': 'Emit raw JSON or binary content when possible.',
       '--no-markdown': 'Disable markdown rendering for text output.',
+      '--allow-ansi': 'Allow ANSI escape sequences in server-provided text.',
       '--no-spinner': 'Disable the loading spinner.'
     },
     examples: [
@@ -201,7 +202,7 @@ function statichelp() {
 
 /**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, server?: string, config?: string }} [opts]
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string }} [opts]
  * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
@@ -231,6 +232,7 @@ export function cli(opts = {}) {
       const inputArgs = Object.keys(input.restParsed).length ? input.restParsed : input.parsed;
       const colors = base.colors && global.colors;
       const markdown = base.markdown && global.markdown;
+      const ansi = base.ansi || global.ansi;
       const theme = { accent: base.accent, subtle: base.subtle };
 
       if (global.version) {
@@ -367,7 +369,7 @@ export function cli(opts = {}) {
           }
         const args = await inputs(global, input.parsed, inputArgs, tool);
         const result = await session.client.callTool({ name: tool.name, arguments: args });
-        await outputresult(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        await outputresult(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
         return;
       }
 
@@ -378,7 +380,7 @@ export function cli(opts = {}) {
           }
         const args = await inputs(global, input.parsed, inputArgs, prompt);
         const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
-        await outputresult(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        await outputresult(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
         return;
       }
 
@@ -392,7 +394,7 @@ export function cli(opts = {}) {
           jsonout(result);
           return;
         }
-        await outputresource(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        await outputresource(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
         return;
       }
 
@@ -408,7 +410,7 @@ export function cli(opts = {}) {
           jsonout(result);
           return;
         }
-        await outputresource(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        await outputresource(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
         return;
       }
 

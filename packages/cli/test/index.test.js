@@ -198,6 +198,26 @@ function toolsRunSuite() {
 }
 
 /**
+ * Validate numeric coercion for scalar inputs.
+ * @returns {Promise<void>}
+ */
+async function toolsAddCase() {
+  const setup = await setupconfig();
+  const result = await runcli(['tools', 'add', '--config', setup.file, '--first', '2', '--second', '5', '--raw']);
+  const data = parsejson(result.stdout);
+
+  assert.equal(data.structuredContent.total, 7);
+}
+
+/**
+ * Run numeric coercion suite.
+ * @returns {void}
+ */
+function toolsAddSuite() {
+  it('coerces numeric inputs for tool execution', toolsAddCase);
+}
+
+/**
  * Validate array/object inputs are parsed as JSON.
  * @returns {Promise<void>}
  */
@@ -352,6 +372,7 @@ function cliSuite() {
   describe('servers list', serversSuite);
   describe('tools list', toolsSuite);
   describe('tools exec', toolsRunSuite);
+  describe('tools numeric coercion', toolsAddSuite);
   describe('tools arrays', toolsArraySuite);
   describe('tools dot notation', toolsDotSuite);
   describe('help output', helpSuite);
