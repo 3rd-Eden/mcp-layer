@@ -2,6 +2,10 @@
   "name": "@mcp-layer/test-server",
   "version": "1.0.0",
   "description": "Feature-rich MCP server for integration testing and local development.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
   "type": "module",
   "keywords": [
     "mcp",

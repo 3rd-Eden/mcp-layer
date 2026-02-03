@@ -2,6 +2,10 @@
   "name": "@mcp-layer/schema",
   "version": "1.0.0",
   "description": "Extract and normalize MCP schemas into a unified Zod-based format.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
   "type": "module",
   "keywords": [
     "mcp",

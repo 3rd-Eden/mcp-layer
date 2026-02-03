@@ -2,6 +2,10 @@
   "name": "@mcp-layer/attach",
   "version": "1.0.0",
   "description": "Attach to an in-process MCP server instance and return a Session.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
   "type": "module",
   "keywords": [
     "mcp",
