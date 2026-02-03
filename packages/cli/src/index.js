@@ -5,6 +5,7 @@ import { table, jsonout } from './output.js';
 import { inputs } from './inputs.js';
 import { catalog, spinner as spin } from './mcp.js';
 import { render } from './template.js';
+import { outputresult, outputresource } from './format.js';
 import { connect } from '@mcp-layer/connect';
 import { extract } from '@mcp-layer/schema';
 
@@ -181,6 +182,8 @@ function statichelp() {
       '--format <json>': 'Switch list output to JSON.',
       '--json <string>': 'Provide JSON input for run/render.',
       '--input <path>': 'Provide JSON input from a file.',
+      '--raw': 'Emit raw JSON or binary content when possible.',
+      '--no-markdown': 'Disable markdown rendering for text output.',
       '--no-spinner': 'Disable the loading spinner.'
     },
     examples: [
@@ -198,7 +201,7 @@ function statichelp() {
 
 /**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, server?: string, config?: string }} [opts]
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, server?: string, config?: string }} [opts]
  * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
@@ -227,6 +230,7 @@ export function cli(opts = {}) {
       const global = globals(input.parsed);
       const inputArgs = Object.keys(input.restParsed).length ? input.restParsed : input.parsed;
       const colors = base.colors && global.colors;
+      const markdown = base.markdown && global.markdown;
       const theme = { accent: base.accent, subtle: base.subtle };
 
       if (global.version) {
@@ -361,37 +365,36 @@ export function cli(opts = {}) {
           if (!tool) {
             throw new Error(`Unknown tool: ${cmd.target}`);
           }
-          const args = await inputs(global, input.parsed, inputArgs, tool);
-          const result = await session.client.callTool({ name: tool.name, arguments: args });
-          jsonout(result);
-          return;
-        }
+        const args = await inputs(global, input.parsed, inputArgs, tool);
+        const result = await session.client.callTool({ name: tool.name, arguments: args });
+        await outputresult(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        return;
+      }
 
         if (cmd.surface === 'prompts' && cmd.action === 'exec') {
           const prompt = finditem(items, 'prompt', cmd.target);
           if (!prompt) {
             throw new Error(`Unknown prompt: ${cmd.target}`);
           }
-          const args = await inputs(global, input.parsed, inputArgs, prompt);
-          const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
-          jsonout(result);
-          return;
-        }
+        const args = await inputs(global, input.parsed, inputArgs, prompt);
+        const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
+        await outputresult(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        return;
+      }
 
         if (cmd.surface === 'resources' && cmd.action === 'exec') {
           const resource = finditem(items, 'resource', cmd.target);
           if (!resource) {
             throw new Error(`Unknown resource: ${cmd.target}`);
           }
-          const result = await session.client.readResource({ uri: resource.detail.uri });
-          if (global.format === 'json') {
-            jsonout(result);
-            return;
-          }
-          const text = result.contents?.[0]?.text;
-          process.stdout.write(`${text || JSON.stringify(result, null, 2)}\n`);
+        const result = await session.client.readResource({ uri: resource.detail.uri });
+        if (global.format === 'json') {
+          jsonout(result);
           return;
         }
+        await outputresource(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        return;
+      }
 
         if (cmd.surface === 'templates' && cmd.action === 'exec') {
           const template = finditem(items, 'resource-template', cmd.target);
@@ -400,15 +403,14 @@ export function cli(opts = {}) {
           }
           const args = await inputs(global, input.parsed, inputArgs, template);
           const uri = render(template.detail?.uriTemplate, args);
-          const result = await session.client.readResource({ uri });
-          if (global.format === 'json') {
-            jsonout(result);
-            return;
-          }
-          const text = result.contents?.[0]?.text;
-          process.stdout.write(`${text || JSON.stringify(result, null, 2)}\n`);
+        const result = await session.client.readResource({ uri });
+        if (global.format === 'json') {
+          jsonout(result);
           return;
         }
+        await outputresource(result, { raw: global.raw, markdown, tty: Boolean(process.stdout.isTTY), colors, theme });
+        return;
+      }
 
         throw new Error(`Unknown command: ${cmd.surface}`);
       } finally {

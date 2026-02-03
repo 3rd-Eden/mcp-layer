@@ -62,6 +62,24 @@ If a parameter clashes with a CLI flag (like `--help`), pass tool arguments afte
 mcp-layer tools echo -- --help "not a real help flag"
 ```
 
+## Output formatting
+
+The CLI formats MCP responses for readability by default:
+
+- Text content prints as plain text.
+- Markdown content renders as ANSI Markdown when stdout is a TTY.
+- Images and audio show a short hint with MIME type and size.
+- Resource links show name, description, and URI.
+
+Use `--raw` to emit the raw MCP JSON response (or raw binary bytes when a single binary payload is returned). This makes piping to files straightforward:
+
+```sh
+mcp-layer tools present --raw > output.json
+mcp-layer tools present --raw > image.png
+```
+
+Disable markdown rendering with `--no-markdown`.
+
 ## Color output
 
 Color output is enabled by default when stdout is a TTY. Disable it with `--no-color` or by setting `NO_COLOR=1`. You can customize the colors via `accent` and `subtle` in `cli()` options.
@@ -147,6 +165,7 @@ Options:
 - `accent`: hex color for headings (default `#FFA500`).
 - `subtle`: hex color for flag names (default `#696969`).
 - `spinner`: enable the loading spinner.
+- `markdown`: enable markdown rendering for text output.
 - `server`: default server name.
 - `config`: default config path.
 

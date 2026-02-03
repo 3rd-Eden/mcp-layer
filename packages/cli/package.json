@@ -36,7 +36,10 @@
     "@mcp-layer/schema": "workspace:*",
     "@socketregistry/yocto-spinner": "^1.0.21",
     "argh": "^1.0.0",
-    "cli-table3": "^0.6.5"
+    "cli-table3": "^0.6.5",
+    "marked": "^15.0.0",
+    "marked-terminal": "^7.3.0",
+    "terminal-image": "^3.1.1"
   },
   "devDependencies": {
     "@mcp-layer/test-server": "workspace:*"

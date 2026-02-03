@@ -182,7 +182,7 @@ function toolsSuite() {
  */
 async function toolsRunCase() {
   const setup = await setupconfig();
-  const result = await runcli(['tools', 'echo', '--config', setup.file, '--text', 'hello']);
+  const result = await runcli(['tools', 'echo', '--config', setup.file, '--text', 'hello', '--raw']);
   const data = parsejson(result.stdout);
 
   assert.equal(Array.isArray(data.content), true);
@@ -211,7 +211,8 @@ async function toolsArrayCase() {
     '--items',
     '["one","two"]',
     '--meta',
-    '{\"tag\":\"alpha\"}'
+    '{\"tag\":\"alpha\"}',
+    '--raw'
   ]);
   const data = parsejson(result.stdout);
 
@@ -241,7 +242,8 @@ async function toolsDotCase() {
     '--items',
     '["one","two"]',
     '--meta.tag',
-    'alpha'
+    'alpha',
+    '--raw'
   ]);
   const data = parsejson(result.stdout);
 
@@ -321,6 +323,28 @@ function toolHelpSuite() {
 }
 
 /**
+ * Validate formatted output for mixed content types.
+ * @returns {Promise<void>}
+ */
+async function toolsPresentCase() {
+  const setup = await setupconfig();
+  const result = await runcli(['tools', 'present', '--config', setup.file, '--title', 'Demo']);
+
+  assert.equal(result.stdout.includes('Image:'), true);
+  assert.equal(result.stdout.includes('Audio:'), true);
+  assert.equal(result.stdout.includes('Resource link'), true);
+  assert.equal(result.stdout.includes('Embedded resource'), true);
+}
+
+/**
+ * Run the tool formatting suite.
+ * @returns {void}
+ */
+function toolsPresentSuite() {
+  it('formats mixed content outputs', toolsPresentCase);
+}
+
+/**
  * Run the CLI test suite.
  * @returns {void}
  */
@@ -332,6 +356,7 @@ function cliSuite() {
   describe('tools dot notation', toolsDotSuite);
   describe('help output', helpSuite);
   describe('tool help', toolHelpSuite);
+  describe('tools formatting', toolsPresentSuite);
 }
 
 describe('cli', cliSuite);

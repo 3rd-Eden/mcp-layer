@@ -35,7 +35,7 @@ export function usecolors(enabled) {
  * Build color helpers for CLI output.
  * @param {boolean} enabled
  * @param {{ accent: string, subtle: string }} theme
- * @returns {{ title: (text: string) => string, name: (text: string) => string, flag: (text: string) => string }}
+ * @returns {{ title: (text: string) => string, name: (text: string) => string, flag: (text: string) => string, subtle: (text: string) => string }}
  */
 export function palette(enabled, theme) {
   if (!usecolors(enabled)) {
@@ -47,6 +47,9 @@ export function palette(enabled, theme) {
         return text;
       },
       flag: function flag(text) {
+        return text;
+      },
+      subtle: function subtle(text) {
         return text;
       }
     };
@@ -61,6 +64,9 @@ export function palette(enabled, theme) {
       return text;
     },
     flag: function flag(text) {
+      return hexcolor(subtle, text);
+    },
+    subtle: function subtle(text) {
       return hexcolor(subtle, text);
     }
   };

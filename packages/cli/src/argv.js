@@ -29,7 +29,7 @@ export function parse(args) {
 /**
  * Build global CLI options from parsed argv.
  * @param {Record<string, unknown>} parsed
- * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean }}
+ * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean }}
  */
 export function globals(parsed) {
   const help = Boolean(parsed.help || parsed.h);
@@ -41,7 +41,9 @@ export function globals(parsed) {
   const input = typeof parsed.input === 'string' ? parsed.input : undefined;
   const colors = parsed.color === false ? false : true;
   const spinner = parsed.spinner === false ? false : true;
-  return { server, config, format, json, input, help, version, colors, spinner };
+  const raw = Boolean(parsed.raw);
+  const markdown = parsed.markdown === false ? false : true;
+  return { server, config, format, json, input, help, version, colors, spinner, raw, markdown };
 }
 
 /**
