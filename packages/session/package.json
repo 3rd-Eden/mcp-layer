@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/session",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Shared MCP session wrapper used by connect and attach.",
   "type": "module",
   "keywords": [

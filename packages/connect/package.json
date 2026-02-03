@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/connect",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "High-level client helpers for connecting to MCP servers using the official SDK.",
   "type": "module",
   "keywords": [

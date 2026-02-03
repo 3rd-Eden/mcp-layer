@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/attach",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Attach to an in-process MCP server instance and return a Session.",
   "type": "module",
   "keywords": [
