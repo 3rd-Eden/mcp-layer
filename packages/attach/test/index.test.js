@@ -1,7 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from '@mcp-layer/test-server';
+import { extract } from '@mcp-layer/schema';
 import { attach, Session } from '../src/index.js';
+import { build as buildPlatformatic } from './fixtures/platformatic.js';
 
 /**
  * Create a test server instance.
@@ -9,6 +11,19 @@ import { attach, Session } from '../src/index.js';
  */
 function maketarget() {
   return build();
+}
+
+/**
+ * Find a schema item by type and name.
+ * @param {import('@mcp-layer/schema').SchemaOutput} output - Schema extraction output.
+ * @param {string} type - Item type to locate.
+ * @param {string} name - Item name to locate.
+ * @returns {import('@mcp-layer/schema').SchemaItem | undefined}
+ */
+function findItem(output, type, name) {
+  return output.items.find(function match(item) {
+    return item.type === type && item.name === name;
+  });
 }
 
 describe('attach', function attachSuite() {
@@ -36,5 +51,25 @@ describe('attach', function attachSuite() {
     } finally {
       await first.close();
     }
+  });
+
+  it('attaches to a Platformatic MCP Fastify instance and extracts schema', async function platformaticCase(t) {
+    const app = await buildPlatformatic();
+    const session = await attach(app, 'platformatic');
+
+    t.after(async function afterPlatformatic() {
+      await session.close();
+      await app.close();
+    });
+
+    const output = await extract(session);
+    const tool = findItem(output, 'tool', 'sum');
+    const resource = findItem(output, 'resource', 'config');
+    const prompt = findItem(output, 'prompt', 'review');
+
+    assert.ok(tool);
+    assert.ok(resource);
+    assert.ok(prompt);
+    assert.equal(output.server.info?.name, 'platformatic-fixture');
   });
 });

@@ -138,6 +138,7 @@ Suggested uses for the unified schema:
 
 - Schema compilation uses Ajv under the hood. If a tool exposes an invalid JSON Schema, extraction still succeeds but `detail.input.error` or `detail.output.error` will be populated for that item.
 - Servers that return empty lists produce an empty `items` array (not an error).
+- Servers that support resources but not resource templates are treated as having zero templates.
 
 ## JSON Schema vs Zod
 

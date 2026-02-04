@@ -13,6 +13,23 @@ function isrecord(value) {
 }
 
 /**
+ * Determine whether an MCP error indicates a missing method.
+ * @param {unknown} error - Error value to inspect.
+ * @returns {boolean}
+ */
+function ismissing(error) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const code = 'code' in error ? error.code : undefined;
+  if (code === -32601) {
+    return true;
+  }
+  const message = 'message' in error ? String(error.message) : '';
+  return message.includes('Method') && message.includes('not found');
+}
+
+/**
  * Build a Zod refinement function backed by Ajv.
  * @param {import('ajv').Ajv} validator - Ajv instance used to format errors.
  * @param {import('ajv').ValidateFunction} check - Compiled Ajv validation function.
@@ -170,7 +187,14 @@ async function templates(client) {
     return Array.isArray(result.resourceTemplates) ? result.resourceTemplates : [];
   }
 
-  return page(call, pull);
+  try {
+    return await page(call, pull);
+  } catch (error) {
+    if (ismissing(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**

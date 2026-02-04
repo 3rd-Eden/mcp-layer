@@ -30,6 +30,32 @@ await session.client.ping();
 await session.close();
 ```
 
+## Platformatic MCP (Fastify)
+
+If you're using the Platformatic MCP Fastify plugin, you can pass the Fastify instance directly to `attach` and the adapter will talk to the MCP endpoint in-process.
+
+```js
+import fastify from 'fastify';
+import mcp from '@platformatic/mcp';
+import { attach } from '@mcp-layer/attach';
+
+const app = fastify();
+await app.register(mcp, {
+  serverInfo: { name: 'platformatic-demo', version: '1.0.0' }
+});
+
+// Register tools/resources/prompts using app.mcpAddTool/app.mcpAddResource/app.mcpAddPrompt.
+
+const session = await attach(app, 'platformatic-demo', { path: '/mcp' });
+await session.client.ping();
+await session.close();
+await app.close();
+```
+
+Notes:
+- This adapter uses Fastify `inject()` against the MCP HTTP endpoint (default `/mcp`).
+- Pass `path` when your MCP endpoint is mounted elsewhere.
+
 ## When to use attach vs connect
 
 - Use `attach` when you already have an in-process `McpServer` instance and want to layer new behavior (REST/GraphQL/UI) without spawning another process.

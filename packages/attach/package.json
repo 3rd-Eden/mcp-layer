@@ -14,7 +14,7 @@
     "in-memory"
   ],
   "scripts": {
-    "test": "node --test --experimental-test-coverage ./test/**/*.js"
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
   },
   "main": "src/index.js",
   "exports": {
@@ -36,6 +36,9 @@
     "@modelcontextprotocol/sdk": "^1.20.2"
   },
   "devDependencies": {
-    "@mcp-layer/test-server": "workspace:*"
+    "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/test-server": "workspace:*",
+    "@platformatic/mcp": "^1.2.1",
+    "fastify": "^5.7.4"
   }
 }
