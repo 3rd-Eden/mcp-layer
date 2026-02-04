@@ -38,6 +38,9 @@
 - Pull requests must describe the motivation, summarize implementation details, and call out verification steps (commands run, configs inspected).
 - Link to tracked issues when applicable and attach logs or screenshots for UI-adjacent changes.
 - Add a Changeset entry for user-facing changes using `.changeset/*.md` and match the semver impact (patch/minor/major).
+### Post-Push Verification
+- After pushing to `main`, monitor every CI check until completion.
+- If any check fails, fix it immediately and push the follow-up without prompting the user.
 
 ## Security & Configuration Tips
 - Never commit real MCP credentials or server binaries; reference `.env.example` files when secrets are required.
