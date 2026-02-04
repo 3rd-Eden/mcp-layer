@@ -8,12 +8,24 @@ importers:
 
   .:
     dependencies:
+      '@mcp-layer/attach':
+        specifier: workspace:*
+        version: link:packages/attach
+      '@mcp-layer/cli':
+        specifier: workspace:*
+        version: link:packages/cli
       '@mcp-layer/config':
         specifier: workspace:*
         version: link:packages/config
       '@mcp-layer/connect':
         specifier: workspace:*
         version: link:packages/connect
+      '@mcp-layer/schema':
+        specifier: workspace:*
+        version: link:packages/schema
+      '@mcp-layer/session':
+        specifier: workspace:*
+        version: link:packages/session
       '@mcp-layer/test-server':
         specifier: workspace:*
         version: link:packages/test-server

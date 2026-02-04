@@ -11,6 +11,19 @@
 
 ## Packages
 
+### mcp-layer
+
+`mcp-layer` aggregates every workspace package under a single namespace export so you can import from one place when prototyping or composing multiple layers. We still recommend consuming the individual packages by default; the root package exists for teams that want a single install with always-matched versions/majors.
+
+```js
+import { attach, cli, config, connect, schema, session, testServer } from 'mcp-layer';
+
+const loaded = await config.load(undefined, process.cwd());
+const link = await connect.connect(loaded, 'demo');
+const catalog = await schema.extract(link);
+await link.close();
+```
+
 ### Infrastructure and utilities
 
 | Package | Purpose |
@@ -76,6 +89,8 @@ We use Changesets to manage versions and a GitHub Actions release workflow to pu
 3) GitHub Actions publishes via npm Trusted Publishing (OIDC)
 
 Before publishing, configure npm Trusted Publishers for each package in the npm registry and ensure the release workflow has `id-token: write` permissions.
+
+The root package runs `prepack` to regenerate `src/index.js` and sync root `package.json` dependencies to the workspace packages before publishing.
 
 See `.github/workflows/release.yml` for the pipeline details.
 

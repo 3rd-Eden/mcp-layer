@@ -25,8 +25,8 @@
   "author": "Arnout Kazemier",
   "packageManager": "pnpm@8.15.4",
   "type": "module",
-  "private": true,
   "scripts": {
+    "prepack": "node src/generate.js",
     "test": "node --test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
@@ -36,8 +36,21 @@
     "@changesets/cli": "^2.29.2"
   },
   "dependencies": {
+    "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/cli": "workspace:*",
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/session": "workspace:*",
     "@mcp-layer/test-server": "workspace:*"
+  },
+  "main": "./src/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./src/index.js"
   }
 }
