@@ -31,6 +31,7 @@
 - Scope commits narrowly; each should introduce one logical change and include necessary tests or docs.
 - Pull requests must describe the motivation, summarize implementation details, and call out verification steps (commands run, configs inspected).
 - Link to tracked issues when applicable and attach logs or screenshots for UI-adjacent changes.
+- Add a Changeset entry for user-facing changes using `.changeset/*.md` and match the semver impact (patch/minor/major).
 
 ## Security & Configuration Tips
 - Never commit real MCP credentials or server binaries; reference `.env.example` files when secrets are required.
