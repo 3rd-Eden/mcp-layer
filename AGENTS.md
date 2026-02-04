@@ -11,6 +11,18 @@
 - `pnpm test` — placeholder; replace with the project test runner when introduced.
 - Use `node packages/<layer>/src/index.js` for quick manual checks until build tooling is added.
 
+## Open Source Mindset
+- Every time you add or change a feature, first ask: is there an existing package in our ecosystem or the broader open source ecosystem that solves this?
+- Default to reusing existing libraries to minimize new code and offload maintenance and tech debt when possible.
+- If research turns up no good fit, treat that as a signal the feature should be more generic and reusable.
+- Design APIs for broader use cases, not just the immediate product need; question whether the API makes sense for other engineers.
+- When a feature feels reusable, extract it into a new package under `packages/`, write dedicated documentation, and add ample test coverage.
+- Write down the package vision and scope in the README to avoid scope creep and keep reuse intent clear.
+- Documentation must be part of the workflow; update docs incrementally as you build.
+- Feel empowered to rewrite when it leads to smaller, clearer packages. Do not fear major changes or version bumps if they improve the code and project.
+- You are empowered to propose and create new packages. It should feel natural to create additional packages as part of your development workflow.
+- This guidance is mandatory and should be applied before proposing or implementing code changes.
+
 ## Coding Style & Naming Conventions
 - JavaScript/TypeScript modules use ES modules with 2-space indentation and trailing commas where valid.
 - File names are lowercase with hyphens for multiword utilities (e.g., `load-config.js`); class files may use PascalCase if it clarifies purpose.
@@ -47,7 +59,7 @@
 - When testing locally, prefer temporary configs via `MCP_CONFIG_PATH` to avoid mutating user system files.
 
 ## Ground Rules
-- Always default to using existing open source modules where possible, the less code we write, the less we have to maintain, the more we can focus on features. 
+- Follow the Open Source Mindset guidance above when deciding to build vs reuse. 
 - All the code that is written should be commented in full JSDoc.
   - When making important logical decisions, explain using comment **why** the decision was made, never use comments to comments to explain what the code is doing.
 - We are in a prototyping phase, we are allowed to make breaking API changes, and do not need to worry about backwards compatibility. Do create this techdebt while iterating on code. 
