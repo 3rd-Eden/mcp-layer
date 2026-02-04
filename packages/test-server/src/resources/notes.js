@@ -2,8 +2,8 @@ import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /**
  * Register the dynamic notes resource template with completions.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ notes: Map<string, Record<string, string>> }} context
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the resource on.
+ * @param {{ notes: Map<string, Record<string, string>> }} context - Notes data keyed by topic/detail.
  */
 export function registerNotesResource(server, context) {
   const template = new ResourceTemplate('note://{topic}/{detail}', {
@@ -39,8 +39,8 @@ export function registerNotesResource(server, context) {
 
   /**
    * Derive note topic and detail for a URI or template variable set.
-   * @param {URL} uri
-   * @param {{ topic?: string, detail?: string }} [variables]
+   * @param {URL} uri - Requested resource URI.
+   * @param {{ topic?: string, detail?: string }} [variables] - Template variables resolved from the request.
    * @returns {{ topic: string, detail: string }}
    */
   function noteParts(uri, variables = {}) {
@@ -52,8 +52,8 @@ export function registerNotesResource(server, context) {
 
   /**
    * Read a dynamic note resource for the requested topic/detail pair.
-   * @param {URL} uri
-   * @param {{ topic?: string, detail?: string }} [variables]
+   * @param {URL} uri - Requested resource URI.
+   * @param {{ topic?: string, detail?: string }} [variables] - Template variables resolved from the request.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').ReadResourceResult>}
    */
   async function noteRead(uri, variables = {}) {

@@ -2,9 +2,9 @@ import { palette } from './colors.js';
 
 /**
  * Render a help header.
- * @param {{ name: string, version: string, description: string }} meta
- * @param {{ accent: string, subtle: string }} theme
- * @param {boolean} colors
+ * @param {{ name: string, version: string, description: string }} meta - CLI metadata for name/version/description.
+ * @param {{ accent: string, subtle: string }} theme - Theme colors for header styling.
+ * @param {boolean} colors - Whether to emit ANSI color output.
  * @returns {string}
  */
 export function header(meta, theme, colors) {
@@ -22,10 +22,10 @@ export function header(meta, theme, colors) {
 
 /**
  * Render a section with a title and lines.
- * @param {string} title
- * @param {string[]} lines
- * @param {{ accent: string, subtle: string }} theme
- * @param {boolean} colors
+ * @param {string} title - Section title text.
+ * @param {string[]} lines - Section body lines.
+ * @param {{ accent: string, subtle: string }} theme - Theme colors for section styling.
+ * @param {boolean} colors - Whether to emit ANSI color output.
  * @returns {string}
  */
 export function section(title, lines, theme, colors) {
@@ -40,9 +40,9 @@ export function section(title, lines, theme, colors) {
 
 /**
  * Wrap text to a fixed width.
- * @param {string} text
- * @param {number} width
- * @param {string} indent
+ * @param {string} text - Input string to wrap.
+ * @param {number} width - Maximum line width before wrapping.
+ * @param {string} indent - Prefix to apply to each wrapped line.
  * @returns {string[]}
  */
 export function wrap(text, width, indent) {

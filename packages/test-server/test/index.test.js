@@ -19,7 +19,7 @@ const entry = fileURLToPath(new URL('../src/bin.js', import.meta.url));
 
 /**
  * Establish a client/transport pair connected to the test server.
- * @param {{ clientOptions?: object, beforeConnect?: (client: Client) => void | Promise<void> }} [options]
+ * @param {{ clientOptions?: object, beforeConnect?: (client: Client) => void | Promise<void> }} [options] - Optional client overrides and hooks.
  * @returns {Promise<{ client: Client, transport: StdioClientTransport }>}
  */
 async function connect(options = {}) {
@@ -37,7 +37,7 @@ async function connect(options = {}) {
 
 /**
  * Close a client and transport pair.
- * @param {{ client: Client, transport: StdioClientTransport }} session
+ * @param {{ client: Client, transport: StdioClientTransport }} session - Connected client/transport pair to shut down.
  * @returns {Promise<void>}
  */
 async function cleanup(session) {

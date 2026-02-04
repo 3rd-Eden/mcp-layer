@@ -5,7 +5,7 @@ import stringify from '@iarna/toml/stringify.js';
 
 /**
  * Resolve project-scoped configuration files for Codex.
- * @param {string} dir
+ * @param {string} dir - Project root directory (unused for Codex).
  * @returns {string[]}
  */
 function project(dir) {
@@ -15,7 +15,7 @@ function project(dir) {
 
 /**
  * Resolve user-level configuration files for Codex.
- * @param {{ home?: string, env: NodeJS.ProcessEnv }} ctx
+ * @param {{ home?: string, env: NodeJS.ProcessEnv }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {
@@ -30,8 +30,8 @@ function home(ctx) {
 
 /**
  * Parse Codex configuration files written in TOML.
- * @param {string} raw
- * @param {string} file
+ * @param {string} raw - Raw TOML string from the config file.
+ * @param {string} file - File path used for error reporting.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }> }}
  */
 function parse(raw, file) {
@@ -69,9 +69,9 @@ export const codex = {
 
 /**
  * Merge Codex server definitions into TOML configuration files while preserving metadata.
- * @param {string} file
- * @param {{ name: string, config: Record<string, unknown> } | null} entry
- * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> }} [metadata]
+ * @param {string} file - Destination config file path.
+ * @param {{ name: string, config: Record<string, unknown> } | null} entry - Server entry to upsert or null to overwrite with metadata.servers.
+ * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> }} [metadata] - Optional server list for full rewrite.
  * @returns {Promise<void>}
  */
 async function write(file, entry, metadata = {}) {

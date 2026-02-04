@@ -6,7 +6,7 @@ const permissions = ['clipboard-read'];
 
 /**
  * Register a tool that declares an MCP App UI resource.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  * @returns {ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>}
  */
 export function registerDashboard(server) {
@@ -16,7 +16,7 @@ export function registerDashboard(server) {
 
   /**
    * Return a simple payload while the host renders the UI resource.
-   * @param {{ name: string }} args
+   * @param {{ name: string }} args - Request input used for the response payload.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function dashboardTool(args) {

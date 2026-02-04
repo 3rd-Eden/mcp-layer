@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises';
 
 /**
  * Collect tool/prompt inputs from argv.
- * @param {{ json?: string, input?: string }} opts
- * @param {Record<string, unknown>} parsed
- * @param {Record<string, unknown>} extra
- * @param {{ detail?: { input?: { json?: Record<string, unknown> } } }} item
+ * @param {{ json?: string, input?: string }} opts - CLI input flags for JSON payloads.
+ * @param {Record<string, unknown>} parsed - Parsed argv for the main argument list.
+ * @param {Record<string, unknown>} extra - Parsed argv for passthrough arguments.
+ * @param {{ detail?: { input?: { json?: Record<string, unknown> } } }} item - Schema item describing expected inputs.
  * @returns {Promise<Record<string, unknown>>}
  */
 export async function inputs(opts, parsed, extra, item) {
@@ -36,8 +36,8 @@ export async function inputs(opts, parsed, extra, item) {
 
 /**
  * Coerce CLI input values into schema-friendly shapes.
- * @param {unknown} value
- * @param {unknown} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {unknown} schema - JSON schema definition for the input.
  * @returns {unknown}
  */
 function coerce(value, schema) {
@@ -56,8 +56,8 @@ function coerce(value, schema) {
 
 /**
  * Coerce array inputs and apply item conversions.
- * @param {unknown} value
- * @param {Record<string, unknown>} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the array input.
  * @returns {unknown}
  */
 function coercearray(value, schema) {
@@ -71,8 +71,8 @@ function coercearray(value, schema) {
 
 /**
  * Coerce object inputs, preferring JSON parsing for string values.
- * @param {unknown} value
- * @param {Record<string, unknown>} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the object input.
  * @returns {unknown}
  */
 function coerceobject(value, schema) {
@@ -84,8 +84,8 @@ function coerceobject(value, schema) {
 
 /**
  * Coerce scalar values based on schema type.
- * @param {unknown} value
- * @param {Record<string, unknown>} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the scalar input.
  * @returns {unknown}
  */
 function coercevalue(value, schema) {
@@ -101,8 +101,8 @@ function coercevalue(value, schema) {
 
 /**
  * Coerce a boolean value.
- * @param {unknown} value
- * @param {Record<string, unknown>} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the boolean input.
  * @returns {unknown}
  */
 function coerceboolean(value, schema) {
@@ -123,8 +123,8 @@ function coerceboolean(value, schema) {
 
 /**
  * Coerce numeric values.
- * @param {unknown} value
- * @param {Record<string, unknown>} schema
+ * @param {unknown} value - Raw CLI input value.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the numeric input.
  * @returns {unknown}
  */
 function coercenumber(value, schema) {
@@ -148,8 +148,8 @@ function coercenumber(value, schema) {
 
 /**
  * Parse JSON input for object/array values.
- * @param {string} value
- * @param {Record<string, unknown>} schema
+ * @param {string} value - Raw string value to parse as JSON.
+ * @param {Record<string, unknown>} schema - JSON schema definition for the input.
  * @returns {unknown}
  */
 function parsejson(value, schema) {

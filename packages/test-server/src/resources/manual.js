@@ -1,12 +1,12 @@
 /**
  * Register the markdown manual resource.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ manual: string }} context
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the resource on.
+ * @param {{ manual: string }} context - Manual content backing the resource.
  */
 export function registerManualResource(server, context) {
   /**
    * Return a markdown manual describing server features.
-   * @param {URL} uri
+   * @param {URL} uri - Resource URI for the request.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').ReadResourceResult>}
    */
   async function manualRead(uri) {

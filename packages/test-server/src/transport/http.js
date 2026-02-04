@@ -5,7 +5,7 @@ import { build } from '../index.js';
 
 /**
  * Start an HTTP server that exposes Streamable HTTP and SSE transports.
- * @param {{ port?: number }} [opts]
+ * @param {{ port?: number }} [opts] - Optional port override for the HTTP server.
  * @returns {Promise<{ close: () => Promise<void> }>}
  */
 export async function startHttpServer(opts = {}) {

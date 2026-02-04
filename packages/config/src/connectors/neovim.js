@@ -10,7 +10,7 @@ function project() {
 }
 
 /**
- * @param {{ home?: string }} ctx
+ * @param {{ home?: string }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {

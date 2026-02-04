@@ -1,7 +1,7 @@
 /**
  * Convert hex color to ANSI 24-bit escape sequence.
- * @param {string} hex
- * @param {string} text
+ * @param {string} hex - Hex color string in `#RRGGBB` format.
+ * @param {string} text - Text to wrap with ANSI color escape codes.
  * @returns {string}
  */
 function hexcolor(hex, text) {
@@ -18,7 +18,7 @@ function hexcolor(hex, text) {
 
 /**
  * Detect whether color output should be used.
- * @param {boolean} enabled
+ * @param {boolean} enabled - User intent for color output; still respects NO_COLOR/TTY.
  * @returns {boolean}
  */
 export function usecolors(enabled) {
@@ -33,8 +33,8 @@ export function usecolors(enabled) {
 
 /**
  * Build color helpers for CLI output.
- * @param {boolean} enabled
- * @param {{ accent: string, subtle: string }} theme
+ * @param {boolean} enabled - User intent for color output.
+ * @param {{ accent: string, subtle: string }} theme - Theme color configuration for accent/subtle styling.
  * @returns {{ title: (text: string) => string, name: (text: string) => string, flag: (text: string) => string, subtle: (text: string) => string }}
  */
 export function palette(enabled, theme) {

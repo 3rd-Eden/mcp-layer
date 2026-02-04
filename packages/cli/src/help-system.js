@@ -117,7 +117,7 @@ function formatextras(extras, colors, theme) {
 
 /**
  * Build server entries for help output.
- * @param {import('@mcp-layer/config').Config | null} cfg
+ * @param {import('@mcp-layer/config').Config | null} cfg - Loaded config or null when discovery failed.
  * @returns {Array<{ name: string, description: string }>}
  */
 export function serverhelp(cfg) {
@@ -136,7 +136,7 @@ export function serverhelp(cfg) {
 
 /**
  * Extract template variables from a uriTemplate string.
- * @param {string | undefined} template
+ * @param {string | undefined} template - URI template string to parse for variables.
  * @returns {string[]}
  */
 function templatevars(template) {
@@ -156,7 +156,7 @@ function templatevars(template) {
 
 /**
  * Format a JSON schema type for help output.
- * @param {unknown} value
+ * @param {unknown} value - JSON schema `type` or union of types.
  * @returns {string}
  */
 function schematype(value) {
@@ -173,9 +173,9 @@ function schematype(value) {
 
 /**
  * Build a flag description for schema inputs.
- * @param {string} name
- * @param {Record<string, unknown>} schema
- * @param {boolean} required
+ * @param {string} name - Input parameter name.
+ * @param {Record<string, unknown>} schema - JSON schema entry for the input parameter.
+ * @param {boolean} required - Whether the parameter is required.
  * @returns {{ text: string, type: string, required: boolean }}
  */
 function flagdetail(name, schema, required) {
@@ -190,7 +190,7 @@ function flagdetail(name, schema, required) {
 
 /**
  * Extract input flags from an item schema.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Schema item describing a tool or prompt.
  * @returns {Array<{ name: string, text: string, type: string, required: boolean }>}
  */
 function inputflags(item) {
@@ -214,10 +214,11 @@ function inputflags(item) {
 
 /**
  * Build an example CLI invocation for a schema item.
- * @param {string} verb
- * @param {string} name
- * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags
- * @param {string | undefined} serverName
+ * @param {string} verb - CLI surface name (tools/resources/prompts/templates).
+ * @param {string} name - Target name within the surface.
+ * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags - Flag descriptors for the item.
+ * @param {string | undefined} serverName - Optional server name to include.
+ * @param {string} cliName - CLI command name.
  * @returns {string}
  */
 function exampleline(verb, name, flags, serverName, cliName) {
@@ -231,7 +232,7 @@ function exampleline(verb, name, flags, serverName, cliName) {
 
 /**
  * Choose an example value placeholder based on type.
- * @param {{ type: string }} flag
+ * @param {{ type: string }} flag - Flag descriptor with a type string.
  * @returns {string}
  */
 function valuehint(flag) {
@@ -243,8 +244,8 @@ function valuehint(flag) {
 
 /**
  * Check if any flag type includes a token.
- * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags
- * @param {string} token
+ * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags - Flag descriptors to inspect.
+ * @param {string} token - Substring to search for inside flag types.
  * @returns {boolean}
  */
 function hasflagtype(flags, token) {
@@ -258,8 +259,8 @@ function hasflagtype(flags, token) {
 
 /**
  * Find the first flag name matching a token.
- * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags
- * @param {string} token
+ * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags - Flag descriptors to inspect.
+ * @param {string} token - Substring to search for inside flag types.
  * @returns {string}
  */
 function firstflag(flags, token) {
@@ -273,7 +274,7 @@ function firstflag(flags, token) {
 
 /**
  * Build input syntax notes for per-command help.
- * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags
+ * @param {Array<{ name: string, text: string, type: string, required: boolean }>} flags - Flag descriptors to evaluate.
  * @returns {string[]}
  */
 function inputsyntax(flags) {
@@ -300,7 +301,7 @@ function inputsyntax(flags) {
 
 /**
  * Build flag descriptors for any schema item.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Schema item describing a tool/prompt/resource.
  * @returns {Array<{ name: string, text: string, type: string, required: boolean }>}
  */
 function itemflags(item) {
@@ -318,7 +319,7 @@ function itemflags(item) {
 
 /**
  * Get the command surface and target name for an item.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Schema item describing a tool/prompt/resource.
  * @returns {{ surface: string, target: string }}
  */
 function itemcommand(item) {
@@ -621,7 +622,7 @@ export function addsection(extras, title, items) {
 
 /**
  * Format command list.
- * @param {Array<{ name: string, description: string }>} cmds
+ * @param {Array<{ name: string, description: string }>} cmds - Command entries to format.
  * @returns {string[]}
  */
 function listcmds(cmds) {
@@ -632,9 +633,9 @@ function listcmds(cmds) {
 
 /**
  * Format flags list.
- * @param {Record<string, string>} flags
- * @param {boolean} colors
- * @param {{ accent: string, subtle: string }} theme
+ * @param {Record<string, string>} flags - Flag description map.
+ * @param {boolean} colors - Whether color output is enabled.
+ * @param {{ accent: string, subtle: string }} theme - Color theme configuration.
  * @returns {string[]}
  */
 function listflags(flags, colors, theme) {
@@ -648,7 +649,7 @@ function listflags(flags, colors, theme) {
 
 /**
  * Format examples list.
- * @param {string[]} examples
+ * @param {string[]} examples - Example usage lines.
  * @returns {string[]}
  */
 function listexamples(examples) {
@@ -659,7 +660,7 @@ function listexamples(examples) {
 
 /**
  * Format servers list.
- * @param {Array<{ name: string, description: string }>} servers
+ * @param {Array<{ name: string, description: string }>} servers - Server entries to format.
  * @returns {string[]}
  */
 function listservers(servers) {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Register a tool that accepts array/object inputs.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  * @returns {ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>}
  */
 export function registerBatch(server) {
@@ -13,7 +13,7 @@ export function registerBatch(server) {
 
   /**
    * Summarize array/object inputs.
-   * @param {{ items: string[], meta: { tag: string } }} args
+   * @param {{ items: string[], meta: { tag: string } }} args - Batch input values.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function batchTool(args) {

@@ -2,8 +2,8 @@ import Table from 'cli-table3';
 
 /**
  * Render a table to stdout.
- * @param {string[]} head
- * @param {Array<string[]>} rows
+ * @param {string[]} head - Table header labels.
+ * @param {Array<string[]>} rows - Row data to render.
  * @returns {void}
  */
 export function table(head, rows) {
@@ -20,7 +20,7 @@ export function table(head, rows) {
 
 /**
  * Render JSON output.
- * @param {unknown} data
+ * @param {unknown} data - Data to serialize as JSON.
  * @returns {void}
  */
 export function jsonout(data) {

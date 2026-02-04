@@ -14,7 +14,7 @@ function project() {
 
 /**
  * Resolve user-level configuration files for Cline.
- * @param {{ home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx
+ * @param {{ home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {
@@ -28,8 +28,8 @@ function home(ctx) {
   }
 
   /**
-   * @param {string | undefined} base
-   * @param {string} product
+   * @param {string | undefined} base - Base directory for the VS Code product configuration.
+   * @param {string} product - VS Code product name segment.
    */
   function push(base, product) {
     if (base) {
@@ -59,8 +59,8 @@ function home(ctx) {
 
 /**
  * Parse Cline configuration documents.
- * @param {string} raw
- * @param {string} file
+ * @param {string} raw - Raw JSON string from the settings file.
+ * @param {string} file - File path used for error reporting.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
  */
 function parse(raw, file) {
@@ -107,9 +107,9 @@ export const cline = {
 
 /**
  * Merge Cline server definitions into JSON settings while preserving extension specific metadata.
- * @param {string} file
- * @param {{ name: string, config: Record<string, unknown> } | null} entry
- * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> } & Record<string, unknown>} [metadata]
+ * @param {string} file - Destination settings file path.
+ * @param {{ name: string, config: Record<string, unknown> } | null} entry - Server entry to upsert or null to overwrite with metadata.servers.
+ * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> } & Record<string, unknown>} [metadata] - Additional metadata to merge into the settings file.
  * @returns {Promise<void>}
  */
 async function write(file, entry, metadata = {}) {

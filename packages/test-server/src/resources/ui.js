@@ -19,12 +19,12 @@ const uri = 'ui://dashboard/app.html';
 
 /**
  * Register the MCP App UI resource.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the resource on.
  */
 export function registerUi(server) {
   /**
    * Return HTML for the dashboard UI.
-   * @param {URL} url
+   * @param {URL} url - Requested resource URL.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').ReadResourceResult>}
    */
   async function ui(url) {

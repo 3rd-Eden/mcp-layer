@@ -5,7 +5,7 @@ const ajv = new Ajv({ allErrors: true, strict: false });
 
 /**
  * Test if a value is a plain object.
- * @param {unknown} value
+ * @param {unknown} value - Value to test for plain object shape.
  * @returns {value is Record<string, unknown>}
  */
 function isrecord(value) {
@@ -14,15 +14,15 @@ function isrecord(value) {
 
 /**
  * Build a Zod refinement function backed by Ajv.
- * @param {import('ajv').Ajv} validator
- * @param {import('ajv').ValidateFunction} check
+ * @param {import('ajv').Ajv} validator - Ajv instance used to format errors.
+ * @param {import('ajv').ValidateFunction} check - Compiled Ajv validation function.
  * @returns {(value: unknown, ctx: import('zod').RefinementCtx) => void}
  */
 function refiners(validator, check) {
   /**
    * Validate the value and emit Zod issues for Ajv failures.
-   * @param {unknown} value
-   * @param {import('zod').RefinementCtx} ctx
+   * @param {unknown} value - Value to validate.
+   * @param {import('zod').RefinementCtx} ctx - Zod refinement context for reporting issues.
    * @returns {void}
    */
   function apply(value, ctx) {
@@ -39,7 +39,7 @@ function refiners(validator, check) {
 
 /**
  * Wrap a JSON Schema into a Zod schema that delegates validation to Ajv.
- * @param {unknown} json
+ * @param {unknown} json - JSON Schema definition to wrap.
  * @returns {{ schema: import('zod').ZodTypeAny, json: Record<string, unknown> | undefined, error?: string }}
  */
 function wrapschema(json) {
@@ -60,8 +60,8 @@ function wrapschema(json) {
 /**
  * Read all pages for a list request until pagination completes.
  * @template T
- * @param {(cursor?: string) => Promise<T & { nextCursor?: string }>} call
- * @param {(result: T) => Array<unknown>} pull
+ * @param {(cursor?: string) => Promise<T & { nextCursor?: string }>} call - Function that requests a page by cursor.
+ * @param {(result: T) => Array<unknown>} pull - Function that extracts items from each page result.
  * @returns {Promise<Array<unknown>>}
  */
 async function page(call, pull) {
@@ -85,13 +85,13 @@ async function page(call, pull) {
 
 /**
  * Extract tool entries from a client.
- * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client
+ * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client - MCP client instance.
  * @returns {Promise<Array<Record<string, unknown>>>}
  */
 async function tools(client) {
   /**
    * Fetch a page of tools.
-   * @param {string | undefined} cursor
+   * @param {string | undefined} cursor - Pagination cursor from the previous page.
    * @returns {Promise<{ tools: Array<Record<string, unknown>>, nextCursor?: string }>}
    */
   async function call(cursor) {
@@ -103,7 +103,7 @@ async function tools(client) {
 
   /**
    * Pluck tool definitions from a list response.
-   * @param {{ tools?: Array<Record<string, unknown>> }} result
+   * @param {{ tools?: Array<Record<string, unknown>> }} result - listTools response payload.
    * @returns {Array<Record<string, unknown>>}
    */
   function pull(result) {
@@ -115,13 +115,13 @@ async function tools(client) {
 
 /**
  * Extract resource entries from a client.
- * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client
+ * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client - MCP client instance.
  * @returns {Promise<Array<Record<string, unknown>>>}
  */
 async function resources(client) {
   /**
    * Fetch a page of resources.
-   * @param {string | undefined} cursor
+   * @param {string | undefined} cursor - Pagination cursor from the previous page.
    * @returns {Promise<{ resources: Array<Record<string, unknown>>, nextCursor?: string }>}
    */
   async function call(cursor) {
@@ -133,7 +133,7 @@ async function resources(client) {
 
   /**
    * Pluck resource definitions from a list response.
-   * @param {{ resources?: Array<Record<string, unknown>> }} result
+   * @param {{ resources?: Array<Record<string, unknown>> }} result - listResources response payload.
    * @returns {Array<Record<string, unknown>>}
    */
   function pull(result) {
@@ -145,13 +145,13 @@ async function resources(client) {
 
 /**
  * Extract resource template entries from a client.
- * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client
+ * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client - MCP client instance.
  * @returns {Promise<Array<Record<string, unknown>>>}
  */
 async function templates(client) {
   /**
    * Fetch a page of resource templates.
-   * @param {string | undefined} cursor
+   * @param {string | undefined} cursor - Pagination cursor from the previous page.
    * @returns {Promise<{ resourceTemplates: Array<Record<string, unknown>>, nextCursor?: string }>}
    */
   async function call(cursor) {
@@ -163,7 +163,7 @@ async function templates(client) {
 
   /**
    * Pluck resource template definitions from a list response.
-   * @param {{ resourceTemplates?: Array<Record<string, unknown>> }} result
+   * @param {{ resourceTemplates?: Array<Record<string, unknown>> }} result - listResourceTemplates response payload.
    * @returns {Array<Record<string, unknown>>}
    */
   function pull(result) {
@@ -175,13 +175,13 @@ async function templates(client) {
 
 /**
  * Extract prompt entries from a client.
- * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client
+ * @param {import('@modelcontextprotocol/sdk/client/index.js').Client} client - MCP client instance.
  * @returns {Promise<Array<Record<string, unknown>>>}
  */
 async function prompts(client) {
   /**
    * Fetch a page of prompts.
-   * @param {string | undefined} cursor
+   * @param {string | undefined} cursor - Pagination cursor from the previous page.
    * @returns {Promise<{ prompts: Array<Record<string, unknown>>, nextCursor?: string }>}
    */
   async function call(cursor) {
@@ -193,7 +193,7 @@ async function prompts(client) {
 
   /**
    * Pluck prompt definitions from a list response.
-   * @param {{ prompts?: Array<Record<string, unknown>> }} result
+   * @param {{ prompts?: Array<Record<string, unknown>> }} result - listPrompts response payload.
    * @returns {Array<Record<string, unknown>>}
    */
   function pull(result) {
@@ -205,7 +205,7 @@ async function prompts(client) {
 
 /**
  * Build shared metadata from an MCP item.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - MCP definition object.
  * @returns {Record<string, unknown>}
  */
 function meta(item) {
@@ -221,7 +221,7 @@ function meta(item) {
 
 /**
  * Build metadata for tools, including annotations.
- * @param {Record<string, unknown>} tool
+ * @param {Record<string, unknown>} tool - Tool definition object.
  * @returns {Record<string, unknown>}
  */
 function toolmeta(tool) {
@@ -234,7 +234,7 @@ function toolmeta(tool) {
 
 /**
  * Derive a display title with tool annotation fallback.
- * @param {Record<string, unknown>} tool
+ * @param {Record<string, unknown>} tool - Tool definition object.
  * @returns {string | undefined}
  */
 function tooltitle(tool) {
@@ -249,7 +249,7 @@ function tooltitle(tool) {
 
 /**
  * Extract MCP Apps UI metadata from an item.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - MCP definition object.
  * @returns {Record<string, unknown> | undefined}
  */
 function uiitem(item) {
@@ -278,7 +278,7 @@ function uiitem(item) {
 
 /**
  * Normalize a tool definition into the unified schema.
- * @param {Record<string, unknown>} tool
+ * @param {Record<string, unknown>} tool - Raw tool definition from MCP.
  * @returns {Record<string, unknown>}
  */
 function toolitem(tool) {
@@ -306,7 +306,7 @@ function toolitem(tool) {
 
 /**
  * Normalize a resource definition into the unified schema.
- * @param {Record<string, unknown>} resource
+ * @param {Record<string, unknown>} resource - Raw resource definition from MCP.
  * @returns {Record<string, unknown>}
  */
 function resourceitem(resource) {
@@ -328,7 +328,7 @@ function resourceitem(resource) {
 
 /**
  * Normalize a resource template definition into the unified schema.
- * @param {Record<string, unknown>} template
+ * @param {Record<string, unknown>} template - Raw resource template definition from MCP.
  * @returns {Record<string, unknown>}
  */
 function templateitem(template) {
@@ -347,7 +347,7 @@ function templateitem(template) {
 
 /**
  * Build a JSON schema from prompt arguments so prompts share the input schema shape.
- * @param {Record<string, unknown>} prompt
+ * @param {Record<string, unknown>} prompt - Raw prompt definition from MCP.
  * @returns {{ schema: import('zod').ZodTypeAny, json: Record<string, unknown> | undefined, error?: string }}
  */
 function promptinput(prompt) {
@@ -385,7 +385,7 @@ function promptinput(prompt) {
 
 /**
  * Normalize a prompt definition into the unified schema.
- * @param {Record<string, unknown>} prompt
+ * @param {Record<string, unknown>} prompt - Raw prompt definition from MCP.
  * @returns {Record<string, unknown>}
  */
 function promptitem(prompt) {
@@ -404,7 +404,7 @@ function promptitem(prompt) {
 
 /**
  * Convert a set of MCP definitions into a unified item list.
- * @param {{ tools?: Array<Record<string, unknown>>, resources?: Array<Record<string, unknown>>, templates?: Array<Record<string, unknown>>, prompts?: Array<Record<string, unknown>> }} data
+ * @param {{ tools?: Array<Record<string, unknown>>, resources?: Array<Record<string, unknown>>, templates?: Array<Record<string, unknown>>, prompts?: Array<Record<string, unknown>> }} data - Aggregated MCP list responses.
  * @returns {Array<Record<string, unknown>>}
  */
 function normalize(data) {
@@ -439,7 +439,7 @@ function normalize(data) {
 
 /**
  * Extract MCP tool/resource/prompt schemas into a unified Zod-backed format.
- * @param {import('@mcp-layer/session').Session} link
+ * @param {import('@mcp-layer/session').Session} link - Active session with a connected MCP server.
  * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
  */
 export async function extract(link) {

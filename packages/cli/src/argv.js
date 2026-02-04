@@ -2,7 +2,7 @@ import argh from 'argh';
 
 /**
  * Split arguments at the passthrough separator.
- * @param {string[]} args
+ * @param {string[]} args - Raw argv list excluding `node` and script name.
  * @returns {{ main: string[], rest: string[] }}
  */
 export function split(args) {
@@ -15,7 +15,7 @@ export function split(args) {
 
 /**
  * Parse argv into globals and positionals.
- * @param {string[]} args
+ * @param {string[]} args - Raw argv list excluding `node` and script name.
  * @returns {{ parsed: Record<string, unknown>, positionals: string[], rest: string[], restParsed: Record<string, unknown> }}
  */
 export function parse(args) {
@@ -28,7 +28,7 @@ export function parse(args) {
 
 /**
  * Build global CLI options from parsed argv.
- * @param {Record<string, unknown>} parsed
+ * @param {Record<string, unknown>} parsed - Parsed flags from `argh` for the main argument list.
  * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean, ansi: boolean }}
  */
 export function globals(parsed) {
@@ -49,7 +49,7 @@ export function globals(parsed) {
 
 /**
  * Route definition for CLI commands.
- * @param {string[]} positionals
+ * @param {string[]} positionals - Positional arguments after flag parsing.
  * @returns {{ surface: string, action: string, target: string | null }}
  */
 export function route(positionals) {

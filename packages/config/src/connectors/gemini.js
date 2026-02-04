@@ -3,7 +3,7 @@ import { parseDocument, writeDocument } from '../schema.js';
 
 /**
  * Locate project-scoped Gemini CLI configuration files.
- * @param {string} dir
+ * @param {string} dir - Project root directory to search.
  * @returns {string[]}
  */
 function project(dir) {
@@ -12,7 +12,7 @@ function project(dir) {
 
 /**
  * Discover user-level Gemini CLI configuration files.
- * @param {{ home?: string }} ctx
+ * @param {{ home?: string }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {

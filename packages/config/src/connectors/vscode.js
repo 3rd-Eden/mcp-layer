@@ -3,7 +3,7 @@ import path from 'node:path';
 
 /**
  * Resolve workspace-scoped configuration files for VS Code.
- * @param {string} dir
+ * @param {string} dir - Project root directory to search.
  * @returns {string[]}
  */
 function project(dir) {
@@ -15,7 +15,7 @@ function project(dir) {
 
 /**
  * Resolve user-level configuration files for VS Code.
- * @param {{ home?: string }} ctx
+ * @param {{ home?: string }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {
@@ -29,8 +29,8 @@ function home(ctx) {
 
 /**
  * Parse VS Code configuration documents.
- * @param {string} raw
- * @param {string} file
+ * @param {string} raw - Raw JSON string from the settings file.
+ * @param {string} file - File path used for error reporting.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: { inputs: Array<Record<string, unknown>> } }}
  */
 function parse(raw, file) {
@@ -71,9 +71,9 @@ export const vscode = {
 
 /**
  * Merge VS Code servers into JSON configuration documents while preserving declared inputs metadata.
- * @param {string} file
- * @param {{ name: string, config: Record<string, unknown> } | null} entry
- * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }>, inputs?: Array<Record<string, unknown>> }} [metadata]
+ * @param {string} file - Destination config file path.
+ * @param {{ name: string, config: Record<string, unknown> } | null} entry - Server entry to upsert or null to overwrite with metadata.servers.
+ * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }>, inputs?: Array<Record<string, unknown>> }} [metadata] - Optional servers/inputs metadata to merge.
  * @returns {Promise<void>}
  */
 async function write(file, entry, metadata = {}) {

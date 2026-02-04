@@ -5,8 +5,8 @@ import { select } from './config.js';
 
 /**
  * Create a spinner if allowed.
- * @param {boolean} enabled
- * @param {string} text
+ * @param {boolean} enabled - Whether the spinner should be active.
+ * @param {string} text - Spinner label text.
  * @returns {{ start: () => void, stop: () => void }}
  */
 export function spinner(enabled, text) {
@@ -26,7 +26,7 @@ export function spinner(enabled, text) {
 
 /**
  * Build spinner text for schema loading.
- * @param {string | undefined} name
+ * @param {string | undefined} name - Optional server name for display.
  * @returns {string}
  */
 export function spinnertext(name) {
@@ -38,7 +38,7 @@ export function spinnertext(name) {
 
 /**
  * Extract schema items for a server.
- * @param {{ server?: string, config?: string, spinner: boolean }} opts
+ * @param {{ server?: string, config?: string, spinner: boolean }} opts - CLI options for server selection and spinner display.
  * @returns {Promise<{ session: import('@mcp-layer/session').Session, output: { items: Array<Record<string, unknown>>, server: Record<string, unknown> } }>} 
  */
 export async function catalog(opts) {

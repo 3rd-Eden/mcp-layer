@@ -40,7 +40,7 @@ export function build() {
 
 /**
  * Start the test server using stdio transport for integration scenarios.
- * @param {{ server?: McpServer, transport?: StdioServerTransport }} [opts]
+ * @param {{ server?: McpServer, transport?: StdioServerTransport }} [opts] - Optional overrides for the server instance and transport.
  * @returns {Promise<{ server: McpServer, transport: StdioServerTransport }>}
  */
 export async function start(opts = {}) {

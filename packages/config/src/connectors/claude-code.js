@@ -3,7 +3,7 @@ import { parseDocument, writeDocument } from '../schema.js';
 
 /**
  * Produce candidate project-level config files for Claude Code.
- * @param {string} dir
+ * @param {string} dir - Project root directory to search.
  * @returns {string[]}
  */
 function project(dir) {
@@ -14,7 +14,7 @@ function project(dir) {
 
 /**
  * Collect global config locations for Claude Code across supported platforms.
- * @param {{ home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx
+ * @param {{ home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {

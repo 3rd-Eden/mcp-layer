@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Register the echo tool that optionally uppercases responses.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  * @returns {ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>}
  */
 export function registerEcho(server) {
@@ -13,7 +13,7 @@ export function registerEcho(server) {
 
   /**
    * Repeat supplied text and optionally uppercase the response.
-   * @param {{ text: string, loud: boolean }} args
+   * @param {{ text: string, loud: boolean }} args - Request input used to build the response.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function echoTool(args) {

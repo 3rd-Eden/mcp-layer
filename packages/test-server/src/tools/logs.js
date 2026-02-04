@@ -5,7 +5,7 @@ const levels = LoggingLevelSchema.options;
 
 /**
  * Register the logs tool that emits notifications/message entries.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  */
 export function registerLogs(server) {
   const inputSchema = {
@@ -16,7 +16,7 @@ export function registerLogs(server) {
 
   /**
    * Emit a logging notification honoring the client's configured level filter.
-   * @param {{ level: typeof levels[number], message: string, logger: string }} args
+   * @param {{ level: typeof levels[number], message: string, logger: string }} args - Logging payload inputs.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function logsTool(args) {

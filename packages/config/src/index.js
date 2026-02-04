@@ -16,7 +16,7 @@ export class Config {
 
   /**
    * Retrieve a server definition by name.
-   * @param {string} name
+   * @param {string} name - Server name to look up.
    * @returns {{ name: string, source: string, config: Record<string, unknown> } | undefined}
    */
   get(name) {
@@ -25,11 +25,11 @@ export class Config {
 
   /**
    * Register an individual server if it was not seen before.
-   * @param {string} name
-   * @param {Record<string, unknown>} config
-   * @param {string} file
-   * @param {string | undefined} connector
-   * @param {boolean} [force]
+   * @param {string} name - Server name to register.
+   * @param {Record<string, unknown>} config - Server connection configuration.
+   * @param {string} file - Source file path for the server definition.
+   * @param {string | undefined} connector - Connector name that supplied the server.
+   * @param {boolean} [force] - Whether to overwrite an existing entry with the same name.
    * @returns {void}
    */
   registerServer(name, config, file, connector, force = false) {
@@ -40,10 +40,10 @@ export class Config {
 
   /**
    * Register every server exposed by a connector.
-   * @param {Array<{ name: string, config: Record<string, unknown> }>} servers
-   * @param {string} file
-   * @param {string | undefined} connector
-   * @param {boolean} [force]
+   * @param {Array<{ name: string, config: Record<string, unknown> }>} servers - Server definitions to register.
+   * @param {string} file - Source file path for the server definitions.
+   * @param {string | undefined} connector - Connector name that supplied the servers.
+   * @param {boolean} [force] - Whether to overwrite existing entries with the same name.
    * @returns {void}
    */
   registerServers(servers, file, connector, force = false) {
@@ -54,7 +54,7 @@ export class Config {
 
   /**
    * Consume a candidate configuration file.
-   * @param {{ path: string, connector?: string, scope?: 'project' | 'home', parse?: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, data?: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }} candidate
+   * @param {{ path: string, connector?: string, scope?: 'project' | 'home', parse?: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, data?: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }} candidate - Parsed or raw configuration candidate to ingest.
    * @returns {Promise<void>}
    */
   async consume(candidate) {
@@ -96,8 +96,8 @@ export class Config {
 
   /**
    * Upsert a server definition into the underlying configuration files.
-   * @param {{ name: string, config: Record<string, unknown> }} entry
-   * @param {{ connector?: string, file?: string, scope?: 'project' | 'home', metadata?: Record<string, unknown> }} [options]
+   * @param {{ name: string, config: Record<string, unknown> }} entry - Server definition to upsert.
+   * @param {{ connector?: string, file?: string, scope?: 'project' | 'home', metadata?: Record<string, unknown> }} [options] - Connector/file selection and metadata overrides.
    * @returns {Promise<void>}
    */
   async add(entry, options = {}) {
@@ -147,7 +147,7 @@ export class Config {
 
   /**
    * Remove a server definition from the underlying configuration file.
-   * @param {string} name
+   * @param {string} name - Server name to remove.
    * @returns {Promise<void>}
    */
   async remove(name) {
@@ -193,7 +193,7 @@ export class Config {
 
 /**
  * Determine runtime context for discovery.
- * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform }} opts
+ * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform }} opts - Optional overrides for discovery context.
  * @returns {{ cwd: string, home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }}
  */
 function context(opts) {
@@ -206,7 +206,7 @@ function context(opts) {
 
 /**
  * Check existence of a file path.
- * @param {string} file
+ * @param {string} file - File path to check.
  * @returns {Promise<boolean>}
  */
 async function exists(file) {
@@ -220,7 +220,7 @@ async function exists(file) {
 
 /**
  * Resolve config files by traversing connector definitions.
- * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform }} [opts]
+ * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform }} [opts] - Optional overrides for discovery context.
  * @returns {Promise<Array<{ path: string, parse: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, source: { connector: string, scope: 'project' | 'home' } }>>}
  */
 export async function locate(opts = {}) {
@@ -245,7 +245,8 @@ export async function locate(opts = {}) {
 
 /**
  * Load MCP server definitions from disk.
- * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform, documents?: Array<{ path: string, data: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }> }} [opts]
+ * @param {Record<string, unknown> | undefined} document - Optional inline configuration object.
+ * @param {{ start?: string, homeDir?: string, env?: NodeJS.ProcessEnv, platform?: NodeJS.Platform, documents?: Array<{ path: string, data: { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> } }>, connector?: string }} [opts] - Optional discovery overrides and connector metadata.
  * @returns {Promise<Config>}
  */
 export async function load(document, opts = {}) {
@@ -270,7 +271,7 @@ export async function load(document, opts = {}) {
 
 /**
  * Parse an inline configuration document using the standard MCP schema.
- * @param {Record<string, unknown>} doc
+ * @param {Record<string, unknown>} doc - Inline config object to validate and normalize.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
  */
 function parseInlineDocument(doc) {

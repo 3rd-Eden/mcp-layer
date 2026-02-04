@@ -15,9 +15,10 @@ import { registerSummaries } from './summaries.js';
 
 /**
  * Register all server tools.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ references: Array<{ uri: string, name: string, description: string, mimeType: string }> }} context
- * @param {{ hasCapability: (capability: 'sampling' | 'elicitation' | 'roots') => boolean }} capabilities
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register tools on.
+ * @param {{ references: Array<{ uri: string, name: string, description: string, mimeType: string }> }} context - Shared reference data for tools.
+ * @param {{ hasCapability: (capability: 'sampling' | 'elicitation' | 'roots') => boolean }} capabilities - Capability checker for tool behavior.
+ * @param {{ notifyResourceUpdated: (uri: string) => Promise<void> }} notifier - Notifier for resource update events.
  */
 export function registerTools(server, context, capabilities, notifier) {
   const echoHandle = registerEcho(server);

@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Register the summaries tool that delegates to sampling/createMessage.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ hasCapability: (capability: 'sampling') => boolean }} capabilities
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ hasCapability: (capability: 'sampling') => boolean }} capabilities - Capability checker for sampling support.
  */
 export function registerSummaries(server, capabilities) {
   const inputSchema = {
@@ -13,7 +13,7 @@ export function registerSummaries(server, capabilities) {
 
   /**
    * Request a summary via sampling/createMessage when supported.
-   * @param {{ text: string, maxTokens: number }} args
+   * @param {{ text: string, maxTokens: number }} args - Summary request inputs.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function summaryTool(args) {

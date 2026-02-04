@@ -24,7 +24,7 @@ async function tempdir() {
 
 /**
  * Materialise a config file derived from the base fixture.
- * @param {string} dir
+ * @param {string} dir - Temporary directory to receive the config file.
  * @returns {Promise<string>}
  */
 async function copyconfig(dir) {
@@ -35,7 +35,7 @@ async function copyconfig(dir) {
 
 /**
  * Apply runtime command details to the copied config.
- * @param {string} file
+ * @param {string} file - Path to the config file to update.
  * @returns {Promise<void>}
  */
 async function hydrateconfig(file) {

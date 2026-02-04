@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Register the booking tool that triggers elicitation workflows.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ hasCapability: (capability: 'elicitation') => boolean }} capabilities
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ hasCapability: (capability: 'elicitation') => boolean }} capabilities - Capability checker for elicitation support.
  */
 export function registerBooking(server, capabilities) {
   const inputSchema = {
@@ -14,7 +14,7 @@ export function registerBooking(server, capabilities) {
 
   /**
    * Demonstrate elicitation by asking for alternate booking dates.
-   * @param {{ restaurant: string, date: string, guests: number }} args
+   * @param {{ restaurant: string, date: string, guests: number }} args - Booking request inputs.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function bookingTool(args) {

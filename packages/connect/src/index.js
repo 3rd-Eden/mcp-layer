@@ -13,8 +13,8 @@ const base = {
 
 /**
  * Select a server entry from a config source so connect can treat Config wrappers and Maps identically.
- * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src
- * @param {string} name
+ * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src - Config source map or map-like wrapper.
+ * @param {string} name - Server name to retrieve.
  * @returns {{ name: string, source: string, config: Record<string, unknown> } | undefined}
  */
 export function select(src, name) {
@@ -29,8 +29,8 @@ export function select(src, name) {
 
 /**
  * Derive transport parameters from a server entry so the SDK spawns processes with the intended cwd and env.
- * @param {{ name: string, source: string, config: Record<string, unknown> }} item
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit' }} [opts]
+ * @param {{ name: string, source: string, config: Record<string, unknown> }} item - Server entry pulled from config.
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit' }} [opts] - Transport overrides for cwd/env/stderr.
  * @returns {{ command: string, args?: string[], cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit' }}
  */
 export function setup(item, opts = {}) {
@@ -61,9 +61,9 @@ export { Session };
 
 /**
  * Connect to a configured MCP server using the official SDK.
- * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src
- * @param {string} name
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string } }} [opts]
+ * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src - Config source map or map-like wrapper.
+ * @param {string} name - Server name to connect to.
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string } }} [opts] - Transport overrides and client metadata.
  * @returns {Promise<Session>}
  */
 export async function connect(src, name, opts = {}) {

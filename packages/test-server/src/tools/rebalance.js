@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Register the rebalance tool that toggles core tool registrations to exercise debounced notifications.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ echo: ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>, add: ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']> }} handles
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ echo: ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>, add: ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']> }} handles - Tool handles to enable/disable.
  */
 export function registerRebalance(server, handles) {
   const inputSchema = {
@@ -12,7 +12,7 @@ export function registerRebalance(server, handles) {
 
   /**
    * Toggle core tools repeatedly to demonstrate notification debouncing.
-   * @param {{ cycles: number }} args
+   * @param {{ cycles: number }} args - Number of enable/disable cycles to run.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function rebalanceTool(args) {

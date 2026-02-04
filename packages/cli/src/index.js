@@ -11,11 +11,11 @@ import { extract } from '@mcp-layer/schema';
 
 /**
  * Build metadata for help output.
- * @param {{ name: string, version: string, description: string }} base
- * @param {Record<string, unknown> | undefined} info
- * @param {string | undefined} serverName
- * @param {string | undefined} banner
- * @param {string | undefined} instructions
+ * @param {{ name: string, version: string, description: string }} base - Base CLI metadata.
+ * @param {Record<string, unknown> | undefined} info - Optional server-provided info payload.
+ * @param {string | undefined} serverName - Server name resolved from config.
+ * @param {string | undefined} banner - Server banner text captured from stderr.
+ * @param {string | undefined} instructions - Server-provided usage instructions.
  * @returns {{ name: string, version: string, description: string }}
  */
 function servermeta(base, info, serverName, banner, instructions) {
@@ -43,8 +43,8 @@ function servermeta(base, info, serverName, banner, instructions) {
 
 /**
  * Merge banner and instructions into a single help block.
- * @param {string | undefined} banner
- * @param {string | undefined} instructions
+ * @param {string | undefined} banner - Banner text captured from stderr.
+ * @param {string | undefined} instructions - Server-provided help instructions.
  * @returns {string}
  */
 function metadetail(banner, instructions) {
@@ -63,7 +63,7 @@ function metadetail(banner, instructions) {
 
 /**
  * Capture stderr output from a transport to reorder banners in help output.
- * @param {{ stderr?: NodeJS.ReadableStream | null }} transport
+ * @param {{ stderr?: NodeJS.ReadableStream | null }} transport - Transport exposing a stderr stream.
  * @returns {{ text: () => string, stop: () => void }}
  */
 function capturestderr(transport) {
@@ -74,7 +74,7 @@ function capturestderr(transport) {
   const chunks = [];
   /**
    * Collect stderr chunks.
-   * @param {Buffer} chunk
+   * @param {Buffer} chunk - Buffer chunk read from stderr.
    * @returns {void}
    */
   function onData(chunk) {
@@ -93,8 +93,8 @@ function capturestderr(transport) {
 
 /**
  * Build a list of items by type.
- * @param {Array<Record<string, unknown>>} items
- * @param {string} type
+ * @param {Array<Record<string, unknown>>} items - Schema items to filter.
+ * @param {string} type - Target item type to include.
  * @returns {Array<Record<string, unknown>>}
  */
 function listbytype(items, type) {
@@ -109,11 +109,11 @@ function listbytype(items, type) {
 
 /**
  * Render a list table or JSON.
- * @param {Array<Record<string, unknown>>} items
- * @param {string} type
- * @param {string | undefined} format
- * @param {string[]} headers
- * @param {(item: Record<string, unknown>) => string[]} maprow
+ * @param {Array<Record<string, unknown>>} items - Schema items to list.
+ * @param {string} type - Item type to render.
+ * @param {string | undefined} format - Optional output format override.
+ * @param {string[]} headers - Table header labels.
+ * @param {(item: Record<string, unknown>) => string[]} maprow - Row mapper for table output.
  * @returns {boolean}
  */
 function listitems(items, type, format, headers, maprow) {
@@ -132,9 +132,9 @@ function listitems(items, type, format, headers, maprow) {
 
 /**
  * Find a named item in the schema.
- * @param {Array<Record<string, unknown>>} items
- * @param {string} type
- * @param {string | null} target
+ * @param {Array<Record<string, unknown>>} items - Schema items to search.
+ * @param {string} type - Item type to match.
+ * @param {string | null} target - Target name or URI.
  * @returns {Record<string, unknown> | undefined}
  */
 function finditem(items, type, target) {
@@ -161,8 +161,8 @@ function finditem(items, type, target) {
 
 /**
  * Build static help configuration.
- * @param {string} cliName
- * @param {Array<{ options: { name: string, description: string } }>} custom
+ * @param {string} cliName - CLI command name.
+ * @param {Array<{ options: { name: string, description: string } }>} custom - Custom command registrations.
  * @returns {{ commands: Array<{ name: string, description: string }>, flags: Record<string, string>, examples: string[] }}
  */
 function statichelp(cliName, custom) {
@@ -206,7 +206,7 @@ function statichelp(cliName, custom) {
 
 /**
  * Build custom command entries for main help output.
- * @param {Array<{ options: { name: string, description: string } }>} custom
+ * @param {Array<{ options: { name: string, description: string } }>} custom - Custom command registrations.
  * @returns {Array<{ name: string, description: string }>}
  */
 function customcommands(custom) {
@@ -219,8 +219,8 @@ function customcommands(custom) {
 
 /**
  * Find a custom command by name.
- * @param {Array<{ options: { name: string }, handler: (argv: Record<string, unknown>) => Promise<void> }>} custom
- * @param {string | undefined} target
+ * @param {Array<{ options: { name: string }, handler: (argv: Record<string, unknown>) => Promise<void> }>} custom - Custom command registrations.
+ * @param {string | undefined} target - Target command name.
  * @returns {{ options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void> } | undefined}
  */
 function findcustom(custom, target) {
@@ -237,7 +237,7 @@ function findcustom(custom, target) {
 
 /**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean }} [opts]
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean }} [opts] - CLI defaults override.
  * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
@@ -247,8 +247,8 @@ export function cli(opts = {}) {
   return {
     /**
      * Register a custom command.
-     * @param {{ name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }} options
-     * @param {(argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>} handler
+     * @param {{ name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }} options - Custom command metadata.
+     * @param {(argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>} handler - Command handler invoked with parsed argv.
      * @returns {any}
      */
     command: function command(options, handler) {
@@ -258,7 +258,7 @@ export function cli(opts = {}) {
 
     /**
      * Execute the CLI.
-     * @param {string[]} [args]
+     * @param {string[]} [args] - Optional argv override (defaults to process.argv slice).
      * @returns {Promise<void>}
      */
     render: async function render(args) {

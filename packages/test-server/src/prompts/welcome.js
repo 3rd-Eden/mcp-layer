@@ -6,7 +6,7 @@ const tones = ['casual', 'formal', 'cheerful'];
 
 /**
  * Register the welcome prompt with completable arguments.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the prompt on.
  */
 export function registerWelcomePrompt(server) {
   const argsSchema = {
@@ -27,7 +27,7 @@ export function registerWelcomePrompt(server) {
 
   /**
    * Produce a greeting message tailored to the provided tone.
-   * @param {{ name: string, tone: 'casual' | 'formal' | 'cheerful' }} args
+   * @param {{ name: string, tone: 'casual' | 'formal' | 'cheerful' }} args - Prompt arguments provided by the caller.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').GetPromptResult>}
    */
   async function welcomePrompt(args) {

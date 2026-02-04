@@ -1,6 +1,6 @@
 /**
  * Determine whether the provided value represents a usable MCP server definition.
- * @param {unknown} value
+ * @param {unknown} value - Value to evaluate as a server config object.
  * @returns {value is Record<string, unknown>}
  */
 function isServerConfig(value) {
@@ -9,7 +9,7 @@ function isServerConfig(value) {
 
 /**
  * Check that a server definition exposes a connection primitive.
- * @param {Record<string, unknown>} config
+ * @param {Record<string, unknown>} config - Server config object to inspect.
  * @returns {boolean}
  */
 function hasConnection(config) {
@@ -23,8 +23,8 @@ function hasConnection(config) {
 
 /**
  * Extract server entries from the standard MCP schema.
- * @param {Record<string, unknown>} doc
- * @param {string} file
+ * @param {Record<string, unknown>} doc - Parsed document to extract servers from.
+ * @param {string} file - File path used for error reporting.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
  */
 export function extractServers(doc, file) {
@@ -35,8 +35,8 @@ export function extractServers(doc, file) {
   const servers = [];
 
   /**
-   * @param {Record<string, unknown>} node
-   * @param {boolean} strict
+   * @param {Record<string, unknown>} node - Node containing named server configs.
+   * @param {boolean} strict - Whether to enforce connection fields on every entry.
    */
   function consume(node, strict) {
     for (const [name, value] of Object.entries(node)) {
@@ -79,8 +79,8 @@ export function extractServers(doc, file) {
 
 /**
  * Parse a JSON or YAML configuration document into normalised server entries.
- * @param {string} raw
- * @param {string} file
+ * @param {string} raw - Raw document contents.
+ * @param {string} file - File path used for error reporting.
  * @returns {{ servers: Array<{ name: string, config: Record<string, unknown> }>, metadata: Record<string, unknown> }}
  */
 export function parseDocument(raw, file) {
@@ -103,9 +103,9 @@ export function parseDocument(raw, file) {
 
 /**
  * Serialize server definitions into JSON or YAML while preserving metadata.
- * @param {string} file
- * @param {{ name: string, config: Record<string, unknown> } | null} entry
- * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> } & Record<string, unknown>} [metadata]
+ * @param {string} file - Destination config file path.
+ * @param {{ name: string, config: Record<string, unknown> } | null} entry - Server entry to upsert or null to overwrite with metadata.servers.
+ * @param {{ servers?: Array<{ name: string, config: Record<string, unknown> }> } & Record<string, unknown>} [metadata] - Optional metadata to merge into the file.
  * @returns {Promise<void>}
  */
 export async function writeDocument(file, entry, metadata = {}) {

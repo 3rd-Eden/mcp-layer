@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Register the progress tool that emits notifications/progress updates.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  */
 export function registerProgress(server) {
   const inputSchema = {
@@ -12,8 +12,8 @@ export function registerProgress(server) {
 
   /**
    * Wait between steps and emit progress notifications when requested.
-   * @param {{ steps: number, delayMs: number }} args
-   * @param {{ _meta?: { progressToken?: string | number }, signal: AbortSignal, sendNotification: (notification: any) => Promise<void> }} extra
+   * @param {{ steps: number, delayMs: number }} args - Progress configuration inputs.
+   * @param {{ _meta?: { progressToken?: string | number }, signal: AbortSignal, sendNotification: (notification: any) => Promise<void> }} extra - Tool execution context and notification helper.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function progressTool(args, extra) {

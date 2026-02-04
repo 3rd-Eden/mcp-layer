@@ -19,8 +19,8 @@ function setupmarkdown() {
 
 /**
  * Determine if a text block looks like Markdown.
- * @param {string} text
- * @param {string | undefined} mimeType
+ * @param {string} text - Text content to inspect for Markdown-like syntax.
+ * @param {string | undefined} mimeType - Optional explicit MIME type hint.
  * @returns {boolean}
  */
 function ismarkdown(text, mimeType) {
@@ -37,9 +37,9 @@ function ismarkdown(text, mimeType) {
 
 /**
  * Render a text block with optional Markdown formatting.
- * @param {string} text
- * @param {{ markdown: boolean, tty: boolean, ansi: boolean }} options
- * @param {string | undefined} mimeType
+ * @param {string} text - Text content to render.
+ * @param {{ markdown: boolean, tty: boolean, ansi: boolean }} options - Output flags controlling markdown/ANSI behavior.
+ * @param {string | undefined} mimeType - Optional MIME type for markdown detection.
  * @returns {string[]}
  */
 function rendertext(text, options, mimeType) {
@@ -54,7 +54,7 @@ function rendertext(text, options, mimeType) {
 
 /**
  * Decode base64 data into a buffer.
- * @param {string} data
+ * @param {string} data - Base64-encoded payload.
  * @returns {Buffer}
  */
 function decode(data) {
@@ -63,7 +63,7 @@ function decode(data) {
 
 /**
  * Format a byte size for display.
- * @param {number} size
+ * @param {number} size - Byte length to format.
  * @returns {string}
  */
 function bytes(size) {
@@ -80,7 +80,7 @@ function bytes(size) {
 
 /**
  * Strip ANSI escape sequences from text.
- * @param {string} text
+ * @param {string} text - Text that may contain ANSI sequences.
  * @returns {string}
  */
 function stripansi(text) {
@@ -89,8 +89,8 @@ function stripansi(text) {
 
 /**
  * Sanitize text content unless ANSI is explicitly allowed.
- * @param {string} text
- * @param {{ ansi: boolean }} options
+ * @param {string} text - Text to sanitize for terminal-safe output.
+ * @param {{ ansi: boolean }} options - Output flags controlling ANSI stripping.
  * @returns {string}
  */
 function sanitize(text, options) {
@@ -101,7 +101,7 @@ function sanitize(text, options) {
 }
 /**
  * Check if a content item is an image payload.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Content item from an MCP response.
  * @returns {boolean}
  */
 function isimage(item) {
@@ -110,7 +110,7 @@ function isimage(item) {
 
 /**
  * Check if a content item is an audio payload.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Content item from an MCP response.
  * @returns {boolean}
  */
 function isaudio(item) {
@@ -119,7 +119,7 @@ function isaudio(item) {
 
 /**
  * Check if a content item is a resource link.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Content item from an MCP response.
  * @returns {boolean}
  */
 function islink(item) {
@@ -128,7 +128,7 @@ function islink(item) {
 
 /**
  * Check if a content item is an embedded resource.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Content item from an MCP response.
  * @returns {boolean}
  */
 function isresource(item) {
@@ -137,7 +137,7 @@ function isresource(item) {
 
 /**
  * Check if a resource content entry is binary.
- * @param {Record<string, unknown>} item
+ * @param {Record<string, unknown>} item - Resource content entry with a possible blob field.
  * @returns {boolean}
  */
 function isblob(item) {
@@ -146,8 +146,8 @@ function isblob(item) {
 
 /**
  * Render a resource link entry.
- * @param {Record<string, unknown>} item
- * @param {{ title: (text: string) => string, subtle: (text: string) => string }} color
+ * @param {Record<string, unknown>} item - Resource link payload with name/uri/description metadata.
+ * @param {{ title: (text: string) => string, subtle: (text: string) => string }} color - Color palette helpers.
  * @returns {string[]}
  */
 function renderlink(item, color) {
@@ -172,10 +172,11 @@ function renderlink(item, color) {
 
 /**
  * Render binary content as a textual hint.
- * @param {string} label
- * @param {string | undefined} mimeType
- * @param {number} size
- * @param {{ subtle: (text: string) => string }} color
+ * @param {string} label - Human-readable label for the binary payload.
+ * @param {string | undefined} mimeType - Optional MIME type for display.
+ * @param {number} size - Byte length of the binary payload.
+ * @param {{ subtle: (text: string) => string }} color - Color palette helpers.
+ * @param {boolean} multi - Whether multiple payloads were returned in the response.
  * @returns {string[]}
  */
 function renderbinary(label, mimeType, size, color, multi) {
@@ -186,7 +187,7 @@ function renderbinary(label, mimeType, size, color, multi) {
 
 /**
  * Emit a buffer directly to stdout.
- * @param {Buffer} buffer
+ * @param {Buffer} buffer - Binary data to write to stdout.
  * @returns {void}
  */
 function writebuffer(buffer) {
@@ -195,7 +196,7 @@ function writebuffer(buffer) {
 
 /**
  * Emit a list of lines to stdout.
- * @param {string[]} lines
+ * @param {string[]} lines - Preformatted output lines to write.
  * @returns {void}
  */
 function writelines(lines) {
@@ -207,7 +208,7 @@ function writelines(lines) {
 
 /**
  * Extract a single binary payload for raw output.
- * @param {Array<Record<string, unknown>>} items
+ * @param {Array<Record<string, unknown>>} items - MCP content items to inspect.
  * @returns {Buffer | null}
  */
 function singlebinary(items) {
@@ -229,7 +230,7 @@ function singlebinary(items) {
 
 /**
  * Extract a single binary resource content entry.
- * @param {Array<Record<string, unknown>>} items
+ * @param {Array<Record<string, unknown>>} items - Resource content entries to inspect.
  * @returns {Buffer | null}
  */
 function singleblob(items) {
@@ -245,7 +246,7 @@ function singleblob(items) {
 
 /**
  * Extract a single text resource content entry.
- * @param {Array<Record<string, unknown>>} items
+ * @param {Array<Record<string, unknown>>} items - Resource content entries to inspect.
  * @returns {string | null}
  */
 function singleresource(items) {
@@ -261,8 +262,8 @@ function singleresource(items) {
 
 /**
  * Format content array into CLI-friendly lines.
- * @param {Array<Record<string, unknown>>} items
- * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {Array<Record<string, unknown>>} items - MCP content array to render.
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options - Output flags and theme settings.
  * @returns {Promise<string[]>}
  */
 async function rendercontent(items, options) {
@@ -346,8 +347,8 @@ async function rendercontent(items, options) {
 
 /**
  * Format a readResource result into CLI-friendly lines.
- * @param {Array<Record<string, unknown>>} items
- * @param {{ markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {Array<Record<string, unknown>>} items - Resource content entries returned by readResource.
+ * @param {{ markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options - Output flags and theme settings.
  * @returns {Promise<string[]>}
  */
 async function renderresources(items, options) {
@@ -380,8 +381,8 @@ async function renderresources(items, options) {
 
 /**
  * Format tool/prompt results and write to stdout.
- * @param {Record<string, unknown>} result
- * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {Record<string, unknown>} result - Tool or prompt result payload.
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options - Output flags and theme settings.
  * @returns {Promise<void>}
  */
 export async function outputresult(result, options) {
@@ -410,8 +411,8 @@ export async function outputresult(result, options) {
 
 /**
  * Format readResource results and write to stdout.
- * @param {Record<string, unknown>} result
- * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
+ * @param {Record<string, unknown>} result - readResource payload.
+ * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options - Output flags and theme settings.
  * @returns {Promise<void>}
  */
 export async function outputresource(result, options) {

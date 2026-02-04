@@ -12,7 +12,7 @@ const base = {
 
 /**
  * Resolve the underlying SDK server instance from a wrapper.
- * @param {unknown} instance
+ * @param {unknown} instance - Server instance or wrapper object that exposes a `server` field.
  * @returns {import('@modelcontextprotocol/sdk/server/index.js').Server}
  */
 function resolveServer(instance) {
@@ -27,7 +27,7 @@ function resolveServer(instance) {
 
 /**
  * Determine whether a server is already connected to a transport.
- * @param {import('@modelcontextprotocol/sdk/server/index.js').Server} server
+ * @param {import('@modelcontextprotocol/sdk/server/index.js').Server} server - SDK server to inspect for an attached transport.
  * @returns {boolean}
  */
 function isConnected(server) {
@@ -36,9 +36,9 @@ function isConnected(server) {
 
 /**
  * Attach to an in-process MCP server instance and return a Session.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer | import('@modelcontextprotocol/sdk/server/index.js').Server} instance
- * @param {string} name
- * @param {{ info?: { name: string, version: string }, source?: string }} [opts]
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer | import('@modelcontextprotocol/sdk/server/index.js').Server} instance - MCP server instance or wrapper to attach to.
+ * @param {string} name - Human-readable session name used in the Session metadata.
+ * @param {{ info?: { name: string, version: string }, source?: string }} [opts] - Optional client metadata and source label overrides.
  * @returns {Promise<Session>}
  */
 export async function attach(instance, name, opts = {}) {

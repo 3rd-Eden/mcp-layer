@@ -5,7 +5,7 @@ const WAV_BASE64 = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=
 
 /**
  * Register the present tool to emit mixed content types.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  * @returns {ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>}
  */
 export function registerPresent(server) {
@@ -15,7 +15,7 @@ export function registerPresent(server) {
 
   /**
    * Emit markdown, image, audio, and resource link content items.
-   * @param {{ title: string }} args
+   * @param {{ title: string }} args - Presentation title supplied by the caller.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function presentTool(args) {

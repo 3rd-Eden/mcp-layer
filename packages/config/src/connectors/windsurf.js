@@ -11,7 +11,7 @@ function project() {
 
 /**
  * Resolve user-level Windsurf configuration file.
- * @param {{ home?: string }} ctx
+ * @param {{ home?: string }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {

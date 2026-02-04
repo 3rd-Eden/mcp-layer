@@ -25,7 +25,7 @@ async function tempdir() {
 
 /**
  * Copy the base config fixture into a temp directory.
- * @param {string} dir
+ * @param {string} dir - Temporary directory to receive the config file.
  * @returns {Promise<string>}
  */
 async function copyconfig(dir) {
@@ -36,7 +36,7 @@ async function copyconfig(dir) {
 
 /**
  * Inject runtime command details into the config file.
- * @param {string} file
+ * @param {string} file - Path to the config file to update.
  * @returns {Promise<void>}
  */
 async function hydrateconfig(file) {
@@ -49,8 +49,8 @@ async function hydrateconfig(file) {
 
 /**
  * Run the CLI and capture stdout/stderr.
- * @param {string[]} args
- * @param {{ cwd?: string }} [options]
+ * @param {string[]} args - CLI arguments to pass to the test process.
+ * @param {{ cwd?: string }} [options] - Spawn options for working directory.
  * @returns {Promise<{ stdout: string, stderr: string }>}
  */
 async function runcli(args, options = {}) {
@@ -65,7 +65,7 @@ async function runcli(args, options = {}) {
 
     /**
      * Collect stdout chunks.
-     * @param {Buffer} chunk
+     * @param {Buffer} chunk - Buffer chunk read from stdout.
      * @returns {void}
      */
     function onStdout(chunk) {
@@ -74,7 +74,7 @@ async function runcli(args, options = {}) {
 
     /**
      * Collect stderr chunks.
-     * @param {Buffer} chunk
+     * @param {Buffer} chunk - Buffer chunk read from stderr.
      * @returns {void}
      */
     function onStderr(chunk) {
@@ -83,7 +83,7 @@ async function runcli(args, options = {}) {
 
     /**
      * Handle child process errors.
-     * @param {Error} error
+     * @param {Error} error - Spawn error to surface in the test.
      * @returns {void}
      */
     function onError(error) {
@@ -92,7 +92,7 @@ async function runcli(args, options = {}) {
 
     /**
      * Handle child process exit.
-     * @param {number | null} code
+     * @param {number | null} code - Exit code from the child process.
      * @returns {void}
      */
     function onClose(code) {
@@ -112,8 +112,8 @@ async function runcli(args, options = {}) {
 
 /**
  * Run the custom CLI fixture and capture stdout/stderr.
- * @param {string[]} args
- * @param {{ cwd?: string }} [options]
+ * @param {string[]} args - CLI arguments to pass to the custom fixture.
+ * @param {{ cwd?: string }} [options] - Spawn options for working directory.
  * @returns {Promise<{ stdout: string, stderr: string }>}
  */
 async function runcustom(args, options = {}) {
@@ -128,7 +128,7 @@ async function runcustom(args, options = {}) {
 
     /**
      * Collect stdout chunks.
-     * @param {Buffer} chunk
+     * @param {Buffer} chunk - Buffer chunk read from stdout.
      * @returns {void}
      */
     function onStdout(chunk) {
@@ -137,7 +137,7 @@ async function runcustom(args, options = {}) {
 
     /**
      * Collect stderr chunks.
-     * @param {Buffer} chunk
+     * @param {Buffer} chunk - Buffer chunk read from stderr.
      * @returns {void}
      */
     function onStderr(chunk) {
@@ -146,7 +146,7 @@ async function runcustom(args, options = {}) {
 
     /**
      * Handle child process errors.
-     * @param {Error} error
+     * @param {Error} error - Spawn error to surface in the test.
      * @returns {void}
      */
     function onError(error) {
@@ -155,7 +155,7 @@ async function runcustom(args, options = {}) {
 
     /**
      * Handle child process exit.
-     * @param {number | null} code
+     * @param {number | null} code - Exit code from the child process.
      * @returns {void}
      */
     function onClose(code) {
@@ -186,7 +186,7 @@ async function setupconfig() {
 
 /**
  * Parse JSON output from the CLI.
- * @param {string} output
+ * @param {string} output - Raw CLI stdout to parse.
  * @returns {unknown}
  */
 function parsejson(output) {

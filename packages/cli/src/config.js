@@ -28,7 +28,7 @@ export function defaults() {
 
 /**
  * Load configuration from discovery or explicit file.
- * @param {string | undefined} file
+ * @param {string | undefined} file - Optional config path or discovery anchor.
  * @returns {Promise<import('@mcp-layer/config').Config>}
  */
 export async function configload(file) {
@@ -50,7 +50,7 @@ export async function configload(file) {
 
 /**
  * Load configuration and select a server.
- * @param {{ server?: string, config?: string }} opts
+ * @param {{ server?: string, config?: string }} opts - CLI selection options for server name and config path.
  * @returns {Promise<{ config: import('@mcp-layer/config').Config, name: string }>}
  */
 export async function select(opts) {

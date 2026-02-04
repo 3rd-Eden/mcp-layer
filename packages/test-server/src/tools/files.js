@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Register the files tool that emits ResourceLinks referencing shared assets.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ references: Array<{ uri: string, name: string, description: string, mimeType: string }> }} context
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ references: Array<{ uri: string, name: string, description: string, mimeType: string }> }} context - Reference data backing the responses.
  */
 export function registerFiles(server, context) {
   const inputSchema = {
@@ -13,7 +13,7 @@ export function registerFiles(server, context) {
 
   /**
    * Emit ResourceLinks referencing manual and note resources.
-   * @param {{ filter: string, limit: number }} args
+   * @param {{ filter: string, limit: number }} args - Filtering and limit inputs for the listing.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function filesTool(args) {

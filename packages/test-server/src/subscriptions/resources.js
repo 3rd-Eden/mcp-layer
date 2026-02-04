@@ -2,8 +2,8 @@ import { ErrorCode, McpError, SubscribeRequestSchema, UnsubscribeRequestSchema }
 
 /**
  * Configure basic resource subscriptions on the underlying server transport.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ isSubscribable: (uri: string) => boolean }} options
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register subscription handlers on.
+ * @param {{ isSubscribable: (uri: string) => boolean }} options - Subscription filters for allowed URIs.
  * @returns {{ notifyResourceUpdated: (uri: string) => Promise<void> }}
  */
 export function registerResourceSubscriptions(server, options) {
@@ -50,7 +50,7 @@ export function registerResourceSubscriptions(server, options) {
 
   /**
    * Notify subscribed clients that a resource has been updated.
-   * @param {string} uri
+   * @param {string} uri - Resource URI that changed.
    * @returns {Promise<void>}
    */
   async function notifyResourceUpdated(uri) {

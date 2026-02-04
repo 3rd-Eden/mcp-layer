@@ -17,6 +17,12 @@
 - Keep top-level exports minimal and descriptive. Prefer named exports over defaults unless interoperability demands otherwise.
 - Document complex control flow with brief inline comments; avoid narrating obvious logic.
 
+## Documentation Standards
+- Every JSDoc block must fully describe parameters and return values. Editor hints are treated as part of the developer experience, so keep them precise and complete.
+- Always document your work in the README of the project.
+- Documentation is the most critical deliverable. It must be self-contained, cohesive, and detailed enough that a developer can implement the package in a different project without unanswered questions. If you cannot follow a README and achieve a successful implementation, that is a documentation bug and must be fixed in the relevant README.
+- Use judgement for documentation examples: keep core, high-signal examples inline; move optional or advanced examples into collapsed sections with HTML `<details>`/`<summary>`. Follow GitHub's guidance: [Organizing information with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections).
+
 ## Testing Guidelines
 - Adopt Vitest or Node’s built-in test runner when implementing tests; wire the chosen command to `pnpm test`.
 - Place test files in a local `test` directory within each package (e.g., `packages/connect/test/index.test.js`).
@@ -46,9 +52,6 @@
 - Never write anonymous functions, everything should be named.
 - When developing take a test driven development approach, focusing on the tests and the expected outcome and then working your way back to creating the implementation that matches the desired outcome.
   - Tests should be written using `node:test`
-- Always document your work in the README of the project.
-- Documentation is the most critical deliverable. It must be self-contained, cohesive, and detailed enough that a developer can implement the package in a different project without unanswered questions. If you cannot follow a README and achieve a successful implementation, that is a documentation bug and must be fixed in the relevant README.
 - Allocate effort intentionally: 20% code, 40% documentation, 40% testing. Code can be replaced, but only if documentation (inputs) and validation of outputs (tests) exist.
 - Always exercise real implementations and public APIs in tests; obtain explicit user approval before introducing any mocks or stubs.
 - Do not ask the user to verify things you can verify yourself. If verification requires permissions, request them. Prioritize self-sufficient verification: decide how your changes should be verified and ensure that verification is performed.
-- Use judgement for documentation examples: keep core, high-signal examples inline; move optional or advanced examples into collapsed sections with HTML `<details>`/`<summary>`. Follow GitHub's guidance: [Organizing information with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections).

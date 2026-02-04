@@ -11,7 +11,7 @@ function project() {
 
 /**
  * Discover Claude Desktop configuration files per platform.
- * @param {{ home?: string, platform: NodeJS.Platform }} ctx
+ * @param {{ home?: string, platform: NodeJS.Platform }} ctx - Environment context for path resolution.
  * @returns {string[]}
  */
 function home(ctx) {

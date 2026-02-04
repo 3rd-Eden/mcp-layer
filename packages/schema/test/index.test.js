@@ -27,7 +27,7 @@ async function tempdir() {
 
 /**
  * Materialise a config file derived from the base fixture.
- * @param {string} dir
+ * @param {string} dir - Temporary directory to receive the config file.
  * @returns {Promise<string>}
  */
 async function copyconfig(dir) {
@@ -38,7 +38,7 @@ async function copyconfig(dir) {
 
 /**
  * Apply runtime command details to the copied config.
- * @param {string} file
+ * @param {string} file - Path to the config file to update.
  * @returns {Promise<void>}
  */
 async function hydrateconfig(file) {
@@ -51,9 +51,9 @@ async function hydrateconfig(file) {
 
 /**
  * Find a unified schema entry by type and name.
- * @param {Array<{ type: string, name: string }>} list
- * @param {string} type
- * @param {string} name
+ * @param {Array<{ type: string, name: string }>} list - Normalized item list to search.
+ * @param {string} type - Target item type.
+ * @param {string} name - Target item name.
  * @returns {{ type: string, name: string } | undefined}
  */
 function finditem(list, type, name) {

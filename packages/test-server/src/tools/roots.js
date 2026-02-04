@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * Register the roots tool that calls roots/list on capable clients.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ hasCapability: (capability: 'roots') => boolean }} capabilities
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ hasCapability: (capability: 'roots') => boolean }} capabilities - Capability checker for roots support.
  */
 export function registerRoots(server, capabilities) {
   const inputSchema = {
@@ -12,7 +12,7 @@ export function registerRoots(server, capabilities) {
 
   /**
    * Request roots/list from the client to expose workspace locations.
-   * @param {{ includeMeta: boolean }} args
+   * @param {{ includeMeta: boolean }} args - Whether to include client root metadata.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function rootsTool(args) {

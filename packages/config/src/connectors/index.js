@@ -14,7 +14,7 @@ import { generic } from './generic.js';
 
 /**
  * Generate ancestry list from cwd to root for priority evaluation.
- * @param {string} dir
+ * @param {string} dir - Starting directory for upward traversal.
  * @returns {string[]}
  */
 function ascend(dir) {
@@ -48,7 +48,7 @@ export const CONNECTORS = [
 
 /**
  * Locate a connector definition by name.
- * @param {string} name
+ * @param {string} name - Connector name to locate.
  * @returns {{ name: string, project: (dir: string) => string[], home: (ctx: { home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }) => string[], parse: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, write: (file: string, entry: { name: string, config: Record<string, unknown> } | null, metadata?: Record<string, unknown>) => Promise<void> } | undefined}
  */
 export function findConnector(name) {
@@ -59,7 +59,7 @@ export function findConnector(name) {
 
 /**
  * Resolve ordered candidate files across all connectors.
- * @param {{ cwd: string, home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx
+ * @param {{ cwd: string, home?: string, env: NodeJS.ProcessEnv, platform: NodeJS.Platform }} ctx - Environment context for discovery.
  * @returns {Array<{ path: string, parse: (raw: string, file: string) => { servers: Array<{ name: string, config: Record<string, unknown> }>, metadata?: Record<string, unknown> }, source: { connector: string, scope: 'project' | 'home' } }>}
  */
 export function collectCandidates(ctx) {

@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 /**
  * Register a tool that mutates note resources and emits update notifications.
- * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server
- * @param {{ notes: Map<string, Record<string, string>> }} context
- * @param {{ notifyResourceUpdated: (uri: string) => Promise<void> }} notifier
+ * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
+ * @param {{ notes: Map<string, Record<string, string>> }} context - Notes data store to mutate.
+ * @param {{ notifyResourceUpdated: (uri: string) => Promise<void> }} notifier - Resource update notifier.
  */
 export function registerNoteUpdate(server, context, notifier) {
   const inputSchema = {
@@ -15,7 +15,7 @@ export function registerNoteUpdate(server, context, notifier) {
 
   /**
    * Update the referenced note and broadcast notifications/resources/updated.
-   * @param {{ topic: string, detail: string, text: string }} args
+   * @param {{ topic: string, detail: string, text: string }} args - Update inputs for the note entry.
    * @returns {Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult>}
    */
   async function updateNoteTool(args) {
