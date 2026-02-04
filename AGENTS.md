@@ -50,3 +50,4 @@
 - Allocate effort intentionally: 20% code, 40% documentation, 40% testing. Code can be replaced, but only if documentation (inputs) and validation of outputs (tests) exist.
 - Always exercise real implementations and public APIs in tests; obtain explicit user approval before introducing any mocks or stubs.
 - Do not ask the user to verify things you can verify yourself. If verification requires permissions, request them. Prioritize self-sufficient verification: decide how your changes should be verified and ensure that verification is performed.
+- Use judgement for documentation examples: keep core, high-signal examples inline; move optional or advanced examples into collapsed sections with HTML `<details>`/`<summary>`. Follow GitHub's guidance: [Organizing information with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections).

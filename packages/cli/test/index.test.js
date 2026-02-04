@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
 const cli = fileURLToPath(new URL('../bin/cli.js', import.meta.url));
+const custom = fileURLToPath(new URL('./fixtures/custom-cli.mjs', import.meta.url));
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
 const entry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
@@ -55,6 +56,69 @@ async function hydrateconfig(file) {
 async function runcli(args, options = {}) {
   return new Promise(function executor(resolve, reject) {
     const child = spawn(process.execPath, [cli, ...args], {
+      cwd: options.cwd,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    /**
+     * Collect stdout chunks.
+     * @param {Buffer} chunk
+     * @returns {void}
+     */
+    function onStdout(chunk) {
+      stdout += chunk.toString();
+    }
+
+    /**
+     * Collect stderr chunks.
+     * @param {Buffer} chunk
+     * @returns {void}
+     */
+    function onStderr(chunk) {
+      stderr += chunk.toString();
+    }
+
+    /**
+     * Handle child process errors.
+     * @param {Error} error
+     * @returns {void}
+     */
+    function onError(error) {
+      reject(error);
+    }
+
+    /**
+     * Handle child process exit.
+     * @param {number | null} code
+     * @returns {void}
+     */
+    function onClose(code) {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+        return;
+      }
+      reject(new Error(stderr || `CLI exited with ${code}`));
+    }
+
+    child.stdout.on('data', onStdout);
+    child.stderr.on('data', onStderr);
+    child.on('error', onError);
+    child.on('close', onClose);
+  });
+}
+
+/**
+ * Run the custom CLI fixture and capture stdout/stderr.
+ * @param {string[]} args
+ * @param {{ cwd?: string }} [options]
+ * @returns {Promise<{ stdout: string, stderr: string }>}
+ */
+async function runcustom(args, options = {}) {
+  return new Promise(function executor(resolve, reject) {
+    const child = spawn(process.execPath, [custom, ...args], {
       cwd: options.cwd,
       env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
     });
@@ -307,6 +371,38 @@ function helpSuite() {
 }
 
 /**
+ * Validate CLI name usage in help output.
+ * @returns {Promise<void>}
+ */
+async function customNameCase() {
+  const result = await runcustom(['--help']);
+
+  assert.equal(result.stdout.includes('mcp-demo <command>'), true);
+}
+
+/**
+ * Validate custom command help output.
+ * @returns {Promise<void>}
+ */
+async function customHelpCase() {
+  const result = await runcustom(['mcp', '--help']);
+
+  assert.equal(result.stdout.includes('mcp'), true);
+  assert.equal(result.stdout.includes('--spec'), true);
+  assert.equal(result.stdout.includes('Examples'), true);
+  assert.equal(result.stdout.includes('mcp-demo mcp'), true);
+}
+
+/**
+ * Run custom command help suite.
+ * @returns {void}
+ */
+function customHelpSuite() {
+  it('uses the CLI name in help output', customNameCase);
+  it('renders custom command help output', customHelpCase);
+}
+
+/**
  * Validate per-command help output for tools.
  * @returns {Promise<void>}
  */
@@ -365,6 +461,26 @@ function toolsPresentSuite() {
 }
 
 /**
+ * Validate raw resource output returns plain content.
+ * @returns {Promise<void>}
+ */
+async function resourceRawCase() {
+  const setup = await setupconfig();
+  const result = await runcli(['resources', 'resource://manual', '--config', setup.file, '--raw']);
+
+  assert.equal(result.stdout.includes('# MCP Test Server Manual'), true);
+  assert.equal(result.stdout.trim().startsWith('{'), false);
+}
+
+/**
+ * Run resource output suite.
+ * @returns {void}
+ */
+function resourceSuite() {
+  it('emits raw text for single resource payloads', resourceRawCase);
+}
+
+/**
  * Run the CLI test suite.
  * @returns {void}
  */
@@ -378,6 +494,8 @@ function cliSuite() {
   describe('help output', helpSuite);
   describe('tool help', toolHelpSuite);
   describe('tools formatting', toolsPresentSuite);
+  describe('custom help', customHelpSuite);
+  describe('resource raw output', resourceSuite);
 }
 
 describe('cli', cliSuite);

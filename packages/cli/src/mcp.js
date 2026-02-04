@@ -25,16 +25,29 @@ export function spinner(enabled, text) {
 }
 
 /**
+ * Build spinner text for schema loading.
+ * @param {string | undefined} name
+ * @returns {string}
+ */
+export function spinnertext(name) {
+  if (name) {
+    return `Loading ${name} server data`;
+  }
+  return 'Loading server data';
+}
+
+/**
  * Extract schema items for a server.
  * @param {{ server?: string, config?: string, spinner: boolean }} opts
  * @returns {Promise<{ session: import('@mcp-layer/session').Session, output: { items: Array<Record<string, unknown>>, server: Record<string, unknown> } }>} 
  */
 export async function catalog(opts) {
-  const gate = spinner(opts.spinner, 'Loading MCP schema');
-  gate.start();
+  let gate = null;
   let session;
   try {
     const info = await select(opts);
+    gate = spinner(opts.spinner, spinnertext(info.name));
+    gate.start();
     session = await connect(info.config, info.name);
     const output = await extract(session);
     return { session, output };
@@ -44,6 +57,8 @@ export async function catalog(opts) {
     }
     throw error;
   } finally {
-    gate.stop();
+    if (gate) {
+      gate.stop();
+    }
   }
 }

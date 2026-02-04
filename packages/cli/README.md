@@ -36,10 +36,14 @@ mcp-layer templates <template>
 
 Shorthand form:
 
+<details>
+<summary>Example</summary>
+
 ```sh
 mcp-layer tools:echo --text "hello"
 mcp-layer prompts:kickoff --json '{"topic":"launch"}'
 ```
+</details>
 
 ## Input handling
 
@@ -59,9 +63,13 @@ Array and object inputs support a few additional forms:
 
 If a parameter clashes with a CLI flag (like `--help`), pass tool arguments after `--`:
 
+<details>
+<summary>Example</summary>
+
 ```sh
 mcp-layer tools echo -- --help "not a real help flag"
 ```
+</details>
 
 ## Output formatting
 
@@ -73,12 +81,22 @@ The CLI formats MCP responses for readability by default:
 - Resource links show name, description, and URI.
 - Unsupported content types render as a labeled JSON fallback.
 
-Use `--raw` to emit the raw MCP JSON response (or raw binary bytes when a single binary payload is returned). If multiple content items are present, `--raw` returns JSON. This makes piping to files straightforward:
+Use `--raw` to emit raw MCP payloads (plain text or binary bytes when a single payload is returned). If multiple content items are present, `--raw` returns JSON. This makes piping to files straightforward:
 
 ```sh
 mcp-layer tools <tool> --raw > output.json
 mcp-layer tools <tool> --raw > payload.bin
 ```
+
+For single resource payloads, `--raw` emits the unrendered text content (or binary bytes), which makes it easy to pipe markdown or plain text into a file:
+
+<details>
+<summary>Example</summary>
+
+```sh
+mcp-layer resources resource://manual --raw > manual.md
+```
+</details>
 
 Disable markdown rendering with `--no-markdown`.
 
@@ -86,9 +104,13 @@ Server-provided text is sanitized to strip ANSI escape sequences by default. If 
 
 Example:
 
+<details>
+<summary>Example</summary>
+
 ```sh
 mcp-layer tools <tool> --allow-ansi
 ```
+</details>
 
 ## Color output
 
@@ -104,6 +126,30 @@ mcp-layer prompts kickoff --help
 ```
 
 When a server is selected, help output uses the server name/version and lists all discovered tools, prompts, resources, and templates for that server.
+
+Custom commands registered via `cli().command()` are included in the main help output and have their own `--help` rendering.
+
+Example:
+
+<details>
+<summary>Example</summary>
+
+```js
+import { cli } from '@mcp-layer/cli';
+
+await cli({ name: 'acme-mcp' })
+  .command(
+    {
+      name: 'status',
+      description: 'Show CLI status.'
+    },
+    async function statusCommand(argv) {
+      process.stdout.write(JSON.stringify({ ok: true }, null, 2));
+    }
+  )
+  .render();
+```
+</details>
 
 ## Output formats
 
@@ -124,16 +170,29 @@ Run/read/render commands render formatted output by default. Use `--raw` for JSO
 mcp-layer tools list --server demo
 ```
 
+Control server listing in help output via `showServers`:
+
+- `showServers: true` always renders the Servers section.
+- `showServers: false` always hides the Servers section.
+Default: `true`.
+
 You can also point at a specific config file or directory:
+
+<details>
+<summary>Example</summary>
 
 ```sh
 mcp-layer tools list --config ./mcp.json
 mcp-layer tools list --config ~/configs
 ```
+</details>
 
 ## Embedding and custom commands
 
 You can embed the CLI and add custom commands using the same parser and help renderer.
+
+<details>
+<summary>Example</summary>
 
 ```js
 import { cli } from '@mcp-layer/cli';
@@ -149,9 +208,11 @@ async function main() {
         name: 'status',
         description: 'Report CLI configuration state.'
       },
-      async function statusCommand(argv) {
+      async function statusCommand(argv, helpers) {
         const verbose = Boolean(argv.verbose);
+        const done = helpers.spinner('Loading status');
         process.stdout.write(JSON.stringify({ ok: true, verbose }, null, 2));
+        done();
       }
     )
     .render();
@@ -159,6 +220,7 @@ async function main() {
 
 main();
 ```
+</details>
 
 ## API
 
@@ -179,6 +241,7 @@ Options:
 - `ansi`: allow ANSI escape sequences in server-provided text.
 - `server`: default server name.
 - `config`: default config path.
+- `showServers`: show or hide the Servers section in help output.
 
 ### `cli().command(options, handler)`
 
@@ -186,7 +249,8 @@ Registers a custom command.
 
 - `options.name`: command name.
 - `options.description`: summary for help output.
-- `handler(argv)`: async handler invoked with parsed args.
+- `handler(argv, helpers)`: async handler invoked with parsed args.
+- `helpers.spinner(text)`: start a spinner and return a `stop()` function.
 
 ### `cli().render([argv])`
 
@@ -207,6 +271,10 @@ Executes the CLI. If `argv` is omitted, it uses `process.argv`.
 
 ## Development
 
+<details>
+<summary>Example</summary>
+
 ```sh
 pnpm test --filter @mcp-layer/cli
 ```
+</details>

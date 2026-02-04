@@ -1,9 +1,9 @@
 import { defaults, configload, select } from './config.js';
 import { parse, globals, route } from './argv.js';
-import { mainhelp, serverhelp, toolhelp, prompthelp, resourcehelp, templatehelp, addsection, itemhelp } from './help-system.js';
+import { mainhelp, serverhelp, toolhelp, prompthelp, resourcehelp, templatehelp, addsection, itemhelp, commandhelp } from './help-system.js';
 import { table, jsonout } from './output.js';
 import { inputs } from './inputs.js';
-import { catalog, spinner as spin } from './mcp.js';
+import { catalog, spinner as spin, spinnertext } from './mcp.js';
 import { render } from './template.js';
 import { outputresult, outputresource } from './format.js';
 import { connect } from '@mcp-layer/connect';
@@ -161,49 +161,84 @@ function finditem(items, type, target) {
 
 /**
  * Build static help configuration.
+ * @param {string} cliName
+ * @param {Array<{ options: { name: string, description: string } }>} custom
  * @returns {{ commands: Array<{ name: string, description: string }>, flags: Record<string, string>, examples: string[] }}
  */
-function statichelp() {
+function statichelp(cliName, custom) {
+  const commands = [
+    { name: 'servers list', description: 'List configured servers.' },
+    { name: 'tools list', description: 'List available tools.' },
+    { name: 'tools <name>', description: 'Execute a tool.' },
+    { name: 'prompts list', description: 'List available prompts.' },
+    { name: 'prompts <name>', description: 'Execute a prompt.' },
+    { name: 'resources list', description: 'List available resources.' },
+    { name: 'resources <uri>', description: 'Read a resource.' },
+    { name: 'templates list', description: 'List available resource templates.' },
+    { name: 'templates <name>', description: 'Render a resource template.' }
+  ];
+  const extra = customcommands(custom);
   return {
-    commands: [
-      { name: 'servers list', description: 'List configured servers.' },
-      { name: 'tools list', description: 'List available tools.' },
-      { name: 'tools <name>', description: 'Execute a tool.' },
-      { name: 'prompts list', description: 'List available prompts.' },
-      { name: 'prompts <name>', description: 'Execute a prompt.' },
-      { name: 'resources list', description: 'List available resources.' },
-      { name: 'resources <uri>', description: 'Read a resource.' },
-      { name: 'templates list', description: 'List available resource templates.' },
-      { name: 'templates <name>', description: 'Render a resource template.' }
-    ],
+    commands: commands.concat(extra),
     flags: {
       '--server <name>': 'Select a server from the resolved config.',
       '--config <path>': 'Point at a config file or directory to search.',
       '--format <json>': 'Switch list output to JSON.',
       '--json <string>': 'Provide JSON input for run/render.',
       '--input <path>': 'Provide JSON input from a file.',
-      '--raw': 'Emit raw JSON or binary content when possible.',
+      '--raw': 'Emit raw text or binary payloads when possible; fall back to JSON.',
       '--no-markdown': 'Disable markdown rendering for text output.',
       '--allow-ansi': 'Allow ANSI escape sequences in server-provided text.',
       '--no-spinner': 'Disable the loading spinner.'
     },
     examples: [
-      'mcp-layer servers list --format json',
-      'mcp-layer tools list',
-      'mcp-layer tools list --server demo',
-      'mcp-layer tools echo --text "hello"',
-      'mcp-layer tools echo --server demo --text "hello"',
-      'mcp-layer prompts kickoff --json \'{"topic":"launch"}\'',
-      'mcp-layer resources ui://dashboard/app.html',
-      'mcp-layer templates notes --topic add --detail usage'
+      `${cliName} servers list --format json`,
+      `${cliName} tools list`,
+      `${cliName} tools list --server demo`,
+      `${cliName} tools echo --text "hello"`,
+      `${cliName} tools echo --server demo --text "hello"`,
+      `${cliName} prompts kickoff --json '{"topic":"launch"}'`,
+      `${cliName} resources ui://dashboard/app.html`,
+      `${cliName} templates notes --topic add --detail usage`
     ]
   };
 }
 
 /**
+ * Build custom command entries for main help output.
+ * @param {Array<{ options: { name: string, description: string } }>} custom
+ * @returns {Array<{ name: string, description: string }>}
+ */
+function customcommands(custom) {
+  const list = [];
+  for (const cmd of custom) {
+    list.push({ name: cmd.options.name, description: cmd.options.description });
+  }
+  return list;
+}
+
+/**
+ * Find a custom command by name.
+ * @param {Array<{ options: { name: string }, handler: (argv: Record<string, unknown>) => Promise<void> }>} custom
+ * @param {string | undefined} target
+ * @returns {{ options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void> } | undefined}
+ */
+function findcustom(custom, target) {
+  if (!target) {
+    return undefined;
+  }
+  for (const cmd of custom) {
+    if (cmd.options.name === target) {
+      return cmd;
+    }
+  }
+  return undefined;
+}
+
+/**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string }} [opts]
- * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean }} [opts]
+ * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
   const custom = [];
@@ -213,7 +248,7 @@ export function cli(opts = {}) {
     /**
      * Register a custom command.
      * @param {{ name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }} options
-     * @param {(argv: Record<string, unknown>) => Promise<void>} handler
+     * @param {(argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>} handler
      * @returns {any}
      */
     command: function command(options, handler) {
@@ -234,53 +269,78 @@ export function cli(opts = {}) {
       const markdown = base.markdown && global.markdown;
       const ansi = base.ansi || global.ansi;
       const theme = { accent: base.accent, subtle: base.subtle };
+      const tty = Boolean(process.stdout.isTTY);
+      const cliName = base.name || 'mcp-layer';
 
       if (global.version) {
         process.stdout.write(`${base.name} ${base.version}\n`);
         return;
       }
 
+      const customcmd = findcustom(custom, input.positionals[0]);
+
+      if (customcmd && global.help) {
+        const meta = servermeta(base, undefined, undefined, undefined, undefined);
+        process.stdout.write(`${commandhelp(customcmd.options, meta, colors, theme, cliName)}\n`);
+        return;
+      }
+
+      if (customcmd) {
+        const helpers = {
+          spinner: function spinner(text) {
+            const gate = spin(base.spinner && global.spinner, text);
+            gate.start();
+            return function stop() {
+              gate.stop();
+            };
+          }
+        };
+        await customcmd.handler(input.parsed, helpers);
+        return;
+      }
+
       const cmd = route(input.positionals);
 
-        if (global.help && cmd.target && (cmd.surface === 'tools' || cmd.surface === 'prompts' || cmd.surface === 'resources' || cmd.surface === 'templates')) {
-          const info = await select({ server: global.server || base.server, config: global.config || base.config });
-          const gate = spin(base.spinner && global.spinner, 'Loading MCP schema');
-          gate.start();
-          const session = await connect(info.config, info.name, { stderr: 'pipe' });
-          const stderr = capturestderr(session.transport);
-          try {
-            const output = await extract(session);
-            const type = cmd.surface === 'templates' ? 'resource-template' : cmd.surface.slice(0, -1);
-            const item = finditem(output.items, type, cmd.target);
-            if (!item) {
-              throw new Error(`Unknown ${cmd.surface.slice(0, -1)}: ${cmd.target}`);
-            }
-            const banner = stderr.text().trim();
-            const meta = servermeta(base, output.server.info, info.name, banner, output.server.instructions);
-            process.stdout.write(`${itemhelp(item, info.name, meta, colors, theme)}\n`);
-            return;
-          } finally {
-            gate.stop();
-            stderr.stop();
-            await session.close();
+      if (global.help && cmd.target && (cmd.surface === 'tools' || cmd.surface === 'prompts' || cmd.surface === 'resources' || cmd.surface === 'templates')) {
+        const info = await select({ server: global.server || base.server, config: global.config || base.config });
+        const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
+        gate.start();
+        const session = await connect(info.config, info.name, { stderr: 'pipe' });
+        const stderr = capturestderr(session.transport);
+        try {
+          const output = await extract(session);
+          const type = cmd.surface === 'templates' ? 'resource-template' : cmd.surface.slice(0, -1);
+          const item = finditem(output.items, type, cmd.target);
+          if (!item) {
+            throw new Error(`Unknown ${cmd.surface.slice(0, -1)}: ${cmd.target}`);
           }
+          const banner = stderr.text().trim();
+          const meta = servermeta(base, output.server.info, info.name, banner, output.server.instructions);
+          process.stdout.write(`${itemhelp(item, info.name, meta, colors, theme, cliName, tty)}\n`);
+          return;
+        } finally {
+          gate.stop();
+          stderr.stop();
+          await session.close();
         }
+      }
 
       if (global.help || cmd.surface === 'help') {
-        const staticInfo = statichelp();
+        const staticInfo = statichelp(cliName, custom);
         let cfg = null;
         try {
           cfg = await configload(global.config || base.config);
         } catch {
           cfg = null;
         }
-        const servers = serverhelp(cfg);
+        const showServers = Boolean(base.showServers);
+        const servers = showServers ? serverhelp(cfg) : [];
         let meta = servermeta(base, undefined, undefined, undefined, undefined);
         const extras = [];
         if (cfg) {
           try {
             const info = await select({ server: global.server || base.server, config: global.config || base.config });
-            const gate = spin(base.spinner && global.spinner, 'Loading MCP schema');
+            const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
             gate.start();
             const session = await connect(info.config, info.name, { stderr: 'pipe' });
             const stderr = capturestderr(session.transport);
@@ -288,10 +348,10 @@ export function cli(opts = {}) {
               const output = await extract(session);
               const banner = stderr.text().trim();
               meta = servermeta(base, output.server.info, info.name, banner, output.server.instructions);
-              addsection(extras, 'Tools', toolhelp(output.items, info.name, colors, theme));
-              addsection(extras, 'Prompts', prompthelp(output.items, info.name, colors, theme));
-              addsection(extras, 'Resources', resourcehelp(output.items, info.name, colors, theme));
-              addsection(extras, 'Templates', templatehelp(output.items, info.name, colors, theme));
+              addsection(extras, 'Tools', toolhelp(output.items, info.name, colors, theme, cliName, tty));
+              addsection(extras, 'Prompts', prompthelp(output.items, info.name, colors, theme, cliName, tty));
+              addsection(extras, 'Resources', resourcehelp(output.items, info.name, colors, theme, cliName, tty));
+              addsection(extras, 'Templates', templatehelp(output.items, info.name, colors, theme, cliName, tty));
             } finally {
               gate.stop();
               stderr.stop();
@@ -302,15 +362,8 @@ export function cli(opts = {}) {
           }
         }
         const preferExtras = extras.length > 0;
-        process.stdout.write(`${mainhelp(meta, staticInfo.commands, staticInfo.flags, staticInfo.examples, servers, extras, preferExtras, colors, theme)}\n`);
+        process.stdout.write(`${mainhelp(meta, staticInfo.commands, staticInfo.flags, staticInfo.examples, servers, extras, preferExtras, colors, theme, cliName)}\n`);
         return;
-      }
-
-      for (const cmddef of custom) {
-        if (cmddef.options.name === cmd.surface) {
-          await cmddef.handler(input.parsed);
-          return;
-        }
       }
 
       if (cmd.surface === 'servers' && cmd.action === 'list') {
@@ -367,36 +420,36 @@ export function cli(opts = {}) {
           if (!tool) {
             throw new Error(`Unknown tool: ${cmd.target}`);
           }
-        const args = await inputs(global, input.parsed, inputArgs, tool);
-        const result = await session.client.callTool({ name: tool.name, arguments: args });
-        await outputresult(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
-        return;
-      }
+          const args = await inputs(global, input.parsed, inputArgs, tool);
+          const result = await session.client.callTool({ name: tool.name, arguments: args });
+          await outputresult(result, { raw: global.raw, markdown, ansi, tty, colors, theme });
+          return;
+        }
 
         if (cmd.surface === 'prompts' && cmd.action === 'exec') {
           const prompt = finditem(items, 'prompt', cmd.target);
           if (!prompt) {
             throw new Error(`Unknown prompt: ${cmd.target}`);
           }
-        const args = await inputs(global, input.parsed, inputArgs, prompt);
-        const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
-        await outputresult(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
-        return;
-      }
+          const args = await inputs(global, input.parsed, inputArgs, prompt);
+          const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
+          await outputresult(result, { raw: global.raw, markdown, ansi, tty, colors, theme });
+          return;
+        }
 
         if (cmd.surface === 'resources' && cmd.action === 'exec') {
           const resource = finditem(items, 'resource', cmd.target);
           if (!resource) {
             throw new Error(`Unknown resource: ${cmd.target}`);
           }
-        const result = await session.client.readResource({ uri: resource.detail.uri });
-        if (global.format === 'json') {
-          jsonout(result);
+          const result = await session.client.readResource({ uri: resource.detail.uri });
+          if (global.format === 'json') {
+            jsonout(result);
+            return;
+          }
+          await outputresource(result, { raw: global.raw, markdown, ansi, tty, colors, theme });
           return;
         }
-        await outputresource(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
-        return;
-      }
 
         if (cmd.surface === 'templates' && cmd.action === 'exec') {
           const template = finditem(items, 'resource-template', cmd.target);
@@ -405,14 +458,14 @@ export function cli(opts = {}) {
           }
           const args = await inputs(global, input.parsed, inputArgs, template);
           const uri = render(template.detail?.uriTemplate, args);
-        const result = await session.client.readResource({ uri });
-        if (global.format === 'json') {
-          jsonout(result);
+          const result = await session.client.readResource({ uri });
+          if (global.format === 'json') {
+            jsonout(result);
+            return;
+          }
+          await outputresource(result, { raw: global.raw, markdown, ansi, tty, colors, theme });
           return;
         }
-        await outputresource(result, { raw: global.raw, markdown, ansi, tty: Boolean(process.stdout.isTTY), colors, theme });
-        return;
-      }
 
         throw new Error(`Unknown command: ${cmd.surface}`);
       } finally {

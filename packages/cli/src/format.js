@@ -244,6 +244,22 @@ function singleblob(items) {
 }
 
 /**
+ * Extract a single text resource content entry.
+ * @param {Array<Record<string, unknown>>} items
+ * @returns {string | null}
+ */
+function singleresource(items) {
+  if (items.length !== 1) {
+    return null;
+  }
+  const item = items[0];
+  if (typeof item.text === 'string') {
+    return item.text;
+  }
+  return null;
+}
+
+/**
  * Format content array into CLI-friendly lines.
  * @param {Array<Record<string, unknown>>} items
  * @param {{ raw: boolean, markdown: boolean, ansi: boolean, tty: boolean, colors: boolean, theme: { accent: string, subtle: string } }} options
@@ -404,6 +420,11 @@ export async function outputresource(result, options) {
     const buffer = singleblob(items);
     if (buffer) {
       writebuffer(buffer);
+      return;
+    }
+    const text = singleresource(items);
+    if (text !== null) {
+      process.stdout.write(sanitize(text, options));
       return;
     }
     writelines([JSON.stringify(result, null, 2)]);
