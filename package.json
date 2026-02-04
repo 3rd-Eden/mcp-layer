@@ -27,7 +27,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node --test \"packages/**/*.test.js\"",
+    "test": "node --test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
