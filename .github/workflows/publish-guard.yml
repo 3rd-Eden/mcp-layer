@@ -1,0 +1,142 @@
+name: Publish Guard
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  unpublished:
+    if: ${{ github.event.pull_request.user.login == 'github-actions[bot]' && startsWith(github.event.pull_request.title, 'Version Packages') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Detect unpublished packages
+        id: detect
+        run: |
+          node - <<'NODE'
+          import { readdir, readFile, stat } from 'node:fs/promises';
+          import { join } from 'node:path';
+
+          async function readJson(file) {
+            const raw = await readFile(file, 'utf8');
+            return JSON.parse(raw);
+          }
+
+          async function listPackages(root) {
+            const items = [];
+            const rootFile = join(root, 'package.json');
+            const rootData = await readJson(rootFile);
+            if (typeof rootData.name === 'string') {
+              items.push(rootData.name);
+            }
+            const base = join(root, 'packages');
+            const entries = await readdir(base, { withFileTypes: true });
+            for (const entry of entries) {
+              if (!entry.isDirectory()) {
+                continue;
+              }
+              const file = join(base, entry.name, 'package.json');
+              try {
+                const info = await stat(file);
+                if (!info.isFile()) {
+                  continue;
+                }
+              } catch (error) {
+                continue;
+              }
+              const data = await readJson(file);
+              if (typeof data.name === 'string') {
+                items.push(data.name);
+              }
+            }
+            return items;
+          }
+
+          async function exists(name) {
+            const url = `https://registry.npmjs.org/${encodeURIComponent(name)}`;
+            const res = await fetch(url, { method: 'HEAD' });
+            if (res.status === 404) {
+              return false;
+            }
+            return true;
+          }
+
+          const names = await listPackages(process.cwd());
+          const missing = [];
+          for (const name of names) {
+            const ok = await exists(name);
+            if (!ok) {
+              missing.push(name);
+            }
+          }
+
+          const workflow = 'release.yml';
+          const repo = process.env.GITHUB_REPOSITORY || '3rd-Eden/mcp-layer';
+          const workflowPath = `https://github.com/${repo}/blob/main/.github/workflows/${workflow}`;
+          const steps = [
+            'Unpublished packages detected. Bootstrapping is required before merge.',
+            '',
+            'Missing packages:',
+            ...missing.map((name) => `- ${name}`),
+            '',
+            'Bootstrap checklist (one-time per package):',
+            '1. Create a short-lived granular npm token with Read+Write and 2FA bypass.',
+            '2. Publish each missing package once using that token.',
+            '3. Enable npm Trusted Publishing (OIDC) for each package.',
+            '4. Re-run the release pipeline.',
+            '',
+            'Details per package:',
+            ...missing.flatMap((name) => ([
+              `Package: ${name}`,
+              `Package page: https://www.npmjs.com/package/${encodeURIComponent(name)}`,
+              `Settings page: https://www.npmjs.com/package/${encodeURIComponent(name)}/settings`,
+              `OIDC workflow to select: ${workflowPath}`,
+              ''
+            ])),
+            '',
+            'Notes:',
+            `- Trusted Publishing must be enabled after the first publish.`,
+            `- Use ${workflow} as the GitHub Actions workflow name for OIDC.`
+          ].join('\\n');
+
+          const output = process.env.GITHUB_OUTPUT;
+          if (output) {
+            const { appendFile } = await import('node:fs/promises');
+            await appendFile(output, `missing=${missing.join(',')}\n`);
+            await appendFile(output, `missing_md<<EOF\n${missing.length ? message : ''}\nEOF\n`);
+          }
+
+          if (missing.length > 0) {
+            console.log(message);
+            process.exitCode = 1;
+          } else {
+            console.log('All packages are published.');
+          }
+          NODE
+
+      - name: Comment on PR
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `${{ steps.detect.outputs.missing_md }}`;
+            if (!body) {
+              core.info('No unpublished packages detected.');
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
