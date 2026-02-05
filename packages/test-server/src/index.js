@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { debouncedNotifications, info, instructions } from './config.js';
+import { debouncedNotifications, info as defaultInfo, instructions } from './config.js';
 import { manual } from './data/manual.js';
 import { notes } from './data/notes.js';
 import { references } from './data/references.js';
@@ -12,9 +12,15 @@ import { registerTools } from './tools/index.js';
 
 /**
  * Build an MCP server instance pre-configured with tools, resources, and prompts.
+ *
+ * Why this exists: gives tests a consistent surface while still allowing
+ * targeted metadata overrides (name/version) without custom servers.
+ *
+ * @param {{ info?: { name?: string, version?: string } }} [opts] - Optional metadata overrides.
  * @returns {McpServer}
  */
-export function build() {
+export function build(opts = {}) {
+  const info = opts.info ? { ...defaultInfo, ...opts.info } : defaultInfo;
   const server = new McpServer(info, {
     instructions,
     debouncedNotificationMethods: debouncedNotifications,
@@ -40,11 +46,15 @@ export function build() {
 
 /**
  * Start the test server using stdio transport for integration scenarios.
- * @param {{ server?: McpServer, transport?: StdioServerTransport }} [opts] - Optional overrides for the server instance and transport.
+ *
+ * Why this exists: callers can override metadata or transport while still
+ * exercising the standard test-server surface.
+ *
+ * @param {{ server?: McpServer, transport?: StdioServerTransport, info?: { name?: string, version?: string } }} [opts] - Optional overrides for the server instance, transport, or metadata.
  * @returns {Promise<{ server: McpServer, transport: StdioServerTransport }>}
  */
 export async function start(opts = {}) {
-  const server = opts.server ?? build();
+  const server = opts.server ?? build(opts);
   const transport = opts.transport ?? new StdioServerTransport();
 
   // Use stdio transport so callers can spawn this server as a subprocess during tests.

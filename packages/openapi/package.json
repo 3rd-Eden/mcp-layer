@@ -1,0 +1,54 @@
+{
+  "name": "@mcp-layer/openapi",
+  "version": "1.0.0",
+  "description": "OpenAPI 3.1 generator for MCP-backed REST APIs, documentation, and client tooling.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-layer",
+    "openapi",
+    "openapi3",
+    "oas",
+    "swagger",
+    "api",
+    "http",
+    "rest",
+    "fastify",
+    "documentation",
+    "client",
+    "server",
+    "schema",
+    "json-schema"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "uri-js": "^4.4.1"
+  },
+  "peerDependencies": {
+    "@mcp-layer/schema": "^0.3.0"
+  },
+  "devDependencies": {
+    "@mcp-layer/schema": "workspace:*"
+  }
+}

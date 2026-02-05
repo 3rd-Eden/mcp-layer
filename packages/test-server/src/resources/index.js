@@ -1,5 +1,6 @@
 import { registerManualResource } from './manual.js';
 import { registerNotesResource } from './notes.js';
+import { registerTemplateResource } from './templates.js';
 import { registerUi } from './ui.js';
 
 /**
@@ -10,5 +11,6 @@ import { registerUi } from './ui.js';
 export function registerResources(server, context) {
   registerManualResource(server, context);
   registerNotesResource(server, context);
+  registerTemplateResource(server);
   registerUi(server);
 }

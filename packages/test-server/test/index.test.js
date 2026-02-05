@@ -66,7 +66,26 @@ describe('test-server', function serverSuite() {
       });
       assert.deepEqual(
         toolNames.sort(),
-        ['add', 'annotated', 'batch', 'booking', 'dashboard', 'echo', 'files', 'logs', 'note-update', 'present', 'progress', 'rebalance', 'roots', 'summaries']
+        [
+          'add',
+          'annotated',
+          'batch',
+          'booking',
+          'crash',
+          'dashboard',
+          'echo',
+          'fail-gracefully',
+          'files',
+          'flap',
+          'logs',
+          'note-update',
+          'present',
+          'progress',
+          'rebalance',
+          'roots',
+          'slow',
+          'summaries'
+        ]
       );
 
       const annotated = tools.tools.find(function findAnnotated(item) {
@@ -114,12 +133,18 @@ describe('test-server', function serverSuite() {
         return item.name;
       });
       assert.equal(templateNames.includes('notes'), true);
+      assert.equal(templateNames.includes('note-template'), true);
       const notes = templates.resourceTemplates.find(function findNotes(item) {
         return item.name === 'notes';
       });
       assert.ok(notes);
       assert.equal(Array.isArray(notes.icons), true);
       assert.equal(notes._meta?.owner, 'mcp-layer-schema');
+      const noteTemplate = templates.resourceTemplates.find(function findTemplate(item) {
+        return item.name === 'note-template';
+      });
+      assert.ok(noteTemplate);
+      assert.equal(noteTemplate.uriTemplate, 'template://note/{name}');
     });
 
     it('runs core tools with structured and linked outputs', async function toolsCase(t) {
@@ -250,6 +275,9 @@ describe('test-server', function serverSuite() {
 
       const ui = await session.client.readResource({ uri: 'ui://dashboard/app.html' });
       assert.equal(ui.contents?.[0]?.text.includes('Dashboard'), true);
+
+      const templated = await session.client.readResource({ uri: 'template://note/Ada' });
+      assert.equal(templated.contents?.[0]?.text.includes('Template note for Ada.'), true);
     });
 
     it('emits logging and progress notifications', async function loggingProgressCase(t) {

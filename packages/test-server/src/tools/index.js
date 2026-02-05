@@ -12,6 +12,7 @@ import { registerPresent } from './present.js';
 import { registerRebalance } from './rebalance.js';
 import { registerRoots } from './roots.js';
 import { registerSummaries } from './summaries.js';
+import { registerCrash, registerFailGracefully, registerFlap, registerSlow } from './testing.js';
 
 /**
  * Register all server tools.
@@ -35,4 +36,8 @@ export function registerTools(server, context, capabilities, notifier) {
   registerPresent(server);
   registerProgress(server);
   registerRebalance(server, { echo: echoHandle, add: addHandle });
+  registerFailGracefully(server);
+  registerCrash(server);
+  registerSlow(server);
+  registerFlap(server);
 }
