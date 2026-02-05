@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/rest",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fastify REST plugin that layers HTTP APIs on MCP servers with OpenAPI 3.1 docs, validation, and resilience.",
   "repository": {
     "type": "git",
@@ -61,7 +61,7 @@
     "uri-template": "^2.0.0"
   },
   "peerDependencies": {
-    "@mcp-layer/schema": "^0.3.0",
+    "@mcp-layer/schema": "^1.0.1",
     "@opentelemetry/api": "^1.9.0",
     "fastify": "^5.0.0"
   },
