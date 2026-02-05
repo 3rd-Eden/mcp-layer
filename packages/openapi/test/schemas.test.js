@@ -34,12 +34,26 @@ function toolSchemaCase() {
 }
 
 /**
+ * Validate the PromptResponse schema shape.
+ * @returns {void}
+ */
+function promptSchemaCase() {
+  const schema = schemas.PromptResponse;
+
+  assert.equal(schema.$id, 'PromptResponse');
+  assert.equal(schema.type, 'object');
+  assert.ok(schema.properties);
+  assert.ok(schema.properties.messages);
+}
+
+/**
  * Execute schemas tests.
  * @returns {void}
  */
 function schemasSuite() {
   it('exports ProblemDetails schema', problemSchemaCase);
   it('exports ToolResponse schema', toolSchemaCase);
+  it('exports PromptResponse schema', promptSchemaCase);
 }
 
 describe('openapi shared schemas', schemasSuite);

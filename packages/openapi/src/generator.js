@@ -55,6 +55,49 @@ function label(item, fallback) {
 }
 
 /**
+ * Validate item names used in route paths.
+ *
+ * Why this exists: invalid path segments produce mismatched REST routes.
+ *
+ * @param {string} value - Name to validate.
+ * @param {number | undefined} maxLength - Optional length cap.
+ * @returns {void}
+ */
+function assertName(value, maxLength) {
+  const pattern = /^[a-z0-9._-]+$/i;
+  if (!pattern.test(value)) {
+    throw new Error(`Item name "${value}" must be URL-safe (letters, digits, ".", "_", "-").`);
+  }
+  if (typeof maxLength === 'number' && value.length > maxLength) {
+    throw new Error(`Item name "${value}" exceeds maximum length of ${maxLength}.`);
+  }
+}
+
+/**
+ * Ensure a template expression only uses simple `{name}` tokens.
+ *
+ * Why this exists: RFC6570 modifiers are not represented by Fastify routes.
+ *
+ * @param {string} template - Template route string.
+ * @returns {void}
+ */
+function assertSimpleTemplate(template) {
+  const re = /\{([^}]+)\}/g;
+  let match = re.exec(template);
+
+  while (match) {
+    const expr = match[1] ?? '';
+    if (/[+#./?&*]/.test(expr) || expr.includes(',')) {
+      throw new Error(`Template expression "${match[0]}" is not supported.`);
+    }
+    if (!/^[A-Za-z0-9._-]+$/.test(expr)) {
+      throw new Error(`Template parameter "${expr}" must be URL-safe.`);
+    }
+    match = re.exec(template);
+  }
+}
+
+/**
  * Select a description for an operation.
  *
  * Why this exists: prefer catalog descriptions, then derive a short sentence
@@ -107,7 +150,7 @@ function errorresponses() {
       }
     },
     '504': {
-      description: 'Upstream timeout',
+      description: 'Request timeout',
       content: {
         'application/problem+json': {
           schema: { $ref: '#/components/schemas/ProblemDetails' }
@@ -193,7 +236,7 @@ function promptpath(item) {
           description: `Response payload for ${name}.`,
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/ToolResponse' }
+              schema: { $ref: '#/components/schemas/PromptResponse' }
             }
           }
         },
@@ -323,13 +366,14 @@ function openapipath() {
  * that can be used both by the Fastify plugin and future client generators.
  *
  * @param {{ server?: { info?: Record<string, unknown>, instructions?: string }, items?: Array<Record<string, unknown>> }} catalog - Extracted catalog from @mcp-layer/schema.
- * @param {{ title?: string, version?: string, prefix?: string, description?: string, contact?: Record<string, unknown>, license?: Record<string, unknown> }} [options] - Spec generation options.
+ * @param {{ title?: string, version?: string, prefix?: string, description?: string, contact?: Record<string, unknown>, license?: Record<string, unknown>, maxNameLength?: number }} [options] - Spec generation options.
  * @returns {Record<string, unknown>} OpenAPI 3.1 specification object.
  */
 export function spec(catalog = {}, options = {}) {
   const info = catalog.server && catalog.server.info ? catalog.server.info : undefined;
   const list = Array.isArray(catalog.items) ? catalog.items : [];
   const prefix = normprefix(options.prefix);
+  const maxNameLength = typeof options.maxNameLength === 'number' ? options.maxNameLength : undefined;
 
   const title = options.title ?? (info && info.name ? String(info.name) : 'REST API');
   const version = options.version ?? (info && info.version ? String(info.version) : '1.0.0');
@@ -357,6 +401,7 @@ export function spec(catalog = {}, options = {}) {
     if (!item || !item.name) {
       continue;
     }
+    assertName(String(item.name), maxNameLength);
     data.paths[`${prefix}/${item.name}`] = toolpath(item);
   }
 
@@ -365,6 +410,7 @@ export function spec(catalog = {}, options = {}) {
     if (!item || !item.name) {
       continue;
     }
+    assertName(String(item.name), maxNameLength);
     data.paths[`${prefix}/prompts/${item.name}`] = promptpath(item);
   }
 
@@ -385,6 +431,7 @@ export function spec(catalog = {}, options = {}) {
       continue;
     }
     const route = tpath(tmpl, false);
+    assertSimpleTemplate(route);
     const entry = resourcepath(item);
     const params = templateparams(route);
     if (params.length > 0) {

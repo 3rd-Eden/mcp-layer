@@ -34,12 +34,16 @@ await link.close();
 | [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP SDK servers or Platformatic Fastify MCP plugins and return a Session. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract tools/resources/prompts/templates into a unified Zod-backed schema (including MCP Apps metadata). |
 | [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration tests and local exploration. |
+| [`@mcp-layer/openapi`](packages/openapi/README.md) | Generate OpenAPI 3.1 specs from MCP catalogs. |
+| [`@mcp-layer/rest`](packages/rest/README.md) | Fastify plugin that exposes MCP servers over REST. |
 
 ### Layers and interfaces
 
 | Package | Purpose |
 | --- | --- |
 | [`@mcp-layer/cli`](packages/cli/README.md) | CLI framework for turning MCP schemas into commands. |
+| [`@mcp-layer/openapi`](packages/openapi/README.md) | OpenAPI 3.1 generation for REST surfaces. |
+| [`@mcp-layer/rest`](packages/rest/README.md) | Fastify plugin for HTTP REST exposure. |
 
 ## CLI quick try
 

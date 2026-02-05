@@ -58,9 +58,30 @@ export const toolResponseSchema = {
         required: ['type']
       }
     },
-    isError: { type: 'boolean', default: false }
+    isError: { type: 'boolean', default: false },
+    structuredContent: {}
   },
-  required: ['content']
+  required: ['content'],
+  additionalProperties: true
+};
+
+/**
+ * Prompt response schema used for prompt handlers.
+ * @type {Record<string, unknown>}
+ */
+export const promptResponseSchema = {
+  $id: 'PromptResponse',
+  type: 'object',
+  properties: {
+    messages: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: true
+      }
+    }
+  },
+  additionalProperties: true
 };
 
 /**
@@ -69,5 +90,6 @@ export const toolResponseSchema = {
  */
 export const schemas = {
   ProblemDetails: problemDetailsSchema,
-  ToolResponse: toolResponseSchema
+  ToolResponse: toolResponseSchema,
+  PromptResponse: promptResponseSchema
 };

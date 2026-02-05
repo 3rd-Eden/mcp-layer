@@ -73,6 +73,7 @@ Options:
 | `description` | `string` | server description or instructions | Long-form description. |
 | `contact` | `object` | `undefined` | OpenAPI contact object. |
 | `license` | `object` | `undefined` | OpenAPI license object. |
+| `maxNameLength` | `number` | `undefined` | Optional max length for tool/prompt names. |
 
 Returns a plain OpenAPI 3.1 JSON object.
 
@@ -108,6 +109,7 @@ Shared JSON Schemas:
 
 - `ProblemDetails` (RFC 9457)
 - `ToolResponse`
+- `PromptResponse`
 
 <details>
 <summary>Advanced: Mapping examples</summary>

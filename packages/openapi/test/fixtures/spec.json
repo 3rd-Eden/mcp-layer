@@ -87,7 +87,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -179,7 +179,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -285,7 +285,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -374,7 +374,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -463,7 +463,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -556,7 +556,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -651,7 +651,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -751,7 +751,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -837,7 +837,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -936,7 +936,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1043,7 +1043,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1132,7 +1132,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1226,7 +1226,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1314,7 +1314,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1399,7 +1399,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1484,7 +1484,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1569,7 +1569,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1654,7 +1654,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1694,7 +1694,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ToolResponse"
+                  "$ref": "#/components/schemas/PromptResponse"
                 }
               }
             }
@@ -1730,7 +1730,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1788,7 +1788,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1846,7 +1846,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1904,7 +1904,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1962,7 +1962,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2020,7 +2020,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2078,7 +2078,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2136,7 +2136,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2194,7 +2194,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2252,7 +2252,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2310,7 +2310,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2368,7 +2368,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2426,7 +2426,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2484,7 +2484,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2542,7 +2542,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2600,7 +2600,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2658,7 +2658,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2716,7 +2716,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2774,7 +2774,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2832,7 +2832,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2890,7 +2890,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2948,7 +2948,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3006,7 +3006,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3064,7 +3064,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3140,7 +3140,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3219,7 +3219,7 @@
             }
           },
           "504": {
-            "description": "Upstream timeout",
+            "description": "Request timeout",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3361,11 +3361,27 @@
           "isError": {
             "type": "boolean",
             "default": false
-          }
+          },
+          "structuredContent": {}
         },
         "required": [
           "content"
-        ]
+        ],
+        "additionalProperties": true
+      },
+      "PromptResponse": {
+        "$id": "PromptResponse",
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
       }
     }
   }

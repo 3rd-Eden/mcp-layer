@@ -1,7 +1,7 @@
 {
   "name": "@mcp-layer/openapi",
   "version": "1.0.0",
-  "description": "OpenAPI 3.1 generator for MCP-backed REST APIs, documentation, and client tooling.",
+  "description": "OpenAPI 3.1 generator for REST APIs backed by MCP catalogs, documentation tooling, and client generation.",
   "repository": {
     "type": "git",
     "url": "https://github.com/3rd-Eden/mcp-layer"
@@ -12,17 +12,24 @@
     "mcp-layer",
     "openapi",
     "openapi3",
+    "openapi-3.1",
+    "openapi-generator",
     "oas",
     "swagger",
+    "swagger-ui",
+    "redoc",
     "api",
     "http",
     "rest",
     "fastify",
     "documentation",
+    "api-docs",
+    "client-generator",
     "client",
     "server",
     "schema",
-    "json-schema"
+    "json-schema",
+    "catalog"
   ],
   "scripts": {
     "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
@@ -49,6 +56,7 @@
     "@mcp-layer/schema": "^0.3.0"
   },
   "devDependencies": {
-    "@mcp-layer/schema": "workspace:*"
+    "@mcp-layer/schema": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.20.2"
   }
 }

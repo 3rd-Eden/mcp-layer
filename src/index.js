@@ -29,6 +29,18 @@ export * as config from '@mcp-layer/config';
 export * as connect from '@mcp-layer/connect';
 
 /**
+ * Package namespace from `@mcp-layer/openapi`.
+ * @type {typeof import('@mcp-layer/openapi')}
+ */
+export * as openapi from '@mcp-layer/openapi';
+
+/**
+ * Package namespace from `@mcp-layer/rest`.
+ * @type {typeof import('@mcp-layer/rest')}
+ */
+export * as rest from '@mcp-layer/rest';
+
+/**
  * Package namespace from `@mcp-layer/schema`.
  * @type {typeof import('@mcp-layer/schema')}
  */

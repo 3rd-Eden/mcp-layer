@@ -130,6 +130,9 @@ importers:
       '@mcp-layer/schema':
         specifier: workspace:*
         version: link:../schema
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.20.2
+        version: 1.20.2
 
   packages/rest:
     dependencies:

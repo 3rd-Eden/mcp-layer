@@ -40,6 +40,8 @@
     "@mcp-layer/cli": "workspace:*",
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/openapi": "workspace:*",
+    "@mcp-layer/rest": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
     "@mcp-layer/session": "workspace:*",
     "@mcp-layer/test-server": "workspace:*"
