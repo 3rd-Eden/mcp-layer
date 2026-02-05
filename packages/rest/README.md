@@ -113,6 +113,8 @@ Resilience options (backed by `opossum`):
 | `resetTimeout` | `30000` | Time (ms) before moving to half-open. |
 | `volumeThreshold` | `5` | Minimum volume before breaker starts tripping. |
 
+When resilience is enabled, the breaker timeout is also passed through to MCP requests so the underlying client does not keep long-running request timers alive after a breaker timeout.
+
 Telemetry options:
 
 | Option | Default | Description |

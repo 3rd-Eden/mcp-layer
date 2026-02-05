@@ -1,6 +1,22 @@
 import CircuitBreaker from 'opossum';
 
 /**
+ * Build MCP client request options from a breaker instance.
+ *
+ * Why this exists: the SDK defaults to a 60s timeout, which keeps timers alive
+ * after breaker timeouts unless we pass through the configured timeout.
+ *
+ * @param {CircuitBreaker | null} breaker - Breaker instance or null.
+ * @returns {import('@modelcontextprotocol/sdk/shared/protocol.js').RequestOptions | undefined}
+ */
+function requestOptions(breaker) {
+  if (!breaker || !breaker.options || typeof breaker.options.timeout !== 'number') {
+    return undefined;
+  }
+  return { timeout: breaker.options.timeout };
+}
+
+/**
  * Create a circuit breaker for an MCP session.
  *
  * Why this exists: prevents cascading failures when a server is unhealthy.
@@ -12,16 +28,17 @@ import CircuitBreaker from 'opossum';
 export function createCircuitBreaker(session, config) {
   const breaker = new CircuitBreaker(
     async function call(task) {
+      const options = task.options;
       if (task.method === 'tools/call') {
-        return session.client.callTool(task.params);
+        return session.client.callTool(task.params, undefined, options);
       }
       if (task.method === 'prompts/get') {
-        return session.client.getPrompt(task.params);
+        return session.client.getPrompt(task.params, options);
       }
       if (task.method === 'resources/read') {
-        return session.client.readResource(task.params);
+        return session.client.readResource(task.params, options);
       }
-      return session.client.request({ method: task.method, params: task.params });
+      return session.client.request({ method: task.method, params: task.params }, undefined, options);
     },
     {
       timeout: config.timeout,
@@ -77,6 +94,7 @@ export function createCircuitBreaker(session, config) {
  * @returns {Promise<Record<string, unknown>>}
  */
 export async function executeWithBreaker(breaker, session, method, params) {
+  const options = requestOptions(breaker);
   if (!breaker) {
     if (method === 'tools/call') {
       return session.client.callTool(params);
@@ -97,5 +115,5 @@ export async function executeWithBreaker(breaker, session, method, params) {
     throw error;
   }
 
-  return breaker.fire({ method, params });
+  return breaker.fire({ method, params, options });
 }
