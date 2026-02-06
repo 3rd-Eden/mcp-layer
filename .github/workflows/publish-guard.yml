@@ -46,7 +46,7 @@ jobs:
               for (const pull of response.data) {
                 if (hasVersionTitle(pull)) {
                   core.info(`Found version PR #${pull.number}.`);
-                  return String(pull.number);
+                  return pull.number;
                 }
               }
               core.info('No open "Version Packages" PR found.');
@@ -184,12 +184,29 @@ jobs:
         with:
           script: |
             const marker = '<!-- publish-guard:missing-packages -->';
-            const issueNumber = Number(process.env.PR_NUMBER);
+            function parseIssueNumber(raw) {
+              if (!raw)
+                return Number.NaN;
+              try {
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number')
+                  return parsed;
+                if (typeof parsed === 'string')
+                  return Number.parseInt(parsed, 10);
+              } catch (error) {
+                // Keep a fallback parse for non-JSON output values.
+              }
+              return Number.parseInt(raw, 10);
+            }
+
+            const issueNumber = parseIssueNumber(process.env.PR_NUMBER);
             const body = process.env.MESSAGE?.trim() ?? '';
             if (!body) {
               core.info('No unpublished packages detected.');
               return;
             }
+            if (!Number.isInteger(issueNumber) || issueNumber < 1)
+              throw new Error(`Invalid PR number: ${process.env.PR_NUMBER ?? '<empty>'}`);
             const commentBody = `${body}\n\n${marker}`;
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
