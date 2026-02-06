@@ -12,7 +12,6 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 /**
  * Resolve the fixtures directory for this test file.
  *
- * Why this exists: keep snapshot files colocated with the test suite while
  * avoiding brittle relative path math in the test body.
  *
  * @returns {string}
@@ -41,7 +40,6 @@ function loadSpecFixture() {
 /**
  * Normalize spec object for stable comparison.
  *
- * Why this exists: JSON serialization strips `undefined`, matching snapshot files.
  *
  * @param {Record<string, unknown>} spec - OpenAPI spec object.
  * @returns {Record<string, unknown>}
@@ -53,7 +51,6 @@ function normalizeSpec(spec) {
 /**
  * Extract a catalog from the test MCP server.
  *
- * Why this exists: ensures the generator reflects real MCP catalog output,
  * not hand-crafted fixtures.
  *
  * @returns {Promise<{ server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }>}
@@ -72,7 +69,6 @@ async function loadCatalog() {
 /**
  * Build a minimal MCP server with a custom template.
  *
- * Why this exists: tests need to validate template validation behavior.
  *
  * @param {string} template - URI template string.
  * @returns {McpServer}
@@ -115,7 +111,6 @@ function buildTemplateServer(template) {
 /**
  * Build a minimal MCP server with a custom prompt.
  *
- * Why this exists: tests need to validate name validation for prompts.
  *
  * @param {string} name - Prompt name.
  * @returns {McpServer}

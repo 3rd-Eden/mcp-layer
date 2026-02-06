@@ -38,9 +38,7 @@ export function registerProgress(server) {
     }
 
     for (let index = 1; index <= args.steps; index += 1) {
-      if (extra.signal.aborted) {
-        throw new Error('progress tool aborted');
-      }
+      if (extra.signal.aborted) throw new Error('progress tool aborted');
       await sleep();
       if (token) {
         await extra.sendNotification({

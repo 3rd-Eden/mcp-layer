@@ -18,12 +18,8 @@ const base = {
  * @returns {{ name: string, source: string, config: Record<string, unknown> } | undefined}
  */
 export function select(src, name) {
-  if (src instanceof Map) {
-    return src.get(name);
-  }
-  if (src && typeof src === 'object' && typeof src.get === 'function') {
-    return src.get(name);
-  }
+  if (src instanceof Map) return src.get(name);
+  if (src && typeof src === 'object' && typeof src.get === 'function') return src.get(name);
   throw new TypeError('Expected config source to support get(name).');
 }
 

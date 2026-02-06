@@ -1,0 +1,46 @@
+{
+  "name": "@mcp-layer/manager",
+  "version": "0.1.0",
+  "description": "Session manager for building auth-aware MCP session pools with TTL/LRU eviction.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-layer",
+    "session",
+    "manager",
+    "pool",
+    "auth",
+    "proxy"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/session": "workspace:*"
+  },
+  "devDependencies": {
+    "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/test-server": "workspace:*",
+    "fastify": "^5.7.4"
+  }
+}

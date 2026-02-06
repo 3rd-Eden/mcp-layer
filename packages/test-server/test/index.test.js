@@ -28,9 +28,7 @@ async function connect(options = {}) {
     args: [entry]
   });
   const client = new Client({ name: 'mcp-layer-tests', version: '0.0.0' }, options.clientOptions);
-  if (options.beforeConnect) {
-    await options.beforeConnect(client);
-  }
+  if (options.beforeConnect) await options.beforeConnect(client);
   await client.connect(transport);
   return { client, transport };
 }

@@ -18,7 +18,6 @@ export const MCP_ERROR_MAP = {
 /**
  * Create RFC 9457 problem details for an MCP error.
  *
- * Why this exists: translate JSON-RPC errors into HTTP semantics.
  *
  * @param {Error & { code?: number }} error - MCP error instance.
  * @param {string} instance - Request path.
@@ -45,9 +44,7 @@ export function createMcpErrorResponse(error, instance, requestId, options = {})
     mcpErrorCode: code
   };
 
-  if (requestId) {
-    out.requestId = requestId;
-  }
+  if (requestId) out.requestId = requestId;
 
   return out;
 }
@@ -69,9 +66,7 @@ export function createValidationErrorResponse(instance, errors, requestId) {
     errors
   };
 
-  if (requestId) {
-    out.requestId = requestId;
-  }
+  if (requestId) out.requestId = requestId;
 
   return out;
 }
@@ -92,9 +87,29 @@ export function createCircuitOpenResponse(instance, sessionName, requestId) {
     instance
   };
 
-  if (requestId) {
-    out.requestId = requestId;
-  }
+  if (requestId) out.requestId = requestId;
+
+  return out;
+}
+
+/**
+ * Create RFC 9457 auth error response.
+ * @param {string} instance - Request path.
+ * @param {string} title - Error title.
+ * @param {string} detail - Error detail.
+ * @param {string} [requestId] - Request identifier.
+ * @returns {{ type: string, title: string, status: number, detail: string, instance: string, requestId?: string }}
+ */
+export function createAuthResponse(instance, title, detail, requestId) {
+  const out = {
+    type: ERROR_TYPES.AUTH,
+    title,
+    status: 401,
+    detail,
+    instance
+  };
+
+  if (requestId) out.requestId = requestId;
 
   return out;
 }
@@ -102,7 +117,6 @@ export function createCircuitOpenResponse(instance, sessionName, requestId) {
 /**
  * Create RFC 9457 problem details for a tool execution error.
  *
- * Why this exists: tool errors are application-level failures, so REST clients
  * should receive an error status while still getting the tool payload for debugging.
  *
  * @param {string} instance - Request path.
@@ -127,9 +141,7 @@ export function createToolErrorResponse(instance, tool, sessionName, result, req
     }
   };
 
-  if (requestId) {
-    out.requestId = requestId;
-  }
+  if (requestId) out.requestId = requestId;
 
   return out;
 }

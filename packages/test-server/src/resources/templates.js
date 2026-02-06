@@ -3,7 +3,6 @@ import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 /**
  * Register a templated resource that expands a name into a note URI.
  *
- * Why this exists: REST integration tests need a real resource template
  * surface to exercise dynamic routes.
  *
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register resources on.

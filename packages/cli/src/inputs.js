@@ -10,9 +10,7 @@ import { readFile } from 'node:fs/promises';
  */
 export async function inputs(opts, parsed, extra, item) {
   const source = Object.keys(extra).length ? extra : parsed;
-  if (typeof opts.json === 'string') {
-    return JSON.parse(opts.json);
-  }
+  if (typeof opts.json === 'string') return JSON.parse(opts.json);
   if (typeof opts.input === 'string') {
     const raw = await readFile(opts.input, 'utf8');
     return JSON.parse(raw);
@@ -21,9 +19,7 @@ export async function inputs(opts, parsed, extra, item) {
   const props = schema && typeof schema === 'object' && schema.properties ? schema.properties : {};
   const args = {};
   for (const name of Object.keys(props)) {
-    if (Object.hasOwn(source, name)) {
-      args[name] = coerce(source[name], props[name]);
-    }
+    if (Object.hasOwn(source, name)) args[name] = coerce(source[name], props[name]);
   }
   const required = Array.isArray(schema?.required) ? schema.required : [];
   for (const name of required) {
@@ -41,16 +37,10 @@ export async function inputs(opts, parsed, extra, item) {
  * @returns {unknown}
  */
 function coerce(value, schema) {
-  if (!schema || typeof schema !== 'object') {
-    return value;
-  }
+  if (!schema || typeof schema !== 'object') return value;
   const type = schema.type;
-  if (type === 'array' || (Array.isArray(type) && type.includes('array'))) {
-    return coercearray(value, schema);
-  }
-  if (type === 'object' || (Array.isArray(type) && type.includes('object'))) {
-    return coerceobject(value, schema);
-  }
+  if (type === 'array' || (Array.isArray(type) && type.includes('array'))) return coercearray(value, schema);
+  if (type === 'object' || (Array.isArray(type) && type.includes('object'))) return coerceobject(value, schema);
   return coercevalue(value, schema);
 }
 
@@ -76,9 +66,7 @@ function coercearray(value, schema) {
  * @returns {unknown}
  */
 function coerceobject(value, schema) {
-  if (typeof value !== 'string') {
-    return value;
-  }
+  if (typeof value !== 'string') return value;
   return parsejson(value, schema);
 }
 
@@ -90,9 +78,7 @@ function coerceobject(value, schema) {
  */
 function coercevalue(value, schema) {
   const type = schema.type;
-  if (type === 'boolean' || (Array.isArray(type) && type.includes('boolean'))) {
-    return coerceboolean(value, schema);
-  }
+  if (type === 'boolean' || (Array.isArray(type) && type.includes('boolean'))) return coerceboolean(value, schema);
   if (type === 'number' || type === 'integer' || (Array.isArray(type) && (type.includes('number') || type.includes('integer')))) {
     return coercenumber(value, schema);
   }
@@ -106,17 +92,11 @@ function coercevalue(value, schema) {
  * @returns {unknown}
  */
 function coerceboolean(value, schema) {
-  if (typeof value === 'boolean') {
-    return value;
-  }
+  if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
     const lower = value.toLowerCase();
-    if (lower === 'true') {
-      return true;
-    }
-    if (lower === 'false') {
-      return false;
-    }
+    if (lower === 'true') return true;
+    if (lower === 'false') return false;
   }
   return value;
 }
@@ -128,9 +108,7 @@ function coerceboolean(value, schema) {
  * @returns {unknown}
  */
 function coercenumber(value, schema) {
-  if (typeof value === 'number') {
-    return value;
-  }
+  if (typeof value === 'number') return value;
   if (typeof value === 'string') {
     const num = Number(value);
     if (Number.isNaN(num)) {

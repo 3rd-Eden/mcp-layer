@@ -1,9 +1,8 @@
-import { createCircuitOpenResponse, createMcpErrorResponse } from '../errors/mapping.js';
+import { createAuthResponse, createCircuitOpenResponse, createMcpErrorResponse } from '../errors/mapping.js';
 
 /**
  * Create telemetry helpers for a request.
  *
- * Why this exists: handlers share the same timing, metrics, and span lifecycle.
  *
  * @param {{ telemetry: ReturnType<import('../telemetry/index.js').createTelemetry> | null, spanName: string, attributes: Record<string, unknown>, labels: Record<string, string>, validationLabels?: Record<string, string> }} config - Telemetry context.
  * @returns {{ recordValidation: () => void, recordSuccess: () => void, recordError: (error: Error & { code?: string | number }) => void, recordStatus: (status: string, errorType?: string | number) => void, finish: () => void }}
@@ -94,9 +93,7 @@ export function createCallContext(config) {
    * @returns {void}
    */
   function finish() {
-    if (span) {
-      span.end();
-    }
+    if (span) span.end();
   }
 
   return { recordValidation, recordSuccess, recordError, recordStatus, finish };
@@ -105,7 +102,6 @@ export function createCallContext(config) {
 /**
  * Map an MCP error to an HTTP response.
  *
- * Why this exists: handlers share the same circuit breaker and MCP error mapping.
  *
  * @param {Error & { code?: string | number, sessionName?: string }} error - Error from MCP call.
  * @param {string} instance - Request path.
@@ -116,6 +112,14 @@ export function createCallContext(config) {
 export function mapMcpError(error, instance, requestId, options) {
   if (error.code === 'CIRCUIT_OPEN') {
     const response = createCircuitOpenResponse(instance, error.sessionName, requestId);
+    return { status: response.status, body: response };
+  }
+  if (error.code === 'AUTH_REQUIRED') {
+    const response = createAuthResponse(instance, 'Unauthorized', 'Authorization is required.', requestId);
+    return { status: response.status, body: response };
+  }
+  if (error.code === 'AUTH_INVALID') {
+    const response = createAuthResponse(instance, 'Unauthorized', 'Authorization is invalid.', requestId);
     return { status: response.status, body: response };
   }
 

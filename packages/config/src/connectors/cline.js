@@ -32,9 +32,7 @@ function home(ctx) {
    * @param {string} product - VS Code product name segment.
    */
   function push(base, product) {
-    if (base) {
-      list.push(path.join(base, product, 'User', 'globalStorage', EXTENSION_STORAGE, SETTINGS_FILENAME));
-    }
+    if (base) list.push(path.join(base, product, 'User', 'globalStorage', EXTENSION_STORAGE, SETTINGS_FILENAME));
   }
 
   if (ctx.platform === 'win32') {
@@ -78,20 +76,14 @@ function parse(raw, file) {
 
   const list = [];
   for (const [name, value] of Object.entries(servers)) {
-    if (!value || typeof value !== 'object') {
-      continue;
-    }
+    if (!value || typeof value !== 'object') continue;
     list.push({ name, config: /** @type {Record<string, unknown>} */ (value) });
   }
 
   const metadata = {};
   if (doc && typeof doc === 'object') {
-    if (Array.isArray(doc.autoApprove)) {
-      metadata.autoApprove = doc.autoApprove;
-    }
-    if (typeof doc.defaultMode === 'string') {
-      metadata.defaultMode = doc.defaultMode;
-    }
+    if (Array.isArray(doc.autoApprove)) metadata.autoApprove = doc.autoApprove;
+    if (typeof doc.defaultMode === 'string') metadata.defaultMode = doc.defaultMode;
   }
 
   return { servers: list, metadata };
@@ -143,9 +135,7 @@ async function write(file, entry, metadata = {}) {
 
   if (metadata && typeof metadata === 'object') {
     for (const [key, value] of Object.entries(metadata)) {
-      if (key === 'servers') {
-        continue;
-      }
+      if (key === 'servers') continue;
       doc[key] = value;
     }
   }

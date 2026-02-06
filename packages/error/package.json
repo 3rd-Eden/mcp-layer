@@ -1,0 +1,36 @@
+{
+  "name": "@mcp-layer/error",
+  "version": "0.1.0",
+  "description": "Documented runtime errors for mcp-layer packages.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-layer",
+    "error",
+    "dx",
+    "documentation"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
+

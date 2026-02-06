@@ -26,51 +26,32 @@ function list(session) {
  * @returns {string}
  */
 function resolvePrefix(prefixOption, version, info, name) {
-  if (typeof prefixOption === 'function') {
-    return prefixOption(version, info, name);
-  }
-  if (typeof prefixOption === 'string') {
-    return prefixOption;
-  }
+  if (typeof prefixOption === 'function') return prefixOption(version, info, name);
+  if (typeof prefixOption === 'string') return prefixOption;
   return `/${version}`;
 }
 
 /**
- * Register routes for a single session.
+ * Ensure a circuit breaker exists for a session.
  * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
  * @param {import('@mcp-layer/session').Session} session - MCP session.
- * @param {{ prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled?: boolean, serviceName: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, exposeOpenAPI: boolean }} config - Plugin config.
- * @returns {Promise<void>}
+ * @param {{ resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number } }} config - Plugin config.
+ * @param {ReturnType<import('./telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @returns {import('opossum') | null}
  */
-async function registerSession(fastify, session, config) {
-  const catalog = await extract(session);
-  const version = deriveApiVersion(catalog.server && catalog.server.info ? catalog.server.info : undefined);
-  const pref = resolvePrefix(config.prefix, version, catalog.server ? catalog.server.info : undefined, session.name);
+function ensureBreaker(fastify, session, config, telemetry) {
+  if (!config.resilience.enabled) return null;
 
-  const validator = createValidator(config.validation, session);
-  const items = Array.isArray(catalog.items) ? catalog.items : [];
+  const map = fastify.mcpBreakers;
+  if (!map) throw new Error('mcpBreakers map is not initialized.');
 
-  for (const item of items) {
-    if (item.type === 'tool' && item.name && item.detail && item.detail.input && item.detail.input.json) {
-      validator.registerToolSchema(String(item.name), item.detail.input.json);
-    }
-    if (item.type === 'prompt' && item.name && item.detail && item.detail.input && item.detail.input.json) {
-      validator.registerPromptSchema(String(item.name), item.detail.input.json);
-    }
-  }
+  const existing = map.get(session.name);
+  if (existing) return existing;
 
-  const breaker = config.resilience.enabled ? createCircuitBreaker(session, config.resilience) : null;
+  const breaker = createCircuitBreaker(session, config.resilience);
+  map.set(session.name, breaker);
 
-  if (!fastify.mcpBreakers) {
-    fastify.decorate('mcpBreakers', new Map());
-  }
-
-  if (breaker) {
-    fastify.mcpBreakers.set(session.name, breaker);
-  }
-
-  const telemetry = createTelemetry(config.telemetry);
-  if (telemetry && breaker) {
+  if (telemetry) {
     telemetry.setCircuitState(session.name, 'closed');
     breaker.on('open', function onOpen() {
       telemetry.setCircuitState(session.name, 'open');
@@ -83,10 +64,66 @@ async function registerSession(fastify, session, config) {
     });
   }
 
+  return breaker;
+}
+
+/**
+ * Create a session resolver for request handlers.
+ * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
+ * @param {import('@mcp-layer/session').Session} session - Catalog session.
+ * @param {{ manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session> }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number } }} config - Plugin config.
+ * @param {ReturnType<import('./telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @returns {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>}
+ */
+function createResolver(fastify, session, config, telemetry) {
+  /**
+   * Resolve a session for a request.
+   * @param {import('fastify').FastifyRequest} request - Fastify request.
+   * @returns {Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>}
+   */
+  async function resolve(request) {
+    // Manager-backed flows resolve session per request so auth/identity can
+    // drive connection selection at request time.
+    const target = config.manager ? await config.manager.get(request) : session;
+    const breaker = ensureBreaker(fastify, target, config, telemetry);
+    return { session: target, breaker };
+  }
+
+  return resolve;
+}
+
+/**
+ * Register routes for a single session.
+ * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
+ * @param {import('@mcp-layer/session').Session} session - MCP session.
+ * @param {{ manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session> }, prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled?: boolean, serviceName: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, exposeOpenAPI: boolean }} config - Plugin config.
+ * @returns {Promise<void>}
+ */
+async function registerSession(fastify, session, config) {
+  const catalog = await extract(session);
+  const info = catalog.server?.info;
+  const version = deriveApiVersion(info);
+  const pref = resolvePrefix(config.prefix, version, info, session.name);
+
+  const validator = createValidator(config.validation, session);
+  const items = Array.isArray(catalog.items) ? catalog.items : [];
+
+  for (const item of items) {
+    if (item.type === 'tool' && item.name && item.detail?.input?.json) {
+      validator.registerToolSchema(String(item.name), item.detail.input.json);
+    }
+    if (item.type === 'prompt' && item.name && item.detail?.input?.json) {
+      validator.registerPromptSchema(String(item.name), item.detail.input.json);
+    }
+  }
+
+  const telemetry = createTelemetry(config.telemetry);
+  const resolve = createResolver(fastify, session, config, telemetry);
+
   const doc = spec(catalog, {
     prefix: pref,
-    title: catalog.server && catalog.server.info && catalog.server.info.name ? String(catalog.server.info.name) : 'REST API',
-    version: catalog.server && catalog.server.info && catalog.server.info.version ? String(catalog.server.info.version) : '1.0.0',
+    title: info?.name ? String(info.name) : 'REST API',
+    version: info?.version ? String(info.version) : '1.0.0',
     maxNameLength: config.validation.maxToolNameLength
   });
 
@@ -104,7 +141,7 @@ async function registerSession(fastify, session, config) {
       session,
       catalog,
       validator,
-      breaker,
+      resolve,
       telemetry,
       errors: config.errors,
       validation: config.validation
@@ -137,7 +174,10 @@ async function registerSession(fastify, session, config) {
  */
 async function mcpRestPlugin(fastify, opts) {
   const config = validateOptions(opts);
-  const sessions = list(config.session);
+  if (!fastify.mcpBreakers) fastify.decorate('mcpBreakers', new Map());
+  // Catalog extraction is performed once from the provided session. When a
+  // manager is present, runtime session selection happens inside handlers.
+  const sessions = config.manager ? [config.session] : list(config.session);
 
   for (const session of sessions) {
     await registerSession(fastify, session, config);
@@ -153,6 +193,7 @@ async function mcpRestPlugin(fastify, opts) {
     for (const breaker of map) {
       breaker.shutdown();
     }
+    if (config.manager && typeof config.manager.close === 'function') await config.manager.close();
   }
 
   fastify.addHook('onClose', onClose);

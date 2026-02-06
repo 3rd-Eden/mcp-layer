@@ -13,9 +13,7 @@ import { createResourceHandler, createTemplateHandler } from '../handlers/resour
 function bytype(items, type) {
   const list = [];
   for (const item of items) {
-    if (item && item.type === type) {
-      list.push(item);
-    }
+    if (item && item.type === type) list.push(item);
   }
   return list;
 }
@@ -23,7 +21,6 @@ function bytype(items, type) {
 /**
  * Convert a template path into a Fastify route pattern.
  *
- * Why this exists: Fastify uses `:param` syntax, while OpenAPI uses `{param}`.
  *
  * @param {string} template - Path with `{param}` tokens.
  * @returns {string}
@@ -56,7 +53,6 @@ function toFastifyPath(template) {
 /**
  * Extract the first path segment from a route.
  *
- * Why this exists: tool names should not collide with top-level routes.
  *
  * @param {string} route - Route path.
  * @returns {string | null}
@@ -64,9 +60,7 @@ function toFastifyPath(template) {
 function firstSegment(route) {
   const list = route.split('/');
   for (const part of list) {
-    if (part.length > 0) {
-      return part.toLowerCase();
-    }
+    if (part.length > 0) return part.toLowerCase();
   }
   return null;
 }
@@ -74,10 +68,9 @@ function firstSegment(route) {
 /**
  * Register REST routes for a catalog.
  *
- * Why this exists: centralizes route registration for tools/prompts/resources.
  *
  * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
- * @param {{ session: import('@mcp-layer/session').Session, catalog: { items: Array<Record<string, unknown>> }, validator: import('../validation/validator.js').SchemaValidator, breaker: import('opossum') | null, telemetry: ReturnType<import('../telemetry/index.js').createTelemetry>, errors: { exposeDetails: boolean }, validation: { maxToolNameLength: number, maxTemplateParamLength: number } }} ctx - Route context.
+ * @param {{ session: import('@mcp-layer/session').Session, catalog: { items: Array<Record<string, unknown>> }, validator: import('../validation/validator.js').SchemaValidator, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, telemetry: ReturnType<import('../telemetry/index.js').createTelemetry>, errors: { exposeDetails: boolean }, validation: { maxToolNameLength: number, maxTemplateParamLength: number } }} ctx - Route context.
  * @returns {Promise<void>}
  */
 export async function registerRoutes(fastify, ctx) {
@@ -86,63 +79,44 @@ export async function registerRoutes(fastify, ctx) {
 
   const templates = bytype(items, 'resource-template');
   for (const item of templates) {
-    const tmpl = item.detail && item.detail.uriTemplate ? String(item.detail.uriTemplate) : null;
-    if (!tmpl) {
-      continue;
-    }
+    const tmpl = item.detail?.uriTemplate ? String(item.detail.uriTemplate) : null;
+    if (!tmpl) continue;
     const route = tpath(tmpl, false);
     const segment = firstSegment(route);
-    if (segment) {
-      extraReserved.add(segment);
-    }
+    if (segment) extraReserved.add(segment);
   }
 
   const tools = bytype(items, 'tool');
   for (const item of tools) {
-    if (!item.name) {
-      continue;
-    }
+    if (!item.name) continue;
     validateToolName(String(item.name), extraReserved, { maxToolNameLength: ctx.validation.maxToolNameLength });
-    const handler = createToolHandler(ctx.session, String(item.name), ctx.validator, ctx.breaker, ctx.telemetry, ctx.errors);
+    const handler = createToolHandler(ctx.resolve, String(item.name), ctx.validator, ctx.telemetry, ctx.errors);
     fastify.post(`/${item.name}`, handler);
   }
 
   const prompts = bytype(items, 'prompt');
   for (const item of prompts) {
-    if (!item.name) {
-      continue;
-    }
+    if (!item.name) continue;
     validateSegmentName(String(item.name), { maxToolNameLength: ctx.validation.maxToolNameLength });
-    const handler = createPromptHandler(ctx.session, String(item.name), ctx.validator, ctx.breaker, ctx.telemetry, ctx.errors);
+    const handler = createPromptHandler(ctx.resolve, String(item.name), ctx.validator, ctx.telemetry, ctx.errors);
     fastify.post(`/prompts/${item.name}`, handler);
   }
 
   const resources = bytype(items, 'resource');
   for (const item of resources) {
-    const uri = item.detail && item.detail.uri ? String(item.detail.uri) : null;
-    if (!uri) {
-      continue;
-    }
+    const uri = item.detail?.uri ? String(item.detail.uri) : null;
+    if (!uri) continue;
     const route = path(uri);
-    const handler = createResourceHandler(ctx.session, uri, ctx.breaker, ctx.telemetry, ctx.errors);
+    const handler = createResourceHandler(ctx.resolve, uri, ctx.telemetry, ctx.errors);
     fastify.get(route, handler);
   }
 
   for (const item of templates) {
-    const tmpl = item.detail && item.detail.uriTemplate ? String(item.detail.uriTemplate) : null;
-    if (!tmpl) {
-      continue;
-    }
+    const tmpl = item.detail?.uriTemplate ? String(item.detail.uriTemplate) : null;
+    if (!tmpl) continue;
     const route = tpath(tmpl, false);
     const fastifyRoute = toFastifyPath(route);
-    const handler = createTemplateHandler(
-      ctx.session,
-      tmpl,
-      ctx.validation,
-      ctx.breaker,
-      ctx.telemetry,
-      ctx.errors
-    );
+    const handler = createTemplateHandler(ctx.resolve, tmpl, ctx.validation, ctx.telemetry, ctx.errors);
     fastify.get(fastifyRoute, handler);
   }
 

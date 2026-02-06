@@ -40,9 +40,7 @@ export function extractServers(doc, file) {
    */
   function consume(node, strict) {
     for (const [name, value] of Object.entries(node)) {
-      if (!isServerConfig(value)) {
-        continue;
-      }
+      if (!isServerConfig(value)) continue;
 
       if (!hasConnection(value)) {
         if (strict) {
@@ -64,15 +62,9 @@ export function extractServers(doc, file) {
   }
 
   const metadata = {};
-  if (Array.isArray(doc.inputs)) {
-    metadata.inputs = doc.inputs;
-  }
-  if (typeof doc.defaultMode === 'string') {
-    metadata.defaultMode = doc.defaultMode;
-  }
-  if (Array.isArray(doc.autoApprove)) {
-    metadata.autoApprove = doc.autoApprove;
-  }
+  if (Array.isArray(doc.inputs)) metadata.inputs = doc.inputs;
+  if (typeof doc.defaultMode === 'string') metadata.defaultMode = doc.defaultMode;
+  if (Array.isArray(doc.autoApprove)) metadata.autoApprove = doc.autoApprove;
 
   return { servers, metadata };
 }
@@ -150,9 +142,7 @@ export async function writeDocument(file, entry, metadata = {}) {
 
   if (metadata && typeof metadata === 'object') {
     for (const [metaKey, value] of Object.entries(metadata)) {
-      if (metaKey === 'servers') {
-        continue;
-      }
+      if (metaKey === 'servers') continue;
       body[metaKey] = value;
     }
   }

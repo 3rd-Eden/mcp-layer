@@ -17,16 +17,13 @@ const TOOL_NAME_PATTERN = /^[a-z0-9._-]+$/i;
 /**
  * Validate that a name is safe for use in a path segment.
  *
- * Why this exists: keeps path segments URL-safe and bounded.
  *
  * @param {string} name - Tool name.
  * @param {{ maxToolNameLength?: number }} [limits] - Validation limits.
  * @returns {void}
  */
 export function validateSegmentName(name, limits = {}) {
-  if (typeof name !== 'string' || name.length === 0) {
-    throw new Error('Tool name must be a non-empty string.');
-  }
+  if (typeof name !== 'string' || name.length === 0) throw new Error('Tool name must be a non-empty string.');
 
   const max = typeof limits.maxToolNameLength === 'number' ? limits.maxToolNameLength : null;
   if (max && name.length > max) {
@@ -41,7 +38,6 @@ export function validateSegmentName(name, limits = {}) {
 /**
  * Validate that a tool name does not conflict with reserved paths.
  *
- * Why this exists: prevents route collisions and invalid path segments.
  *
  * @param {string} name - Tool name.
  * @param {Set<string>} [extra] - Additional reserved paths (lowercase).

@@ -54,7 +54,6 @@ describe('prompt routing', promptSuite);
 /**
  * Build a minimal MCP server with a custom prompt.
  *
- * Why this exists: tests need to verify prompt name validation.
  *
  * @param {string} name - Prompt name.
  * @returns {McpServer}

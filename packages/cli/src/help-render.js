@@ -9,14 +9,10 @@ import { palette } from './colors.js';
  */
 export function header(meta, theme, colors) {
   const color = palette(colors, theme);
-  const name = meta.name && meta.version ? `${meta.name} v${meta.version}` : meta.name;
+  const name = meta.name ? (meta.version ? `${meta.name} v${meta.version}` : meta.name) : '';
   const parts = [];
-  if (name) {
-    parts.push(color.title(name));
-  }
-  if (meta.description) {
-    parts.push(meta.description);
-  }
+  if (name) parts.push(color.title(name));
+  if (meta.description) parts.push(meta.description);
   return parts.join('\n');
 }
 

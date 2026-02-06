@@ -18,9 +18,7 @@ const base = {
  */
 function resolveServer(instance) {
   if (instance && typeof instance === 'object') {
-    if (instance.server && typeof instance.server === 'object') {
-      return instance.server;
-    }
+    if (instance.server && typeof instance.server === 'object') return instance.server;
     return instance;
   }
   throw new TypeError('Expected an MCP server instance.');
@@ -48,9 +46,7 @@ export async function attach(instance, name, opts = {}) {
   }
 
   const provider = matchProvider(instance);
-  if (provider) {
-    return attachWithProvider(provider, instance, name, opts);
-  }
+  if (provider) return attachWithProvider(provider, instance, name, opts);
 
   const server = resolveServer(instance);
   if (isConnected(server)) {

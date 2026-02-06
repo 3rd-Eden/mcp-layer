@@ -23,9 +23,7 @@ function ascend(dir) {
   while (!list.includes(current)) {
     list.push(current);
     const next = path.dirname(current);
-    if (next === current) {
-      break;
-    }
+    if (next === current) break;
     current = next;
   }
   return list;

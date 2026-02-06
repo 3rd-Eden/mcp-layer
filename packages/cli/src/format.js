@@ -10,9 +10,7 @@ let markdownReady = false;
  * @returns {void}
  */
 function setupmarkdown() {
-  if (markdownReady) {
-    return;
-  }
+  if (markdownReady) return;
   marked.use(markedTerminal());
   markdownReady = true;
 }
@@ -24,9 +22,7 @@ function setupmarkdown() {
  * @returns {boolean}
  */
 function ismarkdown(text, mimeType) {
-  if (mimeType === 'text/markdown' || mimeType === 'text/md') {
-    return true;
-  }
+  if (mimeType === 'text/markdown' || mimeType === 'text/md') return true;
   const sample = text.trim();
   return /^#{1,6}\s/.test(sample)
     || /```/.test(sample)
@@ -94,9 +90,7 @@ function stripansi(text) {
  * @returns {string}
  */
 function sanitize(text, options) {
-  if (options.ansi) {
-    return text;
-  }
+  if (options.ansi) return text;
   return stripansi(text);
 }
 /**
@@ -200,9 +194,7 @@ function writebuffer(buffer) {
  * @returns {void}
  */
 function writelines(lines) {
-  if (lines.length === 0) {
-    return;
-  }
+  if (lines.length === 0) return;
   process.stdout.write(`${lines.join('\n')}\n`);
 }
 
@@ -212,18 +204,12 @@ function writelines(lines) {
  * @returns {Buffer | null}
  */
 function singlebinary(items) {
-  if (items.length !== 1) {
-    return null;
-  }
+  if (items.length !== 1) return null;
   const item = items[0];
-  if (isimage(item) || isaudio(item)) {
-    return decode(String(item.data));
-  }
+  if (isimage(item) || isaudio(item)) return decode(String(item.data));
   if (isresource(item) && item.resource && typeof item.resource === 'object') {
     const res = /** @type {Record<string, unknown>} */ (item.resource);
-    if (typeof res.blob === 'string') {
-      return decode(res.blob);
-    }
+    if (typeof res.blob === 'string') return decode(res.blob);
   }
   return null;
 }
@@ -234,13 +220,9 @@ function singlebinary(items) {
  * @returns {Buffer | null}
  */
 function singleblob(items) {
-  if (items.length !== 1) {
-    return null;
-  }
+  if (items.length !== 1) return null;
   const item = items[0];
-  if (isblob(item)) {
-    return decode(String(item.blob));
-  }
+  if (isblob(item)) return decode(String(item.blob));
   return null;
 }
 
@@ -250,13 +232,9 @@ function singleblob(items) {
  * @returns {string | null}
  */
 function singleresource(items) {
-  if (items.length !== 1) {
-    return null;
-  }
+  if (items.length !== 1) return null;
   const item = items[0];
-  if (typeof item.text === 'string') {
-    return item.text;
-  }
+  if (typeof item.text === 'string') return item.text;
   return null;
 }
 
@@ -273,14 +251,10 @@ async function rendercontent(items, options) {
 
   for (const item of items) {
     if (item.type === 'text' && typeof item.text === 'string') {
-      if (multi) {
-        lines.push(color.title('Text:'));
-      }
+      if (multi) lines.push(color.title('Text:'));
       const mime = typeof item.mimeType === 'string' ? item.mimeType : undefined;
       lines.push(...rendertext(item.text, options, mime));
-      if (multi) {
-        lines.push('');
-      }
+      if (multi) lines.push('');
       continue;
     }
 
@@ -338,9 +312,7 @@ async function rendercontent(items, options) {
   }
 
   return lines.filter(function filterEmpty(line, index, arr) {
-    if (line !== '') {
-      return true;
-    }
+    if (line !== '') return true;
     return index < arr.length - 1 && arr[index + 1] !== '';
   });
 }
@@ -367,14 +339,10 @@ async function renderresources(items, options) {
       const data = decode(item.blob);
       lines.push(...renderbinary('Binary', mime, data.length, color, multi));
     }
-    if (multi) {
-      lines.push('');
-    }
+    if (multi) lines.push('');
   }
   return lines.filter(function filterEmpty(line, index, arr) {
-    if (line !== '') {
-      return true;
-    }
+    if (line !== '') return true;
     return index < arr.length - 1 && arr[index + 1] !== '';
   });
 }
@@ -400,9 +368,7 @@ export async function outputresult(result, options) {
   const lines = await rendercontent(content, options);
   const structured = result.structuredContent;
   if (structured && typeof structured === 'object') {
-    if (lines.length > 0) {
-      lines.push('');
-    }
+    if (lines.length > 0) lines.push('');
     lines.push('Structured content:');
     lines.push(JSON.stringify(structured, null, 2));
   }

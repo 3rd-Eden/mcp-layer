@@ -81,12 +81,8 @@ export class Config {
       return entry.path === candidate.path;
     });
     if (existing) {
-      if (candidate.connector) {
-        existing.connector = candidate.connector;
-      }
-      if (candidate.scope) {
-        existing.scope = candidate.scope;
-      }
+      if (candidate.connector) existing.connector = candidate.connector;
+      if (candidate.scope) existing.scope = candidate.scope;
       existing.data = { servers, metadata };
     } else {
       this.list.push({ path: candidate.path, connector: candidate.connector, scope: candidate.scope, data: { servers, metadata } });
@@ -152,9 +148,7 @@ export class Config {
    */
   async remove(name) {
     const existing = this.get(name);
-    if (!existing) {
-      return;
-    }
+    if (!existing) return;
     const connectorName = existing.connector;
     const connector = connectorName ? findConnector(connectorName) : undefined;
     if (!connector || typeof connector.write !== 'function') {
@@ -168,9 +162,7 @@ export class Config {
       return entry.name !== name;
     });
 
-    if (remaining.length === parsed.servers.length) {
-      return;
-    }
+    if (remaining.length === parsed.servers.length) return;
 
     const metadata = parsed.metadata && typeof parsed.metadata === 'object'
       ? { ...parsed.metadata }
@@ -231,9 +223,7 @@ export async function locate(opts = {}) {
 
   for (const candidate of candidates) {
     const ref = path.resolve(candidate.path);
-    if (seen.has(ref)) {
-      continue;
-    }
+    if (seen.has(ref)) continue;
     seen.add(ref);
     if (await exists(ref)) {
       hits.push({ path: ref, parse: candidate.parse, source: candidate.source });

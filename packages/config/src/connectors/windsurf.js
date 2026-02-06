@@ -16,9 +16,7 @@ function project() {
  */
 function home(ctx) {
   const base = ctx.home;
-  if (!base) {
-    return [];
-  }
+  if (!base) return [];
   return [path.join(base, '.codeium', 'windsurf', 'mcp_config.json')];
 }
 

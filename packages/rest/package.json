@@ -33,7 +33,8 @@
     "validation"
   ],
   "scripts": {
-    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js",
+    "benchmark:load": "node ./benchmark/run.js"
   },
   "main": "src/index.js",
   "exports": {
@@ -74,10 +75,13 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^12.0.0",
     "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/test-server": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.20.2",
     "@opentelemetry/api": "^1.9.0",
+    "autocannon": "^7.13.0",
     "fastify": "^5.7.4",
     "zod": "^3.25.76"
   }

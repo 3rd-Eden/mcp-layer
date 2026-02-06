@@ -5,9 +5,7 @@
  * @returns {string}
  */
 export function render(template, args) {
-  if (!template) {
-    throw new Error('Template URI is missing.');
-  }
+  if (!template) throw new Error('Template URI is missing.');
   /**
    * Replace a template variable with its value.
    * @param {string} match - Full regex match text.
@@ -15,9 +13,7 @@ export function render(template, args) {
    * @returns {string}
    */
   function substitute(match, key) {
-    if (Object.hasOwn(args, key)) {
-      return String(args[key]);
-    }
+    if (Object.hasOwn(args, key)) return String(args[key]);
     throw new Error(`Missing template parameter: ${key}`);
   }
 

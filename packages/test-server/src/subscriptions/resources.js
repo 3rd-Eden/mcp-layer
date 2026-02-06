@@ -37,9 +37,7 @@ export function registerResourceSubscriptions(server, options) {
     const set = subscribers.get(sessionId);
     if (set) {
       set.delete(request.params.uri);
-      if (set.size === 0) {
-        subscribers.delete(sessionId);
-      }
+      if (set.size === 0) subscribers.delete(sessionId);
     }
     return {};
   });

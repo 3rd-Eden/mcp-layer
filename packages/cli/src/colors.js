@@ -6,9 +6,7 @@
  */
 function hexcolor(hex, text) {
   const match = /^#?([a-fA-F0-9]{6})$/.exec(hex);
-  if (!match) {
-    return text;
-  }
+  if (!match) return text;
   const value = match[1];
   const r = Number.parseInt(value.slice(0, 2), 16);
   const g = Number.parseInt(value.slice(2, 4), 16);
@@ -22,12 +20,8 @@ function hexcolor(hex, text) {
  * @returns {boolean}
  */
 export function usecolors(enabled) {
-  if (!enabled) {
-    return false;
-  }
-  if (process.env.NO_COLOR) {
-    return false;
-  }
+  if (!enabled) return false;
+  if (process.env.NO_COLOR) return false;
   return process.stdout.isTTY;
 }
 

@@ -16,9 +16,7 @@ function project() {
  */
 function home(ctx) {
   const base = ctx.home;
-  if (!base) {
-    return [];
-  }
+  if (!base) return [];
   const list = [path.join(base, '.claude', 'settings.json')];
   if (ctx.platform === 'darwin') {
     list.push(path.join(base, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'));

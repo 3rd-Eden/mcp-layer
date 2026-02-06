@@ -2,7 +2,6 @@
 
 `@mcp-layer/test-server` is a feature-complete MCP server used for integration tests and local experiments. It mirrors the tool, resource, prompt, sampling, elicitation, notification, and MCP Apps features expected by the official SDK so clients can validate end-to-end behavior against a single, real server.
 
-## Why this exists
 
 The rest of this workspace depends on a real MCP server to validate protocols. This server:
 - Runs over stdio (and optional HTTP/SSE transports)

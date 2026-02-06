@@ -24,9 +24,7 @@ function project(dir) {
   }
 
   for (const entry of entries) {
-    if (!entry.isFile()) {
-      continue;
-    }
+    if (!entry.isFile()) continue;
     if (PROJECT_PATTERNS.some(function match(pattern) {
       return pattern.test(entry.name);
     })) {
@@ -50,9 +48,7 @@ function home(ctx) {
    * @param {string | undefined} candidate - Candidate file path to add to the result set.
    */
   function push(candidate) {
-    if (candidate) {
-      hits.add(path.resolve(candidate));
-    }
+    if (candidate) hits.add(path.resolve(candidate));
   }
 
   push(ctx.env?.MCP_CONFIG_PATH && base && ctx.env.MCP_CONFIG_PATH.startsWith('~')

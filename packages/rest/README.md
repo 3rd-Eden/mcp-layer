@@ -85,6 +85,7 @@ Top-level options:
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `session` | `Session` or `Session[]` | required | MCP session(s) to expose over REST. |
+| `manager` | `{ get(request) }` | optional | Session manager used to resolve per-request MCP sessions (true proxy mode). Requires `session` for catalog bootstrap. |
 | `prefix` | `string` or `(version, serverInfo, sessionName) => string` | derived | Route prefix. Use a function to create per-session routes. |
 | `validation` | `object` | see below | Validation and schema safety controls. |
 | `resilience` | `object` | see below | Circuit breaker configuration. |
@@ -165,6 +166,51 @@ await app.register(mcpRest, {
 });
 ```
 
+## True Proxy Mode (Proxy Session Manager)
+
+When you need per-request authentication or want to scale beyond a single MCP connection, register a session manager. The session manager derives an identity from the HTTP request (typically `Authorization`) and caches MCP sessions per identity.
+
+```js
+import { createManager } from '@mcp-layer/manager';
+import { connect } from '@mcp-layer/connect';
+import { load } from '@mcp-layer/config';
+
+const config = await load();
+const entry = config.get('my-server');
+if (!entry) {
+  throw new Error('Server not found.');
+}
+
+const manager = createManager({
+  max: 10,
+  ttl: 5 * 60 * 1000,
+  factory: async function factory(ctx) {
+    const token = ctx.identity.auth ? ctx.identity.auth.token : undefined;
+    return connect(config, entry.name, {
+      env: token ? { MCP_AUTH_TOKEN: token } : undefined
+    });
+  }
+});
+
+await app.register(mcpRest, {
+  session,
+  manager: manager
+});
+```
+
+Notes:
+- Today the REST plugin uses the provided `session` to build routes and OpenAPI. The manager is used for per-request execution.
+- The session manager must return sessions that match the same MCP server surface as the catalog session.
+
+## Performance Tips
+
+- Scale REST horizontally (multiple worker processes) before increasing MCP session counts. In benchmarks, the REST process saturates first.
+- Disable or tune validation/telemetry when load testing to measure raw throughput.
+- Use stdio/remote MCP servers for realistic load tests; in-process sessions are excellent for correctness but do not model real transport contention.
+- See Fastify’s benchmarking guidance and published results:
+  - https://fastify.dev/docs/v5.7.x/Guides/Benchmarking/
+  - https://fastify.dev/benchmarks/
+
 ## Validation
 
 The plugin validates tool and prompt inputs with Ajv when schemas are trusted. For untrusted schemas, safety checks are applied and validation is skipped if a schema fails the safety limits.
@@ -197,6 +243,7 @@ The `type` field in Problem Details responses maps to the error names below.
 - [error-validation](#error-validation)
 - [error-not-found](#error-not-found)
 - [error-parse](#error-parse)
+- [error-auth](#error-auth)
 - [error-invalid-params](#error-invalid-params)
 - [error-timeout](#error-timeout)
 - [error-circuit-open](#error-circuit-open)
@@ -221,6 +268,12 @@ Resolution: list the server catalog (`listTools`, `listPrompts`, `listResources`
 When it happens: malformed JSON or request body parsing failure.
 
 Resolution: ensure the request body is valid JSON and the `Content-Type` is `application/json`. If you send an empty body, make sure the endpoint expects it.
+
+### error-auth
+
+When it happens: missing or invalid authorization when `manager` requires auth.
+
+Resolution: send a valid `Authorization` header (for example `Bearer <token>`) or configure `manager` with `auth.mode: "optional"` when auth is not required.
 
 ### error-invalid-params
 

@@ -15,9 +15,7 @@ const base = {
  * @returns {boolean}
  */
 export function isPlatformaticInstance(instance) {
-  if (!instance || typeof instance !== 'object') {
-    return false;
-  }
+  if (!instance || typeof instance !== 'object') return false;
   return typeof instance.mcpAddTool === 'function' && typeof instance.inject === 'function';
 }
 
@@ -54,9 +52,7 @@ class FastifyInjectTransport {
    * @returns {Promise<void>}
    */
   async send(message) {
-    if (!this.active) {
-      throw new Error('Transport is not started.');
-    }
+    if (!this.active) throw new Error('Transport is not started.');
 
     try {
       const response = await this.app.inject({
@@ -77,9 +73,7 @@ class FastifyInjectTransport {
    */
   async close() {
     this.active = false;
-    if (typeof this.onclose === 'function') {
-      this.onclose();
-    }
+    if (typeof this.onclose === 'function') this.onclose();
   }
 
   /**
@@ -88,19 +82,13 @@ class FastifyInjectTransport {
    * @returns {Promise<void>}
    */
   async handleResponse(response) {
-    if (!response || response.statusCode === 204) {
-      return;
-    }
+    if (!response || response.statusCode === 204) return;
 
     const body = response.body;
-    if (!body) {
-      return;
-    }
+    if (!body) return;
 
     const payload = this.parseBody(body);
-    if (!payload) {
-      return;
-    }
+    if (!payload) return;
 
     if (Array.isArray(payload)) {
       this.emitBatch(payload);
@@ -140,9 +128,7 @@ class FastifyInjectTransport {
    * @returns {void}
    */
   emitMessage(message) {
-    if (typeof this.onmessage === 'function') {
-      this.onmessage(message);
-    }
+    if (typeof this.onmessage === 'function') this.onmessage(message);
   }
 
   /**
@@ -151,9 +137,7 @@ class FastifyInjectTransport {
    * @returns {void}
    */
   handleError(error) {
-    if (typeof this.onerror === 'function') {
-      this.onerror(error);
-    }
+    if (typeof this.onerror === 'function') this.onerror(error);
   }
 }
 
@@ -165,9 +149,7 @@ class FastifyInjectTransport {
  * @returns {Promise<Session>}
  */
 export async function attachPlatformatic(app, name, opts = {}) {
-  if (typeof app.ready === 'function') {
-    await app.ready();
-  }
+  if (typeof app.ready === 'function') await app.ready();
 
   const info = { ...base, ...(opts.info ?? {}) };
   const url = typeof opts.path === 'string' && opts.path.length > 0 ? opts.path : '/mcp';

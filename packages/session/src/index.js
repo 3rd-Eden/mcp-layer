@@ -21,8 +21,6 @@ export class Session {
    */
   async close() {
     await this.client.close();
-    if (this.transport && typeof this.transport.close === 'function') {
-      await this.transport.close();
-    }
+    if (this.transport && typeof this.transport.close === 'function') await this.transport.close();
   }
 }

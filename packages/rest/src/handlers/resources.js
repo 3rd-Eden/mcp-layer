@@ -9,17 +9,15 @@ const templateLib = require('uri-template');
 /**
  * Build a shared resource read handler.
  *
- * Why this exists: resource and template routes share the same MCP call flow.
  *
- * @param {import('@mcp-layer/session').Session} session - MCP session.
- * @param {import('opossum') | null} breaker - Circuit breaker.
+ * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolveSession - Session resolver.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
- * @param {(request: import('fastify').FastifyRequest) => { uri?: string, errors?: Array<{ path: string, keyword?: string, message?: string }> }} resolve - URI resolver.
+ * @param {(request: import('fastify').FastifyRequest) => { uri?: string, errors?: Array<{ path: string, keyword?: string, message?: string }> }} resolveUri - URI resolver.
  * @param {string} handlerName - Handler name for diagnostics.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-function createReadHandler(session, breaker, telemetry, errors, resolve, handlerName) {
+function createReadHandler(resolveSession, telemetry, errors, resolveUri, handlerName) {
   /**
    * Handle a resource read request.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
@@ -29,9 +27,9 @@ function createReadHandler(session, breaker, telemetry, errors, resolve, handler
   async function handleRead(request, reply) {
     const requestId = request.id;
     const instance = request.url;
-    const resolved = resolve(request);
+    const resolved = resolveUri(request);
 
-    if (resolved.errors && resolved.errors.length > 0) {
+    if (resolved.errors?.length > 0) {
       const response = createValidationErrorResponse(instance, resolved.errors, requestId);
       reply.code(response.status).send(response);
       return;
@@ -44,39 +42,43 @@ function createReadHandler(session, breaker, telemetry, errors, resolve, handler
     }
 
     const uri = resolved.uri;
-    const ctx = createCallContext({
-      telemetry,
-      spanName: 'mcp.resources/read',
-      attributes: {
-        'mcp.resource.uri': uri,
-        'mcp.session.name': session.name,
-        'http.request.id': requestId
-      },
-      labels: { resource: uri, session: session.name }
-    });
+    let ctx;
 
     try {
+      const resolvedSession = await resolveSession(request);
+      const session = resolvedSession.session;
+      const breaker = resolvedSession.breaker;
+
+      ctx = createCallContext({
+        telemetry,
+        spanName: 'mcp.resources/read',
+        attributes: {
+          'mcp.resource.uri': uri,
+          'mcp.session.name': session.name,
+          'http.request.id': requestId
+        },
+        labels: { resource: uri, session: session.name }
+      });
+
       const result = await executeWithBreaker(breaker, session, 'resources/read', { uri });
 
       ctx.recordSuccess();
 
-      const list = result && Array.isArray(result.contents) ? result.contents : [];
+      const list = Array.isArray(result?.contents) ? result.contents : [];
       const item = list.length > 0 ? list[0] : null;
-      if (item && typeof item.text === 'string') {
-        if (item.mimeType) {
-          reply.type(item.mimeType);
-        }
+      if (typeof item?.text === 'string') {
+        if (item?.mimeType) reply.type(item.mimeType);
         reply.code(200).send(item.text);
         return;
       }
 
       reply.code(200).send(result);
     } catch (error) {
-      ctx.recordError(error);
+      ctx?.recordError(error);
       const response = mapMcpError(error, instance, requestId, errors);
       reply.code(response.status).send(response.body);
     } finally {
-      ctx.finish();
+      ctx?.finish();
     }
   }
 
@@ -87,16 +89,14 @@ function createReadHandler(session, breaker, telemetry, errors, resolve, handler
 /**
  * Create a handler for resource reads.
  *
- * Why this exists: maps HTTP GET requests to MCP resource reads.
  *
- * @param {import('@mcp-layer/session').Session} session - MCP session.
+ * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
  * @param {string} uri - Resource URI.
- * @param {import('opossum') | null} breaker - Circuit breaker.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createResourceHandler(session, uri, breaker, telemetry, errors) {
+export function createResourceHandler(resolve, uri, telemetry, errors) {
   /**
    * Resolve a fixed resource URI.
    * @param {import('fastify').FastifyRequest} _request - Fastify request.
@@ -106,31 +106,22 @@ export function createResourceHandler(session, uri, breaker, telemetry, errors) 
     return { uri };
   }
 
-  return createReadHandler(
-    session,
-    breaker,
-    telemetry,
-    errors,
-    resolveResource,
-    `handleResourceRead_${encodeURIComponent(uri)}`
-  );
+  return createReadHandler(resolve, telemetry, errors, resolveResource, `handleResourceRead_${encodeURIComponent(uri)}`);
 }
 
 /**
  * Create a handler for resource template reads.
  *
- * Why this exists: template routes must expand variables into concrete URIs
  * before issuing a resource read.
  *
- * @param {import('@mcp-layer/session').Session} session - MCP session.
+ * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
  * @param {string} template - Resource URI template.
  * @param {{ maxTemplateParamLength: number }} validation - Validation limits.
- * @param {import('opossum') | null} breaker - Circuit breaker.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createTemplateHandler(session, template, validation, breaker, telemetry, errors) {
+export function createTemplateHandler(resolve, template, validation, telemetry, errors) {
   const parsed = templateLib.parse(template);
 
   /**
@@ -145,7 +136,6 @@ export function createTemplateHandler(session, template, validation, breaker, te
   /**
    * Validate template parameters.
    *
-   * Why this exists: long path segments can be abused to create oversized
    * URIs and downstream load.
    *
    * @param {Record<string, unknown>} params - Route params.
@@ -156,9 +146,7 @@ export function createTemplateHandler(session, template, validation, breaker, te
     const max = validation.maxTemplateParamLength;
 
     for (const [key, value] of Object.entries(params)) {
-      if (value === undefined || value === null) {
-        continue;
-      }
+      if (value === undefined || value === null) continue;
       const text = typeof value === 'string' ? value : String(value);
       if (text.length > max) {
         errors.push({
@@ -186,12 +174,5 @@ export function createTemplateHandler(session, template, validation, breaker, te
     return { uri: expandUri(params) };
   }
 
-  return createReadHandler(
-    session,
-    breaker,
-    telemetry,
-    errors,
-    resolveTemplate,
-    `handleTemplateRead_${encodeURIComponent(template)}`
-  );
+  return createReadHandler(resolve, telemetry, errors, resolveTemplate, `handleTemplateRead_${encodeURIComponent(template)}`);
 }

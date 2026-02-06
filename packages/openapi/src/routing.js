@@ -20,10 +20,6 @@ function splitpath(path) {
 
 /**
  * Decode a path segment safely.
- *
- * Why this exists: percent-encoded segments should round-trip without
- * throwing when malformed input appears.
- *
  * @param {string} value - Encoded segment.
  * @returns {string}
  */
@@ -31,6 +27,8 @@ function decodesegment(value) {
   try {
     return decodeURIComponent(value);
   } catch {
+    // Keep mapping stable for malformed inputs instead of throwing during
+    // route generation.
     return value;
   }
 }
@@ -57,9 +55,6 @@ function encodepath(path) {
 
 /**
  * Encode a template path while preserving template expressions.
- *
- * Why this exists: percent-encoding should not mangle `{var}` segments.
- *
  * @param {string} path - Path containing template expressions.
  * @returns {string}
  */
@@ -84,9 +79,6 @@ function encodeTemplatePath(path) {
 
 /**
  * Strip query and fragment components from a template.
- *
- * Why this exists: route paths should not include query strings or fragments.
- *
  * @param {string} value - Template string.
  * @returns {string}
  */
@@ -94,26 +86,20 @@ function stripTemplateSuffix(value) {
   const query = value.indexOf('?');
   const hash = value.indexOf('#');
   const cut = query === -1 ? hash : hash === -1 ? query : Math.min(query, hash);
-  if (cut === -1) {
-    return value;
-  }
+  if (cut === -1) return value;
   return value.slice(0, cut);
 }
 
 /**
  * Attempt to parse a scheme URI using a standards-compliant parser.
- *
- * Why this exists: a dedicated URI parser handles edge cases more reliably,
- * while we still retain MCP-specific mapping rules.
- *
  * @param {string} uri - Candidate URI.
  * @returns {{ scheme: string, host: string | null, path: string | null } | null}
  */
 function parseuri(uri) {
+  // Use a standards-compliant URI parser first, then apply deterministic MCP
+  // mapping rules on top.
   const parsed = uriLib.parse(uri);
-  if (!parsed || !parsed.scheme) {
-    return null;
-  }
+  if (!parsed || !parsed.scheme) return null;
 
   const scheme = parsed.scheme;
   const host = parsed.host ? parsed.host : null;
@@ -137,9 +123,7 @@ function isscheme(value) {
  */
 function segment(path) {
   const trimmed = path.startsWith('/') ? path.slice(1) : path;
-  if (trimmed.length === 0) {
-    return [];
-  }
+  if (trimmed.length === 0) return [];
   return trimmed.split('/').map(decodesegment);
 }
 
@@ -168,10 +152,6 @@ function buildpath(scheme, host, tail) {
 
 /**
  * Build a mapped HTTP path for a template URI.
- *
- * Why this exists: template routes should expose dynamic segments directly
- * instead of the `_` sentinel used for fixed resources.
- *
  * @param {string} scheme - URI scheme.
  * @param {string | null} host - Authority segment, if present.
  * @param {string | null} tail - Path segment, if present.
@@ -198,18 +178,12 @@ function buildtemplatepath(scheme, host, tail) {
 
 /**
  * Map an MCP resource URI to an HTTP route path.
- *
- * Why this exists: Stable, deterministic mapping lets HTTP routes align with MCP
- * resource URIs without manual translation.
- *
  * @param {string} uri - MCP resource URI.
  * @param {boolean} [encode=true] - Whether to percent-encode path segments.
  * @returns {string} HTTP route path (without version prefix).
  */
 export function path(uri, encode = true) {
-  if (!isstring(uri)) {
-    throw new TypeError('Expected resource URI to be a non-empty string.');
-  }
+  if (!isstring(uri)) throw new TypeError('Expected resource URI to be a non-empty string.');
 
   if (uri.startsWith('/')) {
     const path = encode ? encodepath(uri) : uri;
@@ -250,27 +224,18 @@ export function path(uri, encode = true) {
 
 /**
  * Map an MCP resource URI template to an HTTP route path.
- *
- * Why this exists: template URIs should be exposed as dynamic HTTP routes.
- *
  * @param {string} template - MCP resource URI template.
  * @param {boolean} [encode=true] - Whether to percent-encode static segments.
  * @returns {string} HTTP route path (without version prefix).
  */
 export function tpath(template, encode = true) {
-  if (!isstring(template)) {
-    throw new TypeError('Expected resource URI template to be a non-empty string.');
-  }
+  if (!isstring(template)) throw new TypeError('Expected resource URI template to be a non-empty string.');
 
-  if (!template.includes('{')) {
-    return path(template, encode);
-  }
+  if (!template.includes('{')) return path(template, encode);
 
   const trimmed = stripTemplateSuffix(template);
 
-  if (trimmed.startsWith('/')) {
-    return encode ? encodeTemplatePath(trimmed) : trimmed;
-  }
+  if (trimmed.startsWith('/')) return encode ? encodeTemplatePath(trimmed) : trimmed;
 
   const split = trimmed.indexOf('://');
   if (split !== -1) {
@@ -301,22 +266,17 @@ export function tpath(template, encode = true) {
 /**
  * Reverse a mapped HTTP path back to its MCP resource URI.
  *
- * Why this exists: Request handlers need to convert resource route paths back
  * into MCP resource URIs for read requests.
  *
  * @param {string} path - HTTP route path.
  * @returns {string} Original MCP resource URI.
  */
 export function uri(path) {
-  if (!isstring(path)) {
-    throw new TypeError('Expected path to be a non-empty string.');
-  }
+  if (!isstring(path)) throw new TypeError('Expected path to be a non-empty string.');
 
   const list = segment(path);
 
-  if (list.length === 0) {
-    return '/';
-  }
+  if (list.length === 0) return '/';
 
   if (list.length === 2 && list[1] === '_') {
     return `${list[0]}://`;

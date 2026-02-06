@@ -25,7 +25,6 @@ function merge(base, next) {
 /**
  * Assert that a value is a finite positive number.
  *
- * Why this exists: keeps safety limits predictable and prevents accidental
  * disabling of guards by passing invalid values.
  *
  * @param {string} name - Option name.
@@ -42,41 +41,44 @@ function requirePositiveNumber(name, value) {
 /**
  * Validate trustSchemas value.
  *
- * Why this exists: downstream validators assume a finite set of modes.
  *
  * @param {unknown} value - trustSchemas input.
  * @returns {'auto' | true | false}
  */
 function trustMode(value) {
-  if (value === 'auto' || value === true || value === false) {
-    return value;
-  }
+  if (value === 'auto' || value === true || value === false) return value;
   throw new TypeError('validation.trustSchemas must be "auto", true, or false.');
 }
 
 /**
  * Validate plugin options and apply defaults.
  *
- * Why this exists: ensures required options are present and that downstream
  * modules receive consistent configuration shapes.
  *
  * @param {Record<string, unknown>} opts - User-supplied options.
- * @returns {{ session: unknown, prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, exposeOpenAPI: boolean }}
+ * @returns {{ session: unknown, manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session>, close?: () => Promise<void> }, prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, exposeOpenAPI: boolean }}
  */
 export function validateOptions(opts) {
   const input = isrecord(opts) ? opts : {};
   const session = input.session;
+  const manager = input.manager;
 
-  if (!session) {
-    throw new Error('session option is required.');
+  if (!session && !manager) throw new Error('session or manager option is required.');
+
+  if (manager !== undefined) {
+    if (!isrecord(manager) || typeof manager.get !== 'function') {
+      throw new TypeError('manager must be an object with a get(request) function.');
+    }
+    if (!session) throw new Error('session is required when manager is provided (used for catalog bootstrap).');
+    if (Array.isArray(session)) {
+      throw new TypeError('manager does not support multiple sessions. Register multiple plugins instead.');
+    }
   }
 
   if (input.prefix !== undefined && typeof input.prefix !== 'string' && typeof input.prefix !== 'function') {
     throw new TypeError('prefix must be a string or function.');
   }
-  if (input.errors !== undefined && !isrecord(input.errors)) {
-    throw new TypeError('errors must be an object.');
-  }
+  if (input.errors !== undefined && !isrecord(input.errors)) throw new TypeError('errors must be an object.');
   if (input.validation !== undefined && !isrecord(input.validation)) {
     throw new TypeError('validation must be an object.');
   }
@@ -96,6 +98,7 @@ export function validateOptions(opts) {
 
   return {
     session,
+    manager: /** @type {{ get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session>, close?: () => Promise<void> } | undefined} */ (manager),
     prefix: input.prefix,
     validation: normalizedValidation,
     resilience: /** @type {typeof DEFAULTS.resilience} */ (resilience),

@@ -3,7 +3,6 @@ import { createRequire } from 'node:module';
 /**
  * Load the OpenTelemetry API module dynamically.
  *
- * Why this exists: keep OpenTelemetry optional for consumers.
  *
  * @returns {import('@opentelemetry/api')} OTel API module.
  */
@@ -15,7 +14,6 @@ function loadOtel() {
 /**
  * Create a telemetry helper for the REST plugin.
  *
- * Why this exists: when enabled, handlers should emit metrics and spans without
  * forcing consumers to install an SDK if they do not opt in.
  *
  * @param {{ enabled?: boolean, serviceName: string, api?: import('@opentelemetry/api') }} config - Telemetry configuration.
@@ -23,9 +21,7 @@ function loadOtel() {
  */
 export function createTelemetry(config) {
   const enabled = config.enabled ?? Boolean(config.api);
-  if (!enabled) {
-    return null;
-  }
+  if (!enabled) return null;
 
   const otel = config.api ?? loadOtel();
   const tracer = otel.trace.getTracer(config.serviceName, '1.0.0');

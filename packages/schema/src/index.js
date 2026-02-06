@@ -18,13 +18,9 @@ function isrecord(value) {
  * @returns {boolean}
  */
 function ismissing(error) {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
+  if (!error || typeof error !== 'object') return false;
   const code = 'code' in error ? error.code : undefined;
-  if (code === -32601) {
-    return true;
-  }
+  if (code === -32601) return true;
   const message = 'message' in error ? String(error.message) : '';
   return message.includes('Method') && message.includes('not found');
 }
@@ -44,9 +40,7 @@ function refiners(validator, check) {
    */
   function apply(value, ctx) {
     const ok = check(value);
-    if (ok) {
-      return;
-    }
+    if (ok) return;
     const text = validator.errorsText(check.errors, { dataVar: 'value' });
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: text });
   }
@@ -88,13 +82,9 @@ async function page(call, pull) {
   while (true) {
     const result = await call(cursor);
     const batch = pull(result);
-    if (Array.isArray(batch)) {
-      list.push(...batch);
-    }
+    if (Array.isArray(batch)) list.push(...batch);
     cursor = result.nextCursor;
-    if (!cursor) {
-      break;
-    }
+    if (!cursor) break;
   }
 
   return list;
@@ -190,9 +180,7 @@ async function templates(client) {
   try {
     return await page(call, pull);
   } catch (error) {
-    if (ismissing(error)) {
-      return [];
-    }
+    if (ismissing(error)) return [];
     throw error;
   }
 }
@@ -234,12 +222,8 @@ async function prompts(client) {
  */
 function meta(item) {
   const out = {};
-  if (Array.isArray(item.icons)) {
-    out.icons = item.icons;
-  }
-  if (isrecord(item._meta)) {
-    out._meta = item._meta;
-  }
+  if (Array.isArray(item.icons)) out.icons = item.icons;
+  if (isrecord(item._meta)) out._meta = item._meta;
   return out;
 }
 
@@ -250,9 +234,7 @@ function meta(item) {
  */
 function toolmeta(tool) {
   const out = meta(tool);
-  if (isrecord(tool.annotations)) {
-    out.annotations = tool.annotations;
-  }
+  if (isrecord(tool.annotations)) out.annotations = tool.annotations;
   return out;
 }
 
@@ -262,12 +244,8 @@ function toolmeta(tool) {
  * @returns {string | undefined}
  */
 function tooltitle(tool) {
-  if (typeof tool.title === 'string') {
-    return tool.title;
-  }
-  if (isrecord(tool.annotations) && typeof tool.annotations.title === 'string') {
-    return tool.annotations.title;
-  }
+  if (typeof tool.title === 'string') return tool.title;
+  if (isrecord(tool.annotations) && typeof tool.annotations.title === 'string') return tool.annotations.title;
   return undefined;
 }
 
@@ -277,26 +255,14 @@ function tooltitle(tool) {
  * @returns {Record<string, unknown> | undefined}
  */
 function uiitem(item) {
-  if (!isrecord(item._meta)) {
-    return undefined;
-  }
-  if (!isrecord(item._meta.ui)) {
-    return undefined;
-  }
+  if (!isrecord(item._meta)) return undefined;
+  if (!isrecord(item._meta.ui)) return undefined;
   const ui = /** @type {Record<string, unknown>} */ (item._meta.ui);
   const out = {};
-  if (typeof ui.resourceUri === 'string') {
-    out.resourceUri = ui.resourceUri;
-  }
-  if (typeof ui.csp === 'string') {
-    out.csp = ui.csp;
-  }
-  if (Array.isArray(ui.permissions)) {
-    out.permissions = ui.permissions;
-  }
-  if (Object.keys(out).length === 0) {
-    return undefined;
-  }
+  if (typeof ui.resourceUri === 'string') out.resourceUri = ui.resourceUri;
+  if (typeof ui.csp === 'string') out.csp = ui.csp;
+  if (Array.isArray(ui.permissions)) out.permissions = ui.permissions;
+  if (Object.keys(out).length === 0) return undefined;
   return out;
 }
 
@@ -311,12 +277,8 @@ function toolitem(tool) {
   const detail = { input };
   const ui = uiitem(tool);
 
-  if (isrecord(tool.outputSchema)) {
-    detail.output = output;
-  }
-  if (ui) {
-    detail.ui = ui;
-  }
+  if (isrecord(tool.outputSchema)) detail.output = output;
+  if (ui) detail.ui = ui;
 
   return {
     type: 'tool',
@@ -375,26 +337,18 @@ function templateitem(template) {
  * @returns {{ schema: import('zod').ZodTypeAny, json: Record<string, unknown> | undefined, error?: string }}
  */
 function promptinput(prompt) {
-  if (!Array.isArray(prompt.arguments)) {
-    return wrapschema(undefined);
-  }
+  if (!Array.isArray(prompt.arguments)) return wrapschema(undefined);
 
   const properties = {};
   const required = [];
 
   for (const item of prompt.arguments) {
-    if (!isrecord(item)) {
-      continue;
-    }
-    if (typeof item.name !== 'string' || item.name.length === 0) {
-      continue;
-    }
+    if (!isrecord(item)) continue;
+    if (typeof item.name !== 'string' || item.name.length === 0) continue;
     properties[item.name] = {
       description: typeof item.description === 'string' ? item.description : undefined
     };
-    if (item.required === true) {
-      required.push(item.name);
-    }
+    if (item.required === true) required.push(item.name);
   }
 
   const json = {
@@ -467,9 +421,7 @@ function normalize(data) {
  * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
  */
 export async function extract(link) {
-  if (!link || !link.client) {
-    throw new Error('Expected a Session instance.');
-  }
+  if (!link || !link.client) throw new Error('Expected a Session instance.');
 
   const client = link.client;
   const caps = client.getServerCapabilities();
@@ -483,18 +435,14 @@ export async function extract(link) {
     prompts: undefined
   };
 
-  if (caps && caps.tools) {
-    data.tools = await tools(client);
-  }
+  if (caps && caps.tools) data.tools = await tools(client);
 
   if (caps && caps.resources) {
     data.resources = await resources(client);
     data.templates = await templates(client);
   }
 
-  if (caps && caps.prompts) {
-    data.prompts = await prompts(client);
-  }
+  if (caps && caps.prompts) data.prompts = await prompts(client);
 
   const items = normalize(data);
 

@@ -20,9 +20,7 @@ function project(dir) {
 function home(ctx) {
   const list = [];
   const base = ctx.home;
-  if (!base) {
-    return list;
-  }
+  if (!base) return list;
 
   list.push(path.join(base, '.cursor', 'mcp.json'));
 

@@ -10,9 +10,7 @@ let markdownReady = false;
  * @returns {void}
  */
 function setupmarkdown() {
-  if (markdownReady) {
-    return;
-  }
+  if (markdownReady) return;
   marked.use(markedTerminal());
   markdownReady = true;
 }
@@ -39,12 +37,8 @@ function ismarkdown(text) {
  * @returns {string}
  */
 function renderdesc(text, colors, tty) {
-  if (!text) {
-    return '';
-  }
-  if (!usecolors(colors) || !tty || !ismarkdown(text)) {
-    return text;
-  }
+  if (!text) return '';
+  if (!usecolors(colors) || !tty || !ismarkdown(text)) return text;
   setupmarkdown();
   const output = marked.parse(text);
   return String(output).trimEnd();
@@ -103,9 +97,7 @@ function formatextras(extras, colors, theme) {
       lines.push(`  ${color.title(item.name)}`);
       const parts = String(item.description).split('\n');
       for (const part of parts) {
-        if (part.trim().length === 0) {
-          continue;
-        }
+        if (part.trim().length === 0) continue;
         lines.push(`    ${part}`);
       }
       lines.push('');
@@ -140,16 +132,12 @@ export function serverhelp(cfg) {
  * @returns {string[]}
  */
 function templatevars(template) {
-  if (!template) {
-    return [];
-  }
+  if (!template) return [];
   const vars = new Set();
   const matches = template.match(/\{([^}]+)\}/g) || [];
   for (const match of matches) {
     const name = match.slice(1, -1);
-    if (name) {
-      vars.add(name);
-    }
+    if (name) vars.add(name);
   }
   return Array.from(vars);
 }
@@ -160,9 +148,7 @@ function templatevars(template) {
  * @returns {string}
  */
 function schematype(value) {
-  if (typeof value === 'string') {
-    return value;
-  }
+  if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
     return value.filter(function onlyString(entry) {
       return typeof entry === 'string';
@@ -197,9 +183,7 @@ function inputflags(item) {
   const schema = item.detail && typeof item.detail === 'object' && item.detail.input && typeof item.detail.input === 'object'
     ? item.detail.input.json
     : undefined;
-  if (!schema || typeof schema !== 'object') {
-    return [];
-  }
+  if (!schema || typeof schema !== 'object') return [];
   const props = schema.properties && typeof schema.properties === 'object' ? schema.properties : {};
   const required = Array.isArray(schema.required) ? schema.required : [];
   const flags = [];
@@ -236,9 +220,7 @@ function exampleline(verb, name, flags, serverName, cliName) {
  * @returns {string}
  */
 function valuehint(flag) {
-  if (typeof flag.type === 'string' && (flag.type.includes('array') || flag.type.includes('object'))) {
-    return '<json>';
-  }
+  if (typeof flag.type === 'string' && (flag.type.includes('array') || flag.type.includes('object'))) return '<json>';
   return '<value>';
 }
 
@@ -250,9 +232,7 @@ function valuehint(flag) {
  */
 function hasflagtype(flags, token) {
   for (const flag of flags) {
-    if (typeof flag.type === 'string' && flag.type.includes(token)) {
-      return true;
-    }
+    if (typeof flag.type === 'string' && flag.type.includes(token)) return true;
   }
   return false;
 }
@@ -265,9 +245,7 @@ function hasflagtype(flags, token) {
  */
 function firstflag(flags, token) {
   for (const flag of flags) {
-    if (typeof flag.type === 'string' && flag.type.includes(token)) {
-      return flag.name;
-    }
+    if (typeof flag.type === 'string' && flag.type.includes(token)) return flag.name;
   }
   return '--param';
 }
@@ -280,9 +258,7 @@ function firstflag(flags, token) {
 function inputsyntax(flags) {
   const hasObject = hasflagtype(flags, 'object');
   const hasArray = hasflagtype(flags, 'array');
-  if (!hasObject && !hasArray) {
-    return [];
-  }
+  if (!hasObject && !hasArray) return [];
   const lines = [];
   if (hasObject) {
     const name = firstflag(flags, 'object');
@@ -305,9 +281,7 @@ function inputsyntax(flags) {
  * @returns {Array<{ name: string, text: string, type: string, required: boolean }>}
  */
 function itemflags(item) {
-  if (item.type === 'resource') {
-    return [];
-  }
+  if (item.type === 'resource') return [];
   if (item.type === 'resource-template') {
     const vars = templatevars(item.detail && typeof item.detail === 'object' ? item.detail.uriTemplate : undefined);
     return vars.map(function mapVar(name) {
@@ -365,9 +339,7 @@ export function toolhelp(items, serverName, colors, theme, cliName, tty) {
   const color = palette(colors, theme);
   const list = [];
   for (const item of items) {
-    if (item.type !== 'tool') {
-      continue;
-    }
+    if (item.type !== 'tool') continue;
     const flags = itemflags(item);
     const example = itemexample(item, serverName, flags, cliName);
     const flagtext = formatflags(flags, color);
@@ -391,9 +363,7 @@ export function prompthelp(items, serverName, colors, theme, cliName, tty) {
   const color = palette(colors, theme);
   const list = [];
   for (const item of items) {
-    if (item.type !== 'prompt') {
-      continue;
-    }
+    if (item.type !== 'prompt') continue;
     const flags = itemflags(item);
     const example = itemexample(item, serverName, flags, cliName);
     const flagtext = formatflags(flags, color);
@@ -416,9 +386,7 @@ export function prompthelp(items, serverName, colors, theme, cliName, tty) {
 export function resourcehelp(items, serverName, colors, theme, cliName, tty) {
   const list = [];
   for (const item of items) {
-    if (item.type !== 'resource') {
-      continue;
-    }
+    if (item.type !== 'resource') continue;
     const info = itemcommand(item);
     const example = itemexample(item, serverName, [], cliName);
     const desc = entrydesc(item.description, '', example, colors, tty);
@@ -441,9 +409,7 @@ export function templatehelp(items, serverName, colors, theme, cliName, tty) {
   const color = palette(colors, theme);
   const list = [];
   for (const item of items) {
-    if (item.type !== 'resource-template') {
-      continue;
-    }
+    if (item.type !== 'resource-template') continue;
     const flags = itemflags(item);
     const example = itemexample(item, serverName, flags, cliName);
     const flagtext = formatflags(flags, color);
@@ -465,12 +431,8 @@ export function templatehelp(items, serverName, colors, theme, cliName, tty) {
 function entrydesc(description, flags, example, colors, tty) {
   const parts = [];
   const desc = renderdesc(description, colors, tty);
-  if (desc) {
-    parts.push(desc);
-  }
-  if (flags) {
-    parts.push(flags);
-  }
+  if (desc) parts.push(desc);
+  if (flags) parts.push(flags);
   parts.push(example);
   return `\n${parts.join('\n')}`;
 }
@@ -482,9 +444,7 @@ function entrydesc(description, flags, example, colors, tty) {
  * @returns {string}
  */
 function formatflags(flags, color) {
-  if (flags.length === 0) {
-    return '';
-  }
+  if (flags.length === 0) return '';
   const lines = ['Flags:'];
   for (const flag of flags) {
     const req = flag.required ? ' (required)' : '';
@@ -614,9 +574,7 @@ function customflags(flags, colors, theme) {
  * @returns {void}
  */
 export function addsection(extras, title, items) {
-  if (items.length === 0) {
-    return;
-  }
+  if (items.length === 0) return;
   extras.push({ title, list: items });
 }
 

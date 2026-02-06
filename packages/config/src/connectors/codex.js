@@ -21,9 +21,7 @@ function project(dir) {
 function home(ctx) {
   const list = [];
   const base = ctx.env.CODEX_HOME ? ctx.env.CODEX_HOME : ctx.home ? path.join(ctx.home, '.codex') : undefined;
-  if (!base) {
-    return list;
-  }
+  if (!base) return list;
   list.push(path.join(base, 'config.toml'));
   return list;
 }
@@ -51,9 +49,7 @@ function parse(raw, file) {
 
   const list = [];
   for (const [name, value] of Object.entries(servers)) {
-    if (!value || typeof value !== 'object') {
-      continue;
-    }
+    if (!value || typeof value !== 'object') continue;
     list.push({ name, config: /** @type {Record<string, unknown>} */ (value) });
   }
   return { servers: list, metadata: {} };

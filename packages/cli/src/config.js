@@ -32,9 +32,7 @@ export function defaults() {
  * @returns {Promise<import('@mcp-layer/config').Config>}
  */
 export async function configload(file) {
-  if (!file) {
-    return load(undefined, process.cwd());
-  }
+  if (!file) return load(undefined, process.cwd());
   try {
     const info = await stat(file);
     if (info.isFile()) {
@@ -63,8 +61,6 @@ export async function select(opts) {
   if (list.length === 1) {
     return { config: cfg, name: list[0] };
   }
-  if (!name) {
-    throw new Error('Multiple servers found. Provide --server <name>.');
-  }
+  if (!name) throw new Error('Multiple servers found. Provide --server <name>.');
   throw new Error(`Server "${name}" not found.`);
 }

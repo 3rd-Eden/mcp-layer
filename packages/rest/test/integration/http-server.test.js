@@ -13,7 +13,6 @@ const bin = path.join(root, 'packages', 'test-server', 'src', 'bin.js');
 /**
  * Build a config map compatible with @mcp-layer/connect for the test server.
  *
- * Why this exists: the REST integration test should exercise the connect API
  * against the real test-server binary.
  *
  * @returns {Map<string, { name: string, source: string, config: Record<string, unknown> }>}
@@ -34,7 +33,6 @@ function createConfig() {
 /**
  * Start a Fastify server with the REST plugin and return its base URL.
  *
- * Why this exists: tests need a real network listener to validate HTTP routes.
  *
  * @param {import('@mcp-layer/session').Session} session - MCP session to expose.
  * @returns {Promise<{ fastify: import('fastify').FastifyInstance, base: string }>}
@@ -51,7 +49,6 @@ async function startServer(session) {
 /**
  * Perform a JSON POST request.
  *
- * Why this exists: keeps request setup consistent across tool/prompt calls.
  *
  * @param {string} url - Target URL.
  * @param {Record<string, unknown>} payload - JSON payload.
@@ -70,7 +67,6 @@ async function postJson(url, payload) {
 /**
  * Perform a text GET request.
  *
- * Why this exists: resource routes return text bodies.
  *
  * @param {string} url - Target URL.
  * @returns {Promise<{ status: number, body: string }>}
@@ -110,9 +106,7 @@ function httpSuite() {
       assert.equal(templated.status, 200);
       assert.equal(templated.body.includes('Template note for Ada.'), true);
     } finally {
-      if (app) {
-        await app.fastify.close();
-      }
+      if (app) await app.fastify.close();
       await closeSession(session);
     }
   });
@@ -123,25 +117,20 @@ describe('rest http integration', httpSuite);
 /**
  * Close a connect session and terminate the underlying stdio process.
  *
- * Why this exists: stdio transports spawn a child process that can keep the
  * test runner alive if not explicitly terminated.
  *
  * @param {import('@mcp-layer/session').Session} session - MCP session to close.
  * @returns {Promise<void>}
  */
 async function closeSession(session) {
-  if (!session) {
-    return;
-  }
+  if (!session) return;
 
   const transport = session.transport;
   const child = transport && transport._process ? transport._process : null;
 
   await session.close();
 
-  if (!child) {
-    return;
-  }
+  if (!child) return;
 
   await terminateChild(child);
 }
@@ -149,7 +138,6 @@ async function closeSession(session) {
 /**
  * Wait for a child process to exit with a timeout.
  *
- * Why this exists: tests should not hang if the spawned MCP process fails to
  * exit promptly.
  *
  * @param {import('node:child_process').ChildProcess} child - Spawned process.
@@ -161,9 +149,7 @@ function waitForExit(child, timeoutMs) {
     let done = false;
 
     function finish() {
-      if (done) {
-        return;
-      }
+      if (done) return;
       done = true;
       resolve();
     }
@@ -182,23 +168,18 @@ function waitForExit(child, timeoutMs) {
 /**
  * Terminate a child process with a graceful timeout.
  *
- * Why this exists: stdio transports can leave the spawned server running if we
  * only abort the client side.
  *
  * @param {import('node:child_process').ChildProcess} child - Spawned process.
  * @returns {Promise<void>}
  */
 async function terminateChild(child) {
-  if (child.exitCode !== null || child.killed) {
-    return;
-  }
+  if (child.exitCode !== null || child.killed) return;
 
   child.kill('SIGTERM');
   await waitForExit(child, 1000);
 
-  if (child.exitCode !== null || child.killed) {
-    return;
-  }
+  if (child.exitCode !== null || child.killed) return;
 
   child.kill('SIGKILL');
   await waitForExit(child, 500);

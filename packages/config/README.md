@@ -2,7 +2,6 @@
 
 `@mcp-layer/config` discovers MCP server configuration files produced by supported clients and normalizes their contents into a single, predictable structure. It is the entry point for finding and updating MCP server definitions across popular tools.
 
-## Why this exists
 
 MCP server configuration is fragmented across tools, file formats, and locations. This package gives you one API that:
 - Finds those files reliably.

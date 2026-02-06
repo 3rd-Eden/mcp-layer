@@ -2,7 +2,6 @@
 
 `@mcp-layer/connect` turns normalized MCP server definitions into live client connections using the official MCP SDK. It is the transport layer for the workspace: given a server entry, it spawns the stdio process, completes the MCP handshake, and returns a `Session` you can close deterministically.
 
-## Why this exists
 
 You should not have to rebuild MCP transport logic for every generator or tool. This package centralizes:
 - stdio transport creation

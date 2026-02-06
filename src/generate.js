@@ -24,16 +24,12 @@ export async function collectPackages(rootDir) {
   const packages = [];
 
   for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
+    if (!entry.isDirectory()) continue;
 
     const pkgPath = path.join(packagesDir, entry.name, 'package.json');
     const exists = await hasPackageJson(pkgPath);
 
-    if (exists) {
-      packages.push(entry.name);
-    }
+    if (exists) packages.push(entry.name);
   }
 
   packages.sort();
@@ -121,9 +117,7 @@ export async function syncDependencies(rootDir) {
   }
 
   for (const key of Object.keys(deps)) {
-    if (key.startsWith('@mcp-layer/') && !names.has(key)) {
-      delete deps[key];
-    }
+    if (key.startsWith('@mcp-layer/') && !names.has(key)) delete deps[key];
   }
 
   data.dependencies = sortObject(deps);
@@ -140,9 +134,7 @@ export async function writeIndex(rootDir, outFile) {
   const next = await buildIndex(rootDir);
   const current = await readMaybe(outFile);
 
-  if (current === next) {
-    return;
-  }
+  if (current === next) return;
 
   await writeFile(outFile, next, 'utf8');
 }
@@ -180,9 +172,7 @@ export async function writeJson(filePath, data) {
   const next = `${JSON.stringify(data, null, 2)}\n`;
   const current = await readMaybe(filePath);
 
-  if (current === next) {
-    return;
-  }
+  if (current === next) return;
 
   await writeFile(filePath, next, 'utf8');
 }
@@ -216,6 +206,4 @@ export async function run() {
 }
 
 const entry = fileURLToPath(import.meta.url);
-if (process.argv[1] === entry) {
-  run();
-}
+if (process.argv[1] === entry) run();

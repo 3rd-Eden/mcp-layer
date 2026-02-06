@@ -27,7 +27,6 @@ export class SchemaValidator {
   /**
    * Register a tool schema for validation.
    *
-   * Why this exists: compile schemas once at startup for fast request checks.
    *
    * @param {string} name - Tool name.
    * @param {Record<string, unknown> | undefined} schema - JSON Schema for input.
@@ -40,7 +39,6 @@ export class SchemaValidator {
   /**
    * Register a prompt schema for validation.
    *
-   * Why this exists: prompt inputs use the same validation pipeline as tools.
    *
    * @param {string} name - Prompt name.
    * @param {Record<string, unknown> | undefined} schema - JSON Schema for input.
@@ -53,7 +51,6 @@ export class SchemaValidator {
   /**
    * Validate a request payload against a registered schema.
    *
-   * Why this exists: centralizes error formatting for handlers.
    *
    * @param {'tool' | 'prompt'} type - Schema type.
    * @param {string} name - Tool or prompt name.
@@ -148,7 +145,6 @@ export class SchemaValidator {
 /**
  * Create a schema validator instance.
  *
- * Why this exists: normalizes validation setup for handlers.
  *
  * @param {{ trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }} config - Validation configuration.
  * @param {import('@mcp-layer/session').Session} session - MCP session.

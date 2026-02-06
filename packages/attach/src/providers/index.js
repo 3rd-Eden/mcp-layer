@@ -6,9 +6,7 @@ import { attachPlatformatic, isPlatformaticInstance } from './platformatic.js';
  * @returns {'platformatic' | null}
  */
 export function matchProvider(instance) {
-  if (isPlatformaticInstance(instance)) {
-    return 'platformatic';
-  }
+  if (isPlatformaticInstance(instance)) return 'platformatic';
   return null;
 }
 

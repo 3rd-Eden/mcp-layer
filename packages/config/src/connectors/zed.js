@@ -6,9 +6,7 @@ function project() {
 }
 
 function home(ctx) {
-  if (!ctx.home) {
-    return [];
-  }
+  if (!ctx.home) return [];
   return [path.join(ctx.home, '.config', 'zed', 'mcp.json')];
 }
 

@@ -27,12 +27,41 @@
 - JavaScript/TypeScript modules use ES modules with 2-space indentation and trailing commas where valid.
 - File names are lowercase with hyphens for multiword utilities (e.g., `load-config.js`); class files may use PascalCase if it clarifies purpose.
 - Keep top-level exports minimal and descriptive. Prefer named exports over defaults unless interoperability demands otherwise.
-- Document complex control flow with brief inline comments; avoid narrating obvious logic.
+- Use inline comments only for important architectural or non-obvious tradeoff decisions; avoid narrating obvious logic.
+- Do not add rationale prose inside JSDoc blocks (for example, `Why this exists`). Keep JSDoc focused on API contract (parameters, return values, thrown errors).
+- For single-statement `if` blocks, omit braces when the statement fits on one line and does not violate line-length limits.
+
+## Modern JavaScript Baseline
+- Prefer modern null-safe syntax. Use optional chaining (`?.`) and nullish coalescing (`??`) instead of long `&&` guard chains and `||` defaults when `0`, `false`, or `''` are valid values.
+- Prefer explicit boolean conversion (`Boolean(value)`) over truthy/falsy ambiguity when behavior is user-visible or config-driven.
+- Use `const` by default. Use `let` only when reassignment is required. Never use `var`.
+- Prefer object/array helpers from modern JS (`Object.hasOwn`, `Object.entries`, `Array.prototype.at`) when they improve clarity and reduce branching.
+- Keep control flow flat. Prefer early returns and guard clauses over deep nesting.
+- Prefer `node:`-prefixed built-in imports (for example `node:fs`, `node:path`).
+- Avoid manual defensive access chains like `a && a.b && a.b.c`; replace with `a?.b?.c`.
+- Avoid behavior-changing refactors without tests. Any syntax modernization that can change semantics must be covered by tests first.
+
+## Error Handling Standards
+- Use `@mcp-layer/error` as the default error pattern for runtime errors that can surface to package consumers.
+- Error instances must include:
+  - package identifier,
+  - source method name,
+  - stable reference id,
+  - generated documentation URL.
+- Preserve machine-readable `code` fields when callers branch on error behavior.
+- Document new error references in the corresponding package README error section before shipping changes.
+- Prefer explicit error constructors/helpers over raw `throw new Error(...)` in library surfaces.
 
 ## Documentation Standards
 - Every JSDoc block must fully describe parameters and return values. Editor hints are treated as part of the developer experience, so keep them precise and complete.
 - Always document your work in the README of the project.
 - Documentation is the most critical deliverable. It must be self-contained, cohesive, and detailed enough that a developer can implement the package in a different project without unanswered questions. If you cannot follow a README and achieve a successful implementation, that is a documentation bug and must be fixed in the relevant README.
+- Every README must include an explicit API Reference for exported functions/classes/types, including method signatures, option fields, return shapes, and error behavior.
+- Every code example must be introduced with explanatory text that states:
+  - what the example demonstrates,
+  - why that scenario matters,
+  - what behavior/output a reader should expect.
+- Do not place standalone code blocks without context paragraphs.
 - Use judgement for documentation examples: keep core, high-signal examples inline; move optional or advanced examples into collapsed sections with HTML `<details>`/`<summary>`. Follow GitHub's guidance: [Organizing information with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections).
 
 ## Testing Guidelines
@@ -70,3 +99,9 @@
 - Allocate effort intentionally: 20% code, 40% documentation, 40% testing. Code can be replaced, but only if documentation (inputs) and validation of outputs (tests) exist.
 - Always exercise real implementations and public APIs in tests; obtain explicit user approval before introducing any mocks or stubs.
 - Do not ask the user to verify things you can verify yourself. If verification requires permissions, request them. Prioritize self-sufficient verification: decide how your changes should be verified and ensure that verification is performed.
+- Syntax modernization is mandatory in touched files:
+  - If you modify a file, opportunistically replace legacy guard/default patterns in the changed area with modern equivalents (`?.`, `??`, guard clauses) while preserving behavior.
+  - If you intentionally keep a legacy pattern for semantic reasons, add a short `why` comment near that decision.
+- PRs must include a modernization check summary in their description:
+  - Confirm whether any `&&` property-access chains were introduced or removed.
+  - Confirm whether any `||` defaults were intentionally used instead of `??`, and why.

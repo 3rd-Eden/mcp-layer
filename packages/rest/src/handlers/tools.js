@@ -5,17 +5,15 @@ import { createCallContext, mapMcpError } from './common.js';
 /**
  * Create a handler for tool invocation.
  *
- * Why this exists: encapsulates validation, breaker, and telemetry behavior.
  *
- * @param {import('@mcp-layer/session').Session} session - MCP session.
+ * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
  * @param {string} name - Tool name.
  * @param {import('../validation/validator.js').SchemaValidator} validator - Schema validator.
- * @param {import('opossum') | null} breaker - Circuit breaker.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createToolHandler(session, name, validator, breaker, telemetry, errors) {
+export function createToolHandler(resolve, name, validator, telemetry, errors) {
   /**
    * Handle tool invocation requests.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
@@ -25,19 +23,25 @@ export function createToolHandler(session, name, validator, breaker, telemetry, 
   async function handleToolCall(request, reply) {
     const requestId = request.id;
     const instance = request.url;
-    const ctx = createCallContext({
-      telemetry,
-      spanName: 'mcp.tools/call',
-      attributes: {
-        'mcp.tool.name': name,
-        'mcp.session.name': session.name,
-        'http.request.id': requestId
-      },
-      labels: { tool: name, session: session.name },
-      validationLabels: { tool: name }
-    });
+    let ctx;
 
     try {
+      const resolved = await resolve(request);
+      const session = resolved.session;
+      const breaker = resolved.breaker;
+
+      ctx = createCallContext({
+        telemetry,
+        spanName: 'mcp.tools/call',
+        attributes: {
+          'mcp.tool.name': name,
+          'mcp.session.name': session.name,
+          'http.request.id': requestId
+        },
+        labels: { tool: name, session: session.name },
+        validationLabels: { tool: name }
+      });
+
       const check = validator.validate('tool', name, request.body);
       if (!check.valid) {
         ctx.recordValidation();
@@ -51,7 +55,7 @@ export function createToolHandler(session, name, validator, breaker, telemetry, 
         arguments: request.body
       });
 
-      if (result && result.isError) {
+      if (result?.isError) {
         ctx.recordStatus('tool_error', 'tool_error');
 
         const response = createToolErrorResponse(instance, name, session.name, result, requestId);
@@ -67,11 +71,11 @@ export function createToolHandler(session, name, validator, breaker, telemetry, 
         isError: false
       });
     } catch (error) {
-      ctx.recordError(error);
+      ctx?.recordError(error);
       const response = mapMcpError(error, instance, requestId, errors);
       reply.code(response.status).send(response.body);
     } finally {
-      ctx.finish();
+      ctx?.finish();
     }
   }
 

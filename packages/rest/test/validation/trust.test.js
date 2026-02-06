@@ -11,7 +11,6 @@ import { shouldTrustSchemas } from '../../src/validation/trust.js';
 /**
  * Build a test session using in-memory transport.
  *
- * Why this exists: trust policy checks must use a real in-memory transport
  * without spawning external processes.
  *
  * @returns {Promise<{ session: Session, server: import('@modelcontextprotocol/sdk/server/mcp.js').McpServer }>}
@@ -25,7 +24,6 @@ async function inmem() {
 /**
  * Build a test session using stdio transport.
  *
- * Why this exists: trust policy only depends on transport identity, so we
  * avoid spawning a child process during tests.
  *
  * @returns {Promise<Session>}
@@ -49,7 +47,6 @@ async function stdio() {
 /**
  * Build a test session using Streamable HTTP transport.
  *
- * Why this exists: trust policy needs a remote transport instance without
  * requiring a real HTTP server.
  *
  * @returns {Promise<Session>}

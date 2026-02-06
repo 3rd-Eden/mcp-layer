@@ -6,7 +6,6 @@ import { ERROR_TYPES } from '../../src/errors/types.js';
 /**
  * Count active timeout handles in the current process.
  *
- * Why this exists: we want to ensure breaker timeouts do not leave
  * long-running SDK timers behind after tests complete.
  *
  * @returns {number}

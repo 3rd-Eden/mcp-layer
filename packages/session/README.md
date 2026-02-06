@@ -2,7 +2,6 @@
 
 `@mcp-layer/session` provides the shared Session class used by both `@mcp-layer/connect` and `@mcp-layer/attach`. A Session is the handle you pass around when layering new functionality on top of an MCP server.
 
-## Why this exists
 
 Multiple packages return the same connected handle. To avoid duplication and drift, the Session class lives here and is re-exported by other packages.
 

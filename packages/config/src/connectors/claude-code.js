@@ -27,9 +27,7 @@ function home(ctx) {
     list.push(custom);
   }
 
-  if (ctx.home) {
-    list.push(path.join(ctx.home, '.mcp.json'));
-  }
+  if (ctx.home) list.push(path.join(ctx.home, '.mcp.json'));
 
   if (ctx.platform === 'darwin') {
     list.push(path.join('/Library', 'Application Support', 'ClaudeCode', 'managed-mcp.json'));

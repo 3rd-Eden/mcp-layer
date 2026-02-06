@@ -20,9 +20,7 @@ function project(dir) {
  */
 function home(ctx) {
   const list = [];
-  if (!ctx.home) {
-    return list;
-  }
+  if (!ctx.home) return list;
   list.push(path.join(ctx.home, '.vscode', 'mcp.json'));
   return list;
 }
@@ -51,9 +49,7 @@ function parse(raw, file) {
 
   const list = [];
   for (const [name, value] of Object.entries(serversNode)) {
-    if (!value || typeof value !== 'object') {
-      continue;
-    }
+    if (!value || typeof value !== 'object') continue;
     list.push({ name, config: /** @type {Record<string, unknown>} */ (value) });
   }
 
@@ -105,11 +101,7 @@ async function write(file, entry, metadata = {}) {
     }
   }
 
-  if (metadata && typeof metadata === 'object') {
-    if (Array.isArray(metadata.inputs)) {
-      doc.inputs = metadata.inputs;
-    }
-  }
+  if (metadata && typeof metadata === 'object' && Array.isArray(metadata.inputs)) doc.inputs = metadata.inputs;
 
   const output = `${JSON.stringify(doc, null, 2)}\n`;
   await fs.writeFile(file, output, 'utf8');

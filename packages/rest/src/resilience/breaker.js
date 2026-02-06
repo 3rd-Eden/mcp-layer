@@ -2,25 +2,18 @@ import CircuitBreaker from 'opossum';
 
 /**
  * Build MCP client request options from a breaker instance.
- *
- * Why this exists: the SDK defaults to a 60s timeout, which keeps timers alive
- * after breaker timeouts unless we pass through the configured timeout.
- *
  * @param {CircuitBreaker | null} breaker - Breaker instance or null.
  * @returns {import('@modelcontextprotocol/sdk/shared/protocol.js').RequestOptions | undefined}
  */
 function requestOptions(breaker) {
-  if (!breaker || !breaker.options || typeof breaker.options.timeout !== 'number') {
-    return undefined;
-  }
+  // Pass timeout through to the MCP client so underlying calls are canceled
+  // instead of lingering after the breaker timed out.
+  if (!breaker || !breaker.options || typeof breaker.options.timeout !== 'number') return undefined;
   return { timeout: breaker.options.timeout };
 }
 
 /**
  * Create a circuit breaker for an MCP session.
- *
- * Why this exists: prevents cascading failures when a server is unhealthy.
- *
  * @param {import('@mcp-layer/session').Session} session - MCP session.
  * @param {{ timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }} config - Breaker configuration.
  * @returns {CircuitBreaker}
@@ -29,15 +22,9 @@ export function createCircuitBreaker(session, config) {
   const breaker = new CircuitBreaker(
     async function call(task) {
       const options = task.options;
-      if (task.method === 'tools/call') {
-        return session.client.callTool(task.params, undefined, options);
-      }
-      if (task.method === 'prompts/get') {
-        return session.client.getPrompt(task.params, options);
-      }
-      if (task.method === 'resources/read') {
-        return session.client.readResource(task.params, options);
-      }
+      if (task.method === 'tools/call') return session.client.callTool(task.params, undefined, options);
+      if (task.method === 'prompts/get') return session.client.getPrompt(task.params, options);
+      if (task.method === 'resources/read') return session.client.readResource(task.params, options);
       return session.client.request({ method: task.method, params: task.params }, undefined, options);
     },
     {
@@ -84,9 +71,6 @@ export function createCircuitBreaker(session, config) {
 
 /**
  * Execute an MCP call through a circuit breaker if enabled.
- *
- * Why this exists: unify breaker logic for tool/prompt/resource handlers.
- *
  * @param {CircuitBreaker | null} breaker - Breaker instance or null if disabled.
  * @param {import('@mcp-layer/session').Session} session - MCP session.
  * @param {string} method - MCP method name.
@@ -96,15 +80,9 @@ export function createCircuitBreaker(session, config) {
 export async function executeWithBreaker(breaker, session, method, params) {
   const options = requestOptions(breaker);
   if (!breaker) {
-    if (method === 'tools/call') {
-      return session.client.callTool(params);
-    }
-    if (method === 'prompts/get') {
-      return session.client.getPrompt(params);
-    }
-    if (method === 'resources/read') {
-      return session.client.readResource(params);
-    }
+    if (method === 'tools/call') return session.client.callTool(params);
+    if (method === 'prompts/get') return session.client.getPrompt(params);
+    if (method === 'resources/read') return session.client.readResource(params);
     return session.client.request({ method, params });
   }
 

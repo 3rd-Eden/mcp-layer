@@ -3,7 +3,6 @@ import { z } from 'zod';
 /**
  * Register a tool that always returns isError true.
  *
- * Why this exists: REST tests need a deterministic tool error path without
  * relying on custom servers.
  *
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
@@ -37,7 +36,6 @@ export function registerFailGracefully(server) {
 /**
  * Register a tool that throws.
  *
- * Why this exists: REST tests need a deterministic exception path that
  * exercises JSON-RPC error mapping.
  *
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
@@ -68,7 +66,6 @@ export function registerCrash(server) {
 /**
  * Register a tool that intentionally exceeds short timeouts.
  *
- * Why this exists: circuit breaker tests need a slow tool to trigger timeouts.
  *
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
  * @returns {ReturnType<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer['registerTool']>}
@@ -103,7 +100,6 @@ export function registerSlow(server) {
 /**
  * Register a tool that fails once then succeeds.
  *
- * Why this exists: circuit breaker recovery tests need a deterministic
  * transition from failure to success.
  *
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer} server - MCP server to register the tool on.
@@ -119,9 +115,7 @@ export function registerFlap(server) {
    */
   async function flapTool() {
     count += 1;
-    if (count === 1) {
-      throw new Error('first failure');
-    }
+    if (count === 1) throw new Error('first failure');
     return { content: [{ type: 'text', text: 'ok' }] };
   }
 

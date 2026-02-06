@@ -49,15 +49,9 @@ function servermeta(base, info, serverName, banner, instructions) {
  */
 function metadetail(banner, instructions) {
   const parts = [];
-  if (banner) {
-    parts.push(banner.trim());
-  }
-  if (instructions) {
-    parts.push(instructions.trim());
-  }
-  if (parts.length === 0) {
-    return '';
-  }
+  if (banner) parts.push(banner.trim());
+  if (instructions) parts.push(instructions.trim());
+  if (parts.length === 0) return '';
   return `\n\n${parts.join('\n')}`;
 }
 
@@ -100,9 +94,7 @@ function capturestderr(transport) {
 function listbytype(items, type) {
   const list = [];
   for (const item of items) {
-    if (item.type === type) {
-      list.push(item);
-    }
+    if (item.type === type) list.push(item);
   }
   return list;
 }
@@ -138,23 +130,15 @@ function listitems(items, type, format, headers, maprow) {
  * @returns {Record<string, unknown> | undefined}
  */
 function finditem(items, type, target) {
-  if (!target) {
-    return undefined;
-  }
+  if (!target) return undefined;
   for (const item of items) {
-    if (item.type !== type) {
-      continue;
-    }
+    if (item.type !== type) continue;
     if (type === 'resource') {
       const uri = item.detail && typeof item.detail === 'object' ? item.detail.uri : undefined;
-      if (item.name === target || uri === target) {
-        return item;
-      }
+      if (item.name === target || uri === target) return item;
       continue;
     }
-    if (item.name === target) {
-      return item;
-    }
+    if (item.name === target) return item;
   }
   return undefined;
 }
@@ -224,13 +208,9 @@ function customcommands(custom) {
  * @returns {{ options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>) => Promise<void> } | undefined}
  */
 function findcustom(custom, target) {
-  if (!target) {
-    return undefined;
-  }
+  if (!target) return undefined;
   for (const cmd of custom) {
-    if (cmd.options.name === target) {
-      return cmd;
-    }
+    if (cmd.options.name === target) return cmd;
   }
   return undefined;
 }

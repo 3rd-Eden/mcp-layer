@@ -52,13 +52,9 @@ export async function catalog(opts) {
     const output = await extract(session);
     return { session, output };
   } catch (error) {
-    if (session) {
-      await session.close();
-    }
+    if (session) await session.close();
     throw error;
   } finally {
-    if (gate) {
-      gate.stop();
-    }
+    if (gate) gate.stop();
   }
 }

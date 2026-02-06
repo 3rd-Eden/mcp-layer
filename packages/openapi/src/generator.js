@@ -26,38 +26,28 @@ function bytype(items, type) {
  * @returns {string}
  */
 function normprefix(prefix) {
-  if (!prefix) {
-    return '/v1';
-  }
-  if (prefix.startsWith('/')) {
-    return prefix;
-  }
+  if (!prefix) return '/v1';
+  if (prefix.startsWith('/')) return prefix;
   return `/${prefix}`;
 }
 
 /**
  * Select a human-friendly label for catalog items.
  *
- * Why this exists: use item metadata when available instead of generic labels.
  *
  * @param {Record<string, unknown>} item - Catalog item.
  * @param {string} fallback - Fallback label.
  * @returns {string}
  */
 function label(item, fallback) {
-  if (item && typeof item.title === 'string' && item.title.length > 0) {
-    return item.title;
-  }
-  if (item && typeof item.name === 'string' && item.name.length > 0) {
-    return item.name;
-  }
+  if (item && typeof item.title === 'string' && item.title.length > 0) return item.title;
+  if (item && typeof item.name === 'string' && item.name.length > 0) return item.name;
   return fallback;
 }
 
 /**
  * Validate item names used in route paths.
  *
- * Why this exists: invalid path segments produce mismatched REST routes.
  *
  * @param {string} value - Name to validate.
  * @param {number | undefined} maxLength - Optional length cap.
@@ -76,7 +66,6 @@ function assertName(value, maxLength) {
 /**
  * Ensure a template expression only uses simple `{name}` tokens.
  *
- * Why this exists: RFC6570 modifiers are not represented by Fastify routes.
  *
  * @param {string} template - Template route string.
  * @returns {void}
@@ -100,7 +89,6 @@ function assertSimpleTemplate(template) {
 /**
  * Select a description for an operation.
  *
- * Why this exists: prefer catalog descriptions, then derive a short sentence
  * from item metadata to avoid generic boilerplate.
  *
  * @param {Record<string, unknown>} item - Catalog item.
@@ -108,9 +96,7 @@ function assertSimpleTemplate(template) {
  * @returns {string}
  */
 function desc(item, verb) {
-  if (item && typeof item.description === 'string' && item.description.length > 0) {
-    return item.description;
-  }
+  if (item && typeof item.description === 'string' && item.description.length > 0) return item.description;
   const name = label(item, 'operation');
   return `${verb} ${name}.`;
 }
@@ -174,7 +160,7 @@ function errorresponses() {
  * @returns {Record<string, unknown>}
  */
 function toolpath(item) {
-  const input = inputschema(item.detail && item.detail.input);
+  const input = inputschema(item.detail?.input);
   const name = label(item, 'operation');
   return {
     post: {
@@ -217,7 +203,7 @@ function toolpath(item) {
  * @returns {Record<string, unknown>}
  */
 function promptpath(item) {
-  const input = inputschema(item.detail && item.detail.input);
+  const input = inputschema(item.detail?.input);
   const name = label(item, 'prompt');
   return {
     post: {
@@ -252,7 +238,7 @@ function promptpath(item) {
  * @returns {Record<string, unknown>}
  */
 function resourcepath(item) {
-  const mime = item.detail && item.detail.mimeType ? item.detail.mimeType : 'application/octet-stream';
+  const mime = item.detail?.mimeType ? item.detail.mimeType : 'application/octet-stream';
   const name = label(item, 'resource');
   return {
     get: {
@@ -276,7 +262,6 @@ function resourcepath(item) {
 /**
  * Extract path parameter definitions from a template.
  *
- * Why this exists: OpenAPI requires explicit parameter declarations for
  * templated paths.
  *
  * @param {string} template - URI template string.
@@ -362,7 +347,6 @@ function openapipath() {
 /**
  * Generate an OpenAPI 3.1 specification from a catalog.
  *
- * Why this exists: provide a single source of truth for REST route structure
  * that can be used both by the Fastify plugin and future client generators.
  *
  * @param {{ server?: { info?: Record<string, unknown>, instructions?: string }, items?: Array<Record<string, unknown>> }} catalog - Extracted catalog from @mcp-layer/schema.
@@ -370,16 +354,16 @@ function openapipath() {
  * @returns {Record<string, unknown>} OpenAPI 3.1 specification object.
  */
 export function spec(catalog = {}, options = {}) {
-  const info = catalog.server && catalog.server.info ? catalog.server.info : undefined;
+  const info = catalog.server?.info;
   const list = Array.isArray(catalog.items) ? catalog.items : [];
   const prefix = normprefix(options.prefix);
   const maxNameLength = typeof options.maxNameLength === 'number' ? options.maxNameLength : undefined;
 
-  const title = options.title ?? (info && info.name ? String(info.name) : 'REST API');
-  const version = options.version ?? (info && info.version ? String(info.version) : '1.0.0');
+  const title = options.title ?? (info?.name ? String(info.name) : 'REST API');
+  const version = options.version ?? (info?.version ? String(info.version) : '1.0.0');
   const desc = options.description
-    ?? (info && info.description ? String(info.description) : undefined)
-    ?? (catalog.server && catalog.server.instructions ? String(catalog.server.instructions) : undefined);
+    ?? (info?.description ? String(info.description) : undefined)
+    ?? (catalog.server?.instructions ? String(catalog.server.instructions) : undefined);
 
   const data = {
     openapi: '3.1.0',
@@ -398,45 +382,35 @@ export function spec(catalog = {}, options = {}) {
 
   const tools = bytype(list, 'tool');
   for (const item of tools) {
-    if (!item || !item.name) {
-      continue;
-    }
+    if (!item || !item.name) continue;
     assertName(String(item.name), maxNameLength);
     data.paths[`${prefix}/${item.name}`] = toolpath(item);
   }
 
   const prompts = bytype(list, 'prompt');
   for (const item of prompts) {
-    if (!item || !item.name) {
-      continue;
-    }
+    if (!item || !item.name) continue;
     assertName(String(item.name), maxNameLength);
     data.paths[`${prefix}/prompts/${item.name}`] = promptpath(item);
   }
 
   const resources = bytype(list, 'resource');
   for (const item of resources) {
-    const uri = item.detail && item.detail.uri ? String(item.detail.uri) : null;
-    if (!uri) {
-      continue;
-    }
+    const uri = item.detail?.uri ? String(item.detail.uri) : null;
+    if (!uri) continue;
     const route = path(uri);
     data.paths[`${prefix}${route}`] = resourcepath(item);
   }
 
   const templates = bytype(list, 'resource-template');
   for (const item of templates) {
-    const tmpl = item.detail && item.detail.uriTemplate ? String(item.detail.uriTemplate) : null;
-    if (!tmpl) {
-      continue;
-    }
+    const tmpl = item.detail?.uriTemplate ? String(item.detail.uriTemplate) : null;
+    if (!tmpl) continue;
     const route = tpath(tmpl, false);
     assertSimpleTemplate(route);
     const entry = resourcepath(item);
     const params = templateparams(route);
-    if (params.length > 0) {
-      entry.get.parameters = params;
-    }
+    if (params.length > 0) entry.get.parameters = params;
     data.paths[`${prefix}${route}`] = entry;
   }
 

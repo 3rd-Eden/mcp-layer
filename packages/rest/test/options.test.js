@@ -72,6 +72,32 @@ function optionsSuite() {
       await mcp.close();
     }
   });
+
+  it('requires a catalog session when manager is provided', async function managerCase() {
+    await assert.rejects(
+      async function run() {
+        validateOptions({ manager: { get: async function get() {} } });
+      },
+      /session.*required/i
+    );
+  });
+
+  it('rejects manager with multiple sessions', async function managerMultiCase() {
+    const mcp = createTestMcpServer({ name: 'opts', version: '1.0.0' });
+    const session = await attach(mcp, 'opts');
+
+    try {
+      await assert.rejects(
+        async function run() {
+          validateOptions({ session: [session, session], manager: { get: async function get() {} } });
+        },
+        /manager.*multiple/i
+      );
+    } finally {
+      await session.close();
+      await mcp.close();
+    }
+  });
 }
 
 describe('plugin options', optionsSuite);

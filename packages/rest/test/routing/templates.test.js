@@ -107,7 +107,6 @@ describe('resource template routing', templateSuite);
 /**
  * Build a minimal MCP server with a custom template.
  *
- * Why this exists: tests need to verify template validation on plugin startup.
  *
  * @param {string} template - URI template string.
  * @returns {McpServer}

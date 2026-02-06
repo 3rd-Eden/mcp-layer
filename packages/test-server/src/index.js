@@ -13,7 +13,6 @@ import { registerTools } from './tools/index.js';
 /**
  * Build an MCP server instance pre-configured with tools, resources, and prompts.
  *
- * Why this exists: gives tests a consistent surface while still allowing
  * targeted metadata overrides (name/version) without custom servers.
  *
  * @param {{ info?: { name?: string, version?: string } }} [opts] - Optional metadata overrides.
@@ -47,7 +46,6 @@ export function build(opts = {}) {
 /**
  * Start the test server using stdio transport for integration scenarios.
  *
- * Why this exists: callers can override metadata or transport while still
  * exercising the standard test-server surface.
  *
  * @param {{ server?: McpServer, transport?: StdioServerTransport, info?: { name?: string, version?: string } }} [opts] - Optional overrides for the server instance, transport, or metadata.
