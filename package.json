@@ -1,6 +1,6 @@
 {
   "name": "mcp-layer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Layers of functionality that can be add to any MCP server. ",
   "repository": {
     "type": "git",

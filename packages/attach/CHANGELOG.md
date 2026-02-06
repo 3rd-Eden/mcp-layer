@@ -1,5 +1,12 @@
 # @mcp-layer/attach
 
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies [9391cb2]
+  - @mcp-layer/error@0.2.0
+
 ## 1.1.0
 
 ### Minor Changes

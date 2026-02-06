@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/error",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Documented runtime errors for mcp-layer packages.",
   "repository": {
     "type": "git",
@@ -33,4 +33,3 @@
     "access": "public"
   }
 }
-
