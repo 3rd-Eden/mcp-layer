@@ -124,7 +124,7 @@ describe('config', function configSuite() {
   describe('Config', function configClassSuite() {
     it('throws when consuming without parser or data', async function consumeFailureCase() {
       const config = new Config();
-      await assert.rejects(config.consume({ path: '/tmp/missing' }), /No parser or data supplied/);
+      await assert.rejects(config.consume({ path: '/tmp/missing' }), /No parser or inline data was supplied/);
     });
 
     it('overwrites existing list entries on repeated consume', async function consumeOverwriteCase() {
@@ -180,7 +180,7 @@ describe('config', function configSuite() {
       await fs.copyFile(fixture('claude/project/.mcp.json'), file);
 
       const info = await load(undefined, dir);
-      await assert.rejects(info.add({ name: 'brand', config: { command: 'brand' } }), /Connector is required/);
+      await assert.rejects(info.add({ name: 'brand', config: { command: 'brand' } }), /A connector is required/);
 
       await info.add({ name: 'brand', config: { command: 'brand' } }, { connector: 'claude-code' });
       const doc = JSON.parse(await fs.readFile(file, 'utf8'));
@@ -302,7 +302,7 @@ describe('config', function configSuite() {
 
     it('requires file path when adding new server', async function addMissingFileCase() {
       const config = new Config();
-      await assert.rejects(config.add({ name: 'demo', config: { command: 'demo' } }, { connector: 'claude-code' }), /File path is required/);
+      await assert.rejects(config.add({ name: 'demo', config: { command: 'demo' } }, { connector: 'claude-code' }), /A file path is required/);
     });
 
     it('throws when connector lacks writer during removal', async function removeMissingConnectorCase() {
