@@ -2,6 +2,23 @@
 
 `@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects over stdio, extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. You can also extend it with custom commands.
 
+## Table of Contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Command surface](#command-surface)
+- [Input handling](#input-handling)
+- [Output formatting](#output-formatting)
+- [Color output](#color-output)
+- [Per-command help](#per-command-help)
+- [Output formats](#output-formats)
+- [Configuration and server selection](#configuration-and-server-selection)
+- [Embedding and custom commands](#embedding-and-custom-commands)
+- [API](#api)
+- [Global flags](#global-flags)
+- [Development](#development)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Install
 
 ```sh
@@ -617,3 +634,7 @@ mcp-layer --config ./mcp.json --server integration tools list
 ```
 
 </details>
+
+## License
+
+MIT

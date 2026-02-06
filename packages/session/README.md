@@ -5,6 +5,13 @@
 
 Multiple packages return the same connected handle. To avoid duplication and drift, the Session class lives here and is re-exported by other packages.
 
+## Table of Contents
+
+- [Usage](#usage)
+- [Session shape](#session-shape)
+- [Lifecycle](#lifecycle)
+- [Common usage pattern](#common-usage-pattern)
+
 ## Usage
 
 ```js

@@ -9,6 +9,19 @@ MCP server configuration is fragmented across tools, file formats, and locations
 - Normalizes everything into `{ servers, metadata }` and a `Config` map keyed by server name.
 - Lets you update or remove entries while preserving the host tool's expected format.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Core concepts](#core-concepts)
+- [Connectors (discovery + parsing)](#connectors-discovery-parsing)
+- [Usage](#usage)
+- [API (authoritative)](#api-authoritative)
+- [Validation rules](#validation-rules)
+- [Responsibilities & lifecycle](#responsibilities-lifecycle)
+- [Testing](#testing)
+- [Security & safety](#security-safety)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -155,10 +168,6 @@ pnpm test --filter @mcp-layer/config
 
 - Never commit real MCP credentials or server binaries; use `.env.example` where needed.
 - Prefer `MCP_CONFIG_PATH` for temporary overrides rather than mutating user files.
-
-## License
-
-MIT
 
 ## Runtime Error Reference
 
@@ -484,3 +493,7 @@ console.log(config.map.size);
 ```
 
 </details>
+
+## License
+
+MIT

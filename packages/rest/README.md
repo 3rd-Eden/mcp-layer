@@ -4,6 +4,24 @@ Fastify plugin for exposing MCP servers over REST.
 
 `mcpRest` takes one or more MCP `Session` instances and registers HTTP routes that proxy MCP tools, prompts, and resources. A `Session` is the client-side handle you get from `@mcp-layer/attach` (in-process server) or `@mcp-layer/connect` (remote server). A Fastify “app” in this context is just a `Fastify` instance that owns routing, lifecycle hooks, and configuration.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start (In-Process Server)](#quick-start-in-process-server)
+- [Connect From Discovered Config](#connect-from-discovered-config)
+- [What Gets Exposed](#what-gets-exposed)
+- [Plugin Options](#plugin-options)
+- [Configuration Example](#configuration-example)
+- [True Proxy Mode (Proxy Session Manager)](#true-proxy-mode-proxy-session-manager)
+- [Performance Tips](#performance-tips)
+- [Validation](#validation)
+- [Error Handling](#error-handling)
+- [Error Catalog](#error-catalog)
+- [Resilience](#resilience)
+- [Observability](#observability)
+- [Composition with Fastify Ecosystem](#composition-with-fastify-ecosystem)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -367,10 +385,6 @@ This plugin is designed to compose with standard Fastify plugins:
 - `@fastify/cors` for CORS headers
 - `@fastify/helmet` for security headers
 - `@fastify/rate-limit` for rate limiting
-
-## License
-
-MIT
 
 ## Runtime Error Reference
 
@@ -806,3 +820,7 @@ server.registerTool(toolName, meta, handler);
 ```
 
 </details>
+
+## License
+
+MIT

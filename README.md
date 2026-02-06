@@ -2,6 +2,17 @@
 
 `mcp-layer` helps engineers bolt extra behaviors on top of existing MCP servers without reimplementing transport or schema parsing. It is a small, focused toolbox for discovering MCP configs, connecting to servers, and extracting a unified schema that can drive CLIs, REST APIs, UI renderers, or additional MCP layers.
 
+## Table of Contents
+
+- [What you can build with this repo](#what-you-can-build-with-this-repo)
+- [Packages](#packages)
+- [CLI quick try](#cli-quick-try)
+- [Quick start (end-to-end)](#quick-start-end-to-end)
+- [Design principles](#design-principles)
+- [Development](#development)
+- [Releasing](#releasing)
+- [Repository guidelines](#repository-guidelines)
+
 ## What you can build with this repo
 
 - **CLI layers** that expose MCP tools as commands with validated input.

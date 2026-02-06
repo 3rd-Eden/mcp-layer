@@ -6,6 +6,13 @@ This package converts the MCP catalog produced by `@mcp-layer/schema` into a pla
 
 The public API uses short names (`spec`, `path`, `uri`) to match the project convention of single-word exports where possible.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -124,10 +131,6 @@ Shared JSON Schemas:
 | `db://postgres/users/123` | `/db/postgres/users/123` |
 
 </details>
-
-## License
-
-MIT
 
 ## Runtime Error Reference
 
@@ -310,3 +313,7 @@ console.log(originalUri);
 ```
 
 </details>
+
+## License
+
+MIT

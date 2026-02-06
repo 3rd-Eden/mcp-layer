@@ -12,6 +12,12 @@ The implementation follows the same mechanics as `@bento/error`:
 
 No support-channel line is appended.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [API Reference](#api-reference)
+- [Example](#example)
+
 ## Installation
 
 ```sh
@@ -73,3 +79,7 @@ throw new LayerError({
   message: 'Authorization header is required.'
 });
 ```
+
+## License
+
+MIT

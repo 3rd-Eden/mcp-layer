@@ -9,6 +9,18 @@ You should not have to rebuild MCP transport logic for every generator or tool. 
 - consistent client identity (`MCP_CLIENT_AGENT`)
 - a single close path for client + transport
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Core concepts](#core-concepts)
+- [API (authoritative)](#api-authoritative)
+- [Behavior details](#behavior-details)
+- [Responsibilities & lifecycle](#responsibilities-lifecycle)
+- [Testing](#testing)
+- [Related packages](#related-packages)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -102,10 +114,6 @@ The integration suite spins up the real `@mcp-layer/test-server` binary, connect
 - [`@mcp-layer/config`](../config/README.md) for discovery and normalization.
 - [`@mcp-layer/schema`](../schema/README.md) for schema extraction.
 - [`@mcp-layer/test-server`](../test-server/README.md) for integration testing.
-
-## License
-
-MIT
 
 ## Runtime Error Reference
 
@@ -215,3 +223,7 @@ Step-by-step resolution:
 ```
 
 </details>
+
+## License
+
+MIT

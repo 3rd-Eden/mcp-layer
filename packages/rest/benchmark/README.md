@@ -2,6 +2,11 @@
 
 This folder contains a lightweight load-test harness for `@mcp-layer/rest`. It starts the shared MCP test server in-process, registers the REST plugin, and uses `autocannon` to drive load against a single REST tool endpoint.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Common Scenarios](#common-scenarios)
+
 ## Quick Start
 
 ```sh
@@ -67,3 +72,7 @@ Available flags:
 - `--identities` (default: 1)
 
 </details>
+
+## License
+
+MIT

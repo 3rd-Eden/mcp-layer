@@ -8,6 +8,18 @@ The rest of this workspace depends on a real MCP server to validate protocols. T
 - Exercises all major MCP capabilities
 - Exposes stable fixtures for tests and demos
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [What it provides](#what-it-provides)
+- [Structure](#structure)
+- [Spec support matrix](#spec-support-matrix)
+- [Usage in tests](#usage-in-tests)
+- [Testing](#testing)
+- [Extending the server](#extending-the-server)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```bash
@@ -132,10 +144,6 @@ When adding capabilities:
 2) Add or update a test in `test/index.test.js`.
 3) Document it in this README.
 
-## License
-
-MIT
-
 ## Runtime Error Reference
 
 This section is written for high-pressure debugging moments. These errors are intentionally emitted by the test server to exercise client and REST error-handling paths.
@@ -253,3 +261,7 @@ await assert.rejects(pending);
 ```
 
 </details>
+
+## License
+
+MIT

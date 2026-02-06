@@ -2,6 +2,19 @@
 
 `@mcp-layer/schema` extracts MCP server definitions (tools, resources, prompts, templates, and MCP Apps metadata) and normalizes them into a unified Zod-backed schema. The output is designed for downstream generators that need a single contract to build CLIs, REST endpoints, UI renderers, or additional MCP layers without re-parsing the MCP protocol surface.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [What this package does](#what-this-package-does)
+- [Output shape (authoritative)](#output-shape-authoritative)
+- [MCP Apps support](#mcp-apps-support)
+- [Generator guidance](#generator-guidance)
+- [Responsibilities and lifecycle](#responsibilities-and-lifecycle)
+- [Error handling](#error-handling)
+- [JSON Schema vs Zod](#json-schema-vs-zod)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -172,3 +185,7 @@ await session.close();
 ```
 
 </details>
+
+## License
+
+MIT

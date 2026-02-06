@@ -4,6 +4,18 @@ Reusable MCP session manager with identity-based session reuse, TTL expiration, 
 
 This package is transport-agnostic. It can be used with REST plugins, CLIs, job workers, or any runtime that needs controlled MCP session lifecycles.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [What This Package Provides](#what-this-package-provides)
+- [API Reference](#api-reference)
+- [Identity Rules](#identity-rules)
+- [Example: Default Auth Parsing](#example-default-auth-parsing)
+- [Example: Custom Identity Strategy](#example-custom-identity-strategy)
+- [Example: Integration with a Plugin](#example-integration-with-a-plugin)
+- [Shutdown](#shutdown)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -435,3 +447,7 @@ const manager = createManager({ factory: makeSession, max: 10, ttl });
 ```
 
 </details>
+
+## License
+
+MIT

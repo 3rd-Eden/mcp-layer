@@ -2,6 +2,17 @@
 
 `@mcp-layer/attach` attaches to an in-process MCP server instance and returns a shared `Session`. This is the way to layer REST/GraphQL/UI functionality on top of an existing server without spawning a new process.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Platformatic MCP (Fastify)](#platformatic-mcp-fastify)
+- [When to use attach vs connect](#when-to-use-attach-vs-connect)
+- [API (authoritative)](#api-authoritative)
+- [Behavior and constraints](#behavior-and-constraints)
+- [Testing](#testing)
+- [Runtime Error Reference](#runtime-error-reference)
+
 ## Installation
 
 ```sh
@@ -86,10 +97,6 @@ Returns a `Session` (from `@mcp-layer/session`) with:
 ```sh
 pnpm test --filter @mcp-layer/attach
 ```
-
-## License
-
-MIT
 
 ## Runtime Error Reference
 
@@ -223,3 +230,7 @@ await session.close();
 ```
 
 </details>
+
+## License
+
+MIT
