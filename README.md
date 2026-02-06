@@ -98,6 +98,8 @@ The root package runs `prepack` to regenerate `src/index.js` and sync root `pack
 
 See `.github/workflows/release.yml` for the pipeline details.
 
+The publish guard at `.github/workflows/publish-guard.yml` runs after the `Release` workflow completes and locates the open `Version Packages` PR (`changeset-release/main`). It checks npm for workspace package existence and upserts a single PR comment when packages still need first-time bootstrap publishing.
+
 ## Repository guidelines
 
 See `AGENTS.md` for coding style, testing requirements, and documentation expectations.

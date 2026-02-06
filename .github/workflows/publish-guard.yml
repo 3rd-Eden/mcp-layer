@@ -1,7 +1,12 @@
 name: Publish Guard
 
 on:
-  pull_request:
+  workflow_run:
+    workflows:
+      - Release
+    types:
+      - completed
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -9,7 +14,7 @@ permissions:
 
 jobs:
   unpublished:
-    if: ${{ github.event.pull_request.user.login == 'github-actions[bot]' && startsWith(github.event.pull_request.title, 'Version Packages') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +25,38 @@ jobs:
         with:
           node-version: 20
 
+      - name: Find version PR
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            function hasVersionTitle(pull) {
+              return typeof pull.title === 'string' && pull.title.startsWith('Version Packages');
+            }
+
+            async function findVersionPullRequest() {
+              const head = `${context.repo.owner}:changeset-release/main`;
+              const response = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head,
+                per_page: 10
+              });
+              for (const pull of response.data) {
+                if (hasVersionTitle(pull)) {
+                  core.info(`Found version PR #${pull.number}.`);
+                  return String(pull.number);
+                }
+              }
+              core.info('No open "Version Packages" PR found.');
+              return '';
+            }
+
+            return await findVersionPullRequest();
+
       - name: Detect unpublished packages
+        if: ${{ steps.pr.outputs.result != '' }}
         id: detect
         run: |
           node - <<'NODE'
@@ -71,72 +107,112 @@ jobs:
             return true;
           }
 
-          const names = await listPackages(process.cwd());
-          const missing = [];
-          for (const name of names) {
-            const ok = await exists(name);
-            if (!ok) {
-              missing.push(name);
+          function createMessage(missing, workflowPath) {
+            const lines = [
+              'Unpublished packages detected. Bootstrapping is required before merge.',
+              '',
+              'Missing packages:'
+            ];
+
+            for (const name of missing) {
+              lines.push(`- ${name}`);
             }
+
+            lines.push('');
+            lines.push('Bootstrap checklist (one-time per package):');
+            lines.push('1. Create a short-lived granular npm token with Read+Write and 2FA bypass.');
+            lines.push('2. Publish each missing package once using that token.');
+            lines.push('3. Enable npm Trusted Publishing (OIDC) for each package.');
+            lines.push('4. Re-run the release pipeline.');
+            lines.push('');
+            lines.push('Details per package:');
+
+            for (const name of missing) {
+              const encoded = encodeURIComponent(name);
+              lines.push(`Package: ${name}`);
+              lines.push(`Package page: https://www.npmjs.com/package/${encoded}`);
+              lines.push(`Settings page: https://www.npmjs.com/package/${encoded}/settings`);
+              lines.push(`OIDC workflow to select: ${workflowPath}`);
+              lines.push('');
+            }
+
+            lines.push('');
+            lines.push('Notes:');
+            lines.push('- Trusted Publishing must be enabled after the first publish.');
+            lines.push('- Use release.yml as the GitHub Actions workflow name for OIDC.');
+
+            return lines.join('\n');
           }
 
-          const workflow = 'release.yml';
-          const repo = process.env.GITHUB_REPOSITORY || '3rd-Eden/mcp-layer';
-          const workflowPath = `https://github.com/${repo}/blob/main/.github/workflows/${workflow}`;
-          const steps = [
-            'Unpublished packages detected. Bootstrapping is required before merge.',
-            '',
-            'Missing packages:',
-            ...missing.map((name) => `- ${name}`),
-            '',
-            'Bootstrap checklist (one-time per package):',
-            '1. Create a short-lived granular npm token with Read+Write and 2FA bypass.',
-            '2. Publish each missing package once using that token.',
-            '3. Enable npm Trusted Publishing (OIDC) for each package.',
-            '4. Re-run the release pipeline.',
-            '',
-            'Details per package:',
-            ...missing.flatMap((name) => ([
-              `Package: ${name}`,
-              `Package page: https://www.npmjs.com/package/${encodeURIComponent(name)}`,
-              `Settings page: https://www.npmjs.com/package/${encodeURIComponent(name)}/settings`,
-              `OIDC workflow to select: ${workflowPath}`,
-              ''
-            ])),
-            '',
-            'Notes:',
-            `- Trusted Publishing must be enabled after the first publish.`,
-            `- Use ${workflow} as the GitHub Actions workflow name for OIDC.`
-          ].join('\\n');
+          async function main() {
+            const names = await listPackages(process.cwd());
+            const missing = [];
+            for (const name of names) {
+              const ok = await exists(name);
+              if (!ok)
+                missing.push(name);
+            }
 
-          const output = process.env.GITHUB_OUTPUT;
-          if (output) {
-            const { appendFile } = await import('node:fs/promises');
-            await appendFile(output, `missing=${missing.join(',')}\n`);
-            await appendFile(output, `missing_md<<EOF\n${missing.length ? message : ''}\nEOF\n`);
-          }
+            const workflow = 'release.yml';
+            const repo = process.env.GITHUB_REPOSITORY ?? '3rd-Eden/mcp-layer';
+            const workflowPath = `https://github.com/${repo}/blob/main/.github/workflows/${workflow}`;
+            const message = missing.length > 0 ? createMessage(missing, workflowPath) : '';
 
-          if (missing.length > 0) {
-            console.log(message);
-            process.exitCode = 1;
-          } else {
+            const output = process.env.GITHUB_OUTPUT;
+            if (output) {
+              const { appendFile } = await import('node:fs/promises');
+              await appendFile(output, `missing=${missing.join(',')}\n`);
+              await appendFile(output, `missing_md<<EOF\n${message}\nEOF\n`);
+            }
+
+            if (missing.length > 0) {
+              console.log(message);
+              return;
+            }
             console.log('All packages are published.');
           }
+
+          await main();
           NODE
 
       - name: Comment on PR
-        if: ${{ failure() }}
+        if: ${{ steps.pr.outputs.result != '' && steps.detect.outputs.missing != '' }}
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.result }}
+          MESSAGE: ${{ steps.detect.outputs.missing_md }}
         with:
           script: |
-            const body = `${{ steps.detect.outputs.missing_md }}`;
+            const marker = '<!-- publish-guard:missing-packages -->';
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const body = process.env.MESSAGE?.trim() ?? '';
             if (!body) {
               core.info('No unpublished packages detected.');
+              return;
+            }
+            const commentBody = `${body}\n\n${marker}`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              per_page: 100
+            });
+            for (const comment of comments) {
+              if (!comment.body?.includes(marker))
+                continue;
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: comment.id,
+                body: commentBody
+              });
+              core.info(`Updated publish-guard comment on PR #${issueNumber}.`);
               return;
             }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body
+              issue_number: issueNumber,
+              body: commentBody
             });
+            core.info(`Created publish-guard comment on PR #${issueNumber}.`);
