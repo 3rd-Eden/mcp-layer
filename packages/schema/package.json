@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/schema",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Extract and normalize MCP schemas into a unified Zod-based format.",
   "repository": {
     "type": "git",

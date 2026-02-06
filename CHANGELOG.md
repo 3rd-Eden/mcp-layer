@@ -1,5 +1,22 @@
 # mcp-layer
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [9391cb2]
+- Updated dependencies [9391cb2]
+  - @mcp-layer/error@0.2.0
+  - @mcp-layer/manager@0.2.0
+  - @mcp-layer/rest@1.2.0
+  - @mcp-layer/attach@1.1.1
+  - @mcp-layer/cli@1.1.1
+  - @mcp-layer/config@1.0.1
+  - @mcp-layer/connect@1.0.1
+  - @mcp-layer/openapi@1.1.1
+  - @mcp-layer/schema@1.0.2
+  - @mcp-layer/test-server@1.0.1
+
 ## 0.1.0
 
 ### Minor Changes

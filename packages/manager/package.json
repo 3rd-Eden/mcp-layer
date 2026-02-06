@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/manager",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Session manager for building auth-aware MCP session pools with TTL/LRU eviction.",
   "repository": {
     "type": "git",

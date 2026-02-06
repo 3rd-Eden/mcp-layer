@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Discover, normalize, and update MCP server configurations across popular tools.",
   "repository": {
     "type": "git",
