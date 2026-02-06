@@ -219,7 +219,6 @@ function suite() {
         },
         function match(error) {
           assert.ok(error instanceof LayerError);
-          assert.equal(error.code, 'AUTH_REQUIRED');
           assert.equal(error.package, '@mcp-layer/manager');
           assert.equal(error.method, 'identity');
           assert.match(error.docs, /packages\/manager\/README\.md#error-[a-f0-9]{6}$/);

@@ -41,18 +41,6 @@ const DEFAULTS = {
 };
 
 /**
- * Create a manager-scoped documented error.
- * @param {string} method - Method where the error was produced.
- * @param {string} message - Error message.
- * @param {string} [code] - Optional machine-readable code.
- * @param {Record<string, unknown>} [meta] - Optional diagnostic metadata.
- * @returns {LayerError}
- */
-function fail(method, message, code, meta) {
-  return new LayerError({ name: 'manager', method, message, code, meta });
-}
-
-/**
  * Normalize auth options.
  * @param {Partial<AuthConfig> | undefined} input - Auth overrides.
  * @returns {AuthConfig}
@@ -70,8 +58,12 @@ function authConfig(input) {
  * @returns {Options}
  */
 function normalize(input) {
-  if (!input || typeof input !== 'object') throw fail('normalize', 'Session manager options are required.', 'MANAGER_OPTIONS_REQUIRED');
-  if (typeof input.factory !== 'function') throw fail('normalize', 'Session manager requires a factory function.', 'MANAGER_FACTORY_REQUIRED');
+  if (!input || typeof input !== 'object') {
+    throw new LayerError({ name: 'manager', method: 'normalize', message: 'Session manager options are required.' });
+  }
+  if (typeof input.factory !== 'function') {
+    throw new LayerError({ name: 'manager', method: 'normalize', message: 'Session manager requires a factory function.' });
+  }
 
   const max = typeof input.max === 'number' ? input.max : DEFAULTS.max;
   const ttl = typeof input.ttl === 'number' ? input.ttl : DEFAULTS.ttl;
@@ -79,8 +71,8 @@ function normalize(input) {
   const auth = authConfig(input.auth);
   const now = typeof input.now === 'function' ? input.now : Date.now;
 
-  if (!Number.isFinite(max) || max <= 0) throw fail('normalize', 'max must be a positive number.', 'MANAGER_MAX_INVALID', { value: max });
-  if (!Number.isFinite(ttl) || ttl <= 0) throw fail('normalize', 'ttl must be a positive number.', 'MANAGER_TTL_INVALID', { value: ttl });
+  if (!Number.isFinite(max) || max <= 0) throw new LayerError({ name: 'manager', method: 'normalize', message: 'max must be a positive number.', meta: { value: max } });
+  if (!Number.isFinite(ttl) || ttl <= 0) throw new LayerError({ name: 'manager', method: 'normalize', message: 'ttl must be a positive number.', meta: { value: ttl } });
 
   return {
     max,
@@ -114,7 +106,7 @@ function header(request, name) {
  */
 function bearer(value) {
   const match = value.match(/^Bearer\s+(.+)$/i);
-  if (!match) throw authError('AUTH_INVALID', 'Authorization header must use Bearer scheme.');
+  if (!match) throw new LayerError({ name: 'manager', method: 'identity', message: 'Authorization header must use Bearer scheme.' });
   return match[1];
 }
 
@@ -125,7 +117,7 @@ function bearer(value) {
  */
 function basic(value) {
   const match = value.match(/^Basic\s+(.+)$/i);
-  if (!match) throw authError('AUTH_INVALID', 'Authorization header must use Basic scheme.');
+  if (!match) throw new LayerError({ name: 'manager', method: 'identity', message: 'Authorization header must use Basic scheme.' });
   return match[1];
 }
 
@@ -145,7 +137,7 @@ function identity(request, cfg) {
       const auth = res.auth?.token ? { scheme: res.auth.scheme ?? 'raw', token: res.auth.token, header: res.auth.header ?? '' } : null;
       return { key: res.key, auth, shared: Boolean(res.shared) };
     }
-    throw fail('identity', 'identify() must return a string or { key, auth } object.', 'MANAGER_IDENTIFY_INVALID');
+    throw new LayerError({ name: 'manager', method: 'identity', message: 'identify() must return a string or { key, auth } object.' });
   }
 
   if (cfg.auth.mode === 'disabled') {
@@ -154,7 +146,7 @@ function identity(request, cfg) {
 
   const raw = header(request, cfg.auth.header);
   if (!raw) {
-    if (cfg.auth.mode === 'required') throw authError('AUTH_REQUIRED', 'Authorization header is required.');
+    if (cfg.auth.mode === 'required') throw new LayerError({ name: 'manager', method: 'identity', message: 'Authorization header is required.' });
     return { key: cfg.sharedKey, auth: null, shared: true };
   }
 
@@ -169,16 +161,6 @@ function identity(request, cfg) {
 
   const token = bearer(raw);
   return { key: `bearer:${token}`, auth: { scheme: 'bearer', token, header: raw }, shared: false };
-}
-
-/**
- * Create an auth error with a code.
- * @param {string} code - Error code.
- * @param {string} message - Error message.
- * @returns {Error & { code: string }}
- */
-function authError(code, message) {
-  return fail('identity', message, code);
 }
 
 /**
@@ -286,7 +268,7 @@ export function createManager(input) {
     async function createSession() {
       const ctx = { identity: ident, request };
       const session = await cfg.factory(ctx);
-      if (!(session instanceof Session)) throw fail('get', 'factory must return a Session instance.', 'MANAGER_FACTORY_RESULT_INVALID');
+      if (!(session instanceof Session)) throw new LayerError({ name: 'manager', method: 'get', message: 'factory must return a Session instance.' });
       return session;
     }
   }

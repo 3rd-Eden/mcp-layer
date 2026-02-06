@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { LayerError } from '@mcp-layer/error';
 import { collectCandidates, findConnector } from './connectors/index.js';
 import { extractServers } from './schema.js';
 
@@ -74,7 +75,12 @@ export class Config {
         ? parsed.metadata
         : {};
     } else {
-      throw new Error(`No parser or data supplied for ${candidate.path}`);
+      throw new LayerError({
+        name: 'config',
+        method: 'Config.consume',
+        message: 'No parser or inline data was supplied for "{path}".',
+        vars: { path: candidate.path }
+      });
     }
 
     const existing = this.list.find(function match(entry) {
@@ -100,12 +106,22 @@ export class Config {
     const existing = this.get(entry.name);
     const connectorName = typeof options.connector === 'string' ? options.connector : existing?.connector;
     if (!connectorName) {
-      throw new Error(`Connector is required to add server "${entry.name}"`);
+      throw new LayerError({
+        name: 'config',
+        method: 'Config.add',
+        message: 'A connector is required before adding server "{server}".',
+        vars: { server: entry.name }
+      });
     }
 
     const connector = findConnector(connectorName);
     if (!connector || typeof connector.write !== 'function') {
-      throw new Error(`Connector "${connectorName}" does not support write operations`);
+      throw new LayerError({
+        name: 'config',
+        method: 'Config.add',
+        message: 'Connector "{connector}" does not support write operations.',
+        vars: { connector: connectorName }
+      });
     }
 
     let file = typeof options.file === 'string' ? options.file : existing?.source;
@@ -123,7 +139,12 @@ export class Config {
       }
     }
     if (!file) {
-      throw new Error(`File path is required to add server "${entry.name}"`);
+      throw new LayerError({
+        name: 'config',
+        method: 'Config.add',
+        message: 'A file path is required before adding server "{server}".',
+        vars: { server: entry.name }
+      });
     }
 
     await connector.write(file, entry, options.metadata);
@@ -152,7 +173,12 @@ export class Config {
     const connectorName = existing.connector;
     const connector = connectorName ? findConnector(connectorName) : undefined;
     if (!connector || typeof connector.write !== 'function') {
-      throw new Error(`Connector "${connectorName ?? 'unknown'}" does not support write operations`);
+      throw new LayerError({
+        name: 'config',
+        method: 'Config.remove',
+        message: 'Connector "{connector}" does not support write operations.',
+        vars: { connector: connectorName ?? 'unknown' }
+      });
     }
 
     const file = existing.source;
@@ -267,7 +293,11 @@ export async function load(document, opts = {}) {
 function parseInlineDocument(doc) {
   const parsed = extractServers(doc, '<inline>');
   if (parsed.servers.length === 0) {
-    throw new Error('Inline configuration must declare at least one server using "mcpServers", "servers", or top-level objects with connection settings');
+    throw new LayerError({
+      name: 'config',
+      method: 'parseInlineDocument',
+      message: 'Inline configuration must declare at least one server using "mcpServers", "servers", or top-level objects with connection settings',
+    });
   }
   return parsed;
 }

@@ -1,4 +1,5 @@
 import { path, tpath } from '@mcp-layer/openapi';
+import { LayerError } from '@mcp-layer/error';
 import { validateSegmentName, validateToolName } from './reserved.js';
 import { createToolHandler } from '../handlers/tools.js';
 import { createPromptHandler } from '../handlers/prompts.js';
@@ -34,15 +35,30 @@ function toFastifyPath(template) {
    */
   function replace(match, expr) {
     if (/[+#./?&*]/.test(expr) || expr.includes(',')) {
-      throw new Error(`Template expression "${match}" is not supported.`);
+      throw new LayerError({
+        name: 'rest',
+        method: 'toFastifyPath',
+        message: 'Template expression "{expression}" is not supported.',
+        vars: { expression: match }
+      });
     }
     if (!/^[A-Za-z0-9._-]+$/.test(expr)) {
-      throw new Error(`Template parameter "${expr}" must be URL-safe.`);
+      throw new LayerError({
+        name: 'rest',
+        method: 'toFastifyPath',
+        message: 'Template parameter "{parameter}" must be URL-safe.',
+        vars: { parameter: expr }
+      });
     }
     const cleaned = expr.replace(/^[+#./?&]/, '').replace(/\*$/, '');
     const name = cleaned.split(',')[0];
     if (!name) {
-      throw new Error(`Invalid template expression "${match}" in ${template}`);
+      throw new LayerError({
+        name: 'rest',
+        method: 'toFastifyPath',
+        message: 'Invalid template expression "{expression}" in template "{template}".',
+        vars: { expression: match, template }
+      });
     }
     return `:${name}`;
   }

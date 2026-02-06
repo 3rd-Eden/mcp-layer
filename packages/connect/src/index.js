@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { createRequire } from 'node:module';
+import { LayerError } from '@mcp-layer/error';
 import { Session } from '@mcp-layer/session';
 import path from 'node:path';
 
@@ -20,7 +21,11 @@ const base = {
 export function select(src, name) {
   if (src instanceof Map) return src.get(name);
   if (src && typeof src === 'object' && typeof src.get === 'function') return src.get(name);
-  throw new TypeError('Expected config source to support get(name).');
+  throw new LayerError({
+    name: 'connect',
+    method: 'select',
+    message: 'Expected config source to support get(name).',
+  });
 }
 
 /**
@@ -33,7 +38,12 @@ export function setup(item, opts = {}) {
   const cfg = item.config ?? {};
   const cmd = typeof cfg.command === 'string' ? cfg.command : undefined;
   if (!cmd) {
-    throw new Error(`Server "${item.name}" is missing a command property required for stdio transport.`);
+    throw new LayerError({
+      name: 'connect',
+      method: 'setup',
+      message: 'Server "{server}" is missing a "command" property required for stdio transport.',
+      vars: { server: item.name }
+    });
   }
 
   const list = Array.isArray(cfg.args) ? cfg.args.map(String) : undefined;
@@ -64,12 +74,21 @@ export { Session };
  */
 export async function connect(src, name, opts = {}) {
   if (typeof name !== 'string' || name.length === 0) {
-    throw new TypeError('Expected server name to be a non-empty string.');
+    throw new LayerError({
+      name: 'connect',
+      method: 'connect',
+      message: 'Expected server name to be a non-empty string.',
+    });
   }
 
   const item = select(src, name);
   if (!item) {
-    throw new Error(`Server "${name}" was not found in configuration.`);
+    throw new LayerError({
+      name: 'connect',
+      method: 'connect',
+      message: 'Server "{server}" was not found in configuration.',
+      vars: { server: name }
+    });
   }
 
   const info = { ...base, ...(opts.info ?? {}) };

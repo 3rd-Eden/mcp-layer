@@ -29,14 +29,12 @@ function suite() {
     const error = new LayerError({
       name: 'manager',
       method: 'identity',
-      message: 'Authorization header is required.',
-      code: 'AUTH_REQUIRED'
+      message: 'Authorization header is required.'
     });
 
     assert.equal(error.name, 'LayerError');
     assert.equal(error.package, '@mcp-layer/manager');
     assert.equal(error.method, 'identity');
-    assert.equal(error.code, 'AUTH_REQUIRED');
     assert.equal(
       error.message,
       '@mcp-layer/manager(identity): Authorization header is required.\n\nFor more information visit: https://github.com/3rd-Eden/mcp-layer/tree/main/packages/manager/README.md#error-bc38ab'
@@ -44,23 +42,21 @@ function suite() {
     assert.equal(error.reference, '#BC38AB');
   });
 
-  it('supports %s placeholder interpolation and custom fields', function argsCase() {
+  it('supports named placeholder interpolation and custom fields', function argsCase() {
     const error = new LayerError({
       name: 'manager',
       method: 'normalize',
-      message: 'Invalid option %s for %s.',
-      args: ['max', 'createManager'],
-      code: 'MANAGER_OPTION_INVALID',
+      message: 'Invalid option "{option}" for "{target}".',
+      vars: { option: 'max', target: 'createManager' },
       status: 400
     });
 
     assert.equal(
       error.message,
-      '@mcp-layer/manager(normalize): Invalid option max for createManager.\n\nFor more information visit: https://github.com/3rd-Eden/mcp-layer/tree/main/packages/manager/README.md#error-4416cc'
+      '@mcp-layer/manager(normalize): Invalid option "max" for "createManager".\n\nFor more information visit: https://github.com/3rd-Eden/mcp-layer/tree/main/packages/manager/README.md#error-cbc070'
     );
     assert.equal(error.status, 400);
-    assert.equal(error.code, 'MANAGER_OPTION_INVALID');
-    assert.equal(error.reference, '#4416CC');
+    assert.equal(error.reference, '#CBC070');
   });
 }
 

@@ -52,6 +52,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@mcp-layer/error": "workspace:*",
     "@mcp-layer/openapi": "workspace:*",
     "ajv": "^8.17.0",
     "ajv-formats": "^3.0.0",

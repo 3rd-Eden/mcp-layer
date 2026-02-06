@@ -7,7 +7,7 @@ The implementation follows the same mechanics as `@bento/error`:
 - deterministic short hashtag from `name + method + message`,
 - source context in the message (`@scope/package(method)`),
 - generated docs URL tied to the thrown error identity,
-- support for `%s` placeholder interpolation via `args`,
+- support for named placeholder interpolation via `vars`,
 - passthrough custom fields on the error instance.
 
 No support-channel line is appended.
@@ -27,10 +27,9 @@ new LayerError({
   name: 'manager',
   method: 'identity',
   message: 'Authorization header is required.',
-  args: [],
+  vars: {},
   docs: 'github.com/3rd-Eden/mcp-layer/tree/main/packages',
   scope: '@mcp-layer',
-  code: 'AUTH_REQUIRED',
   ...customFields
 });
 ```
@@ -43,10 +42,11 @@ Required:
 
 Optional:
 
-- `args` for `%s` replacement in `message`
+- `vars` for named replacement in `message` (for example `{ server: 'demo' }` for `Server "{server}" was not found.`)
+- `args` for legacy positional `%s` replacement in `message`
 - `docs` base path override
 - `scope` override
-- any other custom fields (`code`, `status`, etc), copied to the error object
+- any other custom fields (`status`, `cause`, etc), copied to the error object
 
 ### `hashtag(message)`
 
@@ -70,7 +70,6 @@ import { LayerError } from '@mcp-layer/error';
 throw new LayerError({
   name: 'manager',
   method: 'identity',
-  code: 'AUTH_REQUIRED',
   message: 'Authorization header is required.'
 });
 ```

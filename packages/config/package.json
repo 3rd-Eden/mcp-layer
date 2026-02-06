@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "@mcp-layer/error": "workspace:*",
     "yaml": "^2.8.1"
   }
 }

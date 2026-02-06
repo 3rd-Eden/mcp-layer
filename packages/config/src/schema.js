@@ -1,3 +1,8 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import YAML from 'yaml';
+import { LayerError } from '@mcp-layer/error';
+
 /**
  * Determine whether the provided value represents a usable MCP server definition.
  * @param {unknown} value - Value to evaluate as a server config object.
@@ -29,7 +34,12 @@ function hasConnection(config) {
  */
 export function extractServers(doc, file) {
   if (!doc || typeof doc !== 'object') {
-    throw new Error(`${file} must contain an object with server definitions`);
+    throw new LayerError({
+      name: 'config',
+      method: 'extractServers',
+      message: 'Configuration document "{file}" must contain an object with server definitions.',
+      vars: { file }
+    });
   }
 
   const servers = [];
@@ -44,7 +54,12 @@ export function extractServers(doc, file) {
 
       if (!hasConnection(value)) {
         if (strict) {
-          throw new Error(`Server "${name}" in ${file} must declare "command", "url", or "endpoint"`);
+          throw new LayerError({
+            name: 'config',
+            method: 'extractServers',
+            message: 'Server "{server}" in "{file}" must declare "command", "url", or "endpoint".',
+            vars: { server: name, file }
+          });
         }
         continue;
       }
@@ -87,7 +102,12 @@ export function parseDocument(raw, file) {
     }
   } catch (error) {
     const type = ext === '.yaml' || ext === '.yml' ? 'YAML' : 'JSON';
-    throw new Error(`Failed to parse ${type} for ${file}: ${(error instanceof Error ? error.message : 'unknown error')}`);
+    throw new LayerError({
+      name: 'config',
+      method: 'parseDocument',
+      message: 'Failed to parse {format} configuration document "{file}": {reason}',
+      vars: { format: type, file, reason: error instanceof Error ? error.message : 'unknown error' }
+    });
   }
 
   return extractServers(doc ?? {}, file);
@@ -152,6 +172,3 @@ export async function writeDocument(file, entry, metadata = {}) {
     : `${JSON.stringify(body, null, 2)}\n`;
   await fs.writeFile(file, output, 'utf8');
 }
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import YAML from 'yaml';

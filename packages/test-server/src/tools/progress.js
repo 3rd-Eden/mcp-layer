@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Register the progress tool that emits notifications/progress updates.
@@ -30,7 +31,11 @@ export function registerProgress(server) {
           'abort',
           () => {
             clearTimeout(timer);
-            reject(new Error('progress tool aborted'));
+            reject(new LayerError({
+              name: 'test-server',
+              method: 'registerProgress.progressTool.sleep',
+              message: 'progress tool aborted',
+            }));
           },
           { once: true }
         );
@@ -38,7 +43,13 @@ export function registerProgress(server) {
     }
 
     for (let index = 1; index <= args.steps; index += 1) {
-      if (extra.signal.aborted) throw new Error('progress tool aborted');
+      if (extra.signal.aborted) {
+        throw new LayerError({
+          name: 'test-server',
+          method: 'registerProgress.progressTool',
+          message: 'progress tool aborted',
+        });
+      }
       await sleep();
       if (token) {
         await extra.sendNotification({

@@ -1,5 +1,6 @@
 import Ajv from 'ajv';
 import { z } from 'zod';
+import { LayerError } from '@mcp-layer/error';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 
@@ -421,7 +422,13 @@ function normalize(data) {
  * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
  */
 export async function extract(link) {
-  if (!link || !link.client) throw new Error('Expected a Session instance.');
+  if (!link || !link.client) {
+    throw new LayerError({
+      name: 'schema',
+      method: 'extract',
+      message: 'Expected a Session instance.',
+    });
+  }
 
   const client = link.client;
   const caps = client.getServerCapabilities();

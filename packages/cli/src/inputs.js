@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Collect tool/prompt inputs from argv.
@@ -24,7 +25,12 @@ export async function inputs(opts, parsed, extra, item) {
   const required = Array.isArray(schema?.required) ? schema.required : [];
   for (const name of required) {
     if (!Object.hasOwn(args, name)) {
-      throw new Error(`Missing required parameter: ${name}`);
+      throw new LayerError({
+        name: 'cli',
+        method: 'inputs',
+        message: 'Required parameter "{parameter}" is missing.',
+        vars: { parameter: name }
+      });
     }
   }
   return args;
@@ -113,11 +119,21 @@ function coercenumber(value, schema) {
     const num = Number(value);
     if (Number.isNaN(num)) {
       const label = schema.title || schema.description || 'parameter';
-      throw new Error(`Invalid number for ${label}: ${value}`);
+      throw new LayerError({
+        name: 'cli',
+        method: 'coercenumber',
+        message: 'Invalid number for "{parameter}": "{value}".',
+        vars: { parameter: label, value }
+      });
     }
     if (schema.type === 'integer' && !Number.isInteger(num)) {
       const label = schema.title || schema.description || 'parameter';
-      throw new Error(`Invalid integer for ${label}: ${value}`);
+      throw new LayerError({
+        name: 'cli',
+        method: 'coercenumber',
+        message: 'Invalid integer for "{parameter}": "{value}".',
+        vars: { parameter: label, value }
+      });
     }
     return num;
   }
@@ -135,6 +151,11 @@ function parsejson(value, schema) {
     return JSON.parse(value);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid JSON input';
-    throw new Error(`Invalid JSON for ${schema.title || schema.description || 'parameter'}: ${message}`);
+    throw new LayerError({
+      name: 'cli',
+      method: 'parsejson',
+      message: 'Invalid JSON for "{parameter}": {reason}',
+      vars: { parameter: schema.title || schema.description || 'parameter', reason: message }
+    });
   }
 }

@@ -278,3 +278,342 @@ Executes the CLI. If `argv` is omitted, it uses `process.argv`.
 pnpm test --filter @mcp-layer/cli
 ```
 </details>
+
+## Runtime Error Reference
+
+This section is written for high-pressure debugging moments. Each entry maps directly to the CLI's MCP discovery and invocation paths.
+
+<a id="error-876b63"></a>
+### Unknown "{targetType}" target "{targetName}".
+
+Thrown from: `cli.render`
+
+This happens when you run contextual help for a specific target (`tools <name> --help`, `prompts <name> --help`, `resources <uri> --help`, `templates <uri> --help`) and that target is not in the MCP catalog returned by the selected server.
+
+Step-by-step resolution:
+1. Confirm which server the CLI selected: run `mcp-layer servers list` or pass `--server <name>` explicitly.
+2. List the available targets from that exact server: `mcp-layer tools list`, `mcp-layer prompts list`, `mcp-layer resources list`, or `mcp-layer templates list`.
+3. Compare the failing target value character-for-character with list output (case and punctuation must match).
+4. If the target should exist but does not, check the MCP server implementation for that capability and restart/reload the server.
+
+<details>
+<summary>Fix Example: inspect live MCP catalog before target-specific help</summary>
+
+```sh
+mcp-layer --server dev tools list
+mcp-layer --server dev tools weather.get --help
+```
+
+</details>
+
+<a id="error-9417af"></a>
+### Unknown command "{command}".
+
+Thrown from: `cli.render`
+
+This happens when the first positional token does not match any built-in CLI surface (`tools`, `prompts`, `resources`, `templates`, `servers`, `help`) and does not match a registered custom command.
+
+Step-by-step resolution:
+1. Run `mcp-layer --help` and verify the exact command name and shape.
+2. Check for typos or singular/plural mixups (`tool` vs `tools`).
+3. If you expected a custom command, confirm it was registered before calling `cli().render(...)`.
+4. Re-run with the exact command shown by help output.
+
+<details>
+<summary>Fix Example: use a valid CLI command surface</summary>
+
+```sh
+# Wrong: tool list
+mcp-layer tools list
+```
+
+</details>
+
+<a id="error-47dc57"></a>
+### Unknown prompt "{promptName}".
+
+Thrown from: `cli.render`
+
+This happens on `prompts <name> exec` when the connected MCP server does not expose a prompt with that `name` in `prompts/list`.
+
+Step-by-step resolution:
+1. Run `mcp-layer prompts list --server <name>` and copy the prompt name directly.
+2. Confirm the same `--server` and `--config` values are used between list and exec commands.
+3. Verify the MCP server currently loaded the prompt in its handler registry.
+4. Retry `prompts <name> exec` with the exact listed name.
+
+<details>
+<summary>Fix Example: list prompt names before execution</summary>
+
+```sh
+mcp-layer --server dev prompts list
+mcp-layer --server dev prompts summarize.exec exec --topic "release notes"
+```
+
+</details>
+
+<a id="error-5aa245"></a>
+### Unknown resource "{resourceUri}".
+
+Thrown from: `cli.render`
+
+This happens on `resources <uri> exec` when no resource with that URI exists in the connected MCP server's `resources/list` catalog.
+
+Step-by-step resolution:
+1. Run `mcp-layer resources list --server <name>` to retrieve valid URIs.
+2. Copy the URI exactly; resource URIs are protocol-level identifiers and are strict.
+3. Ensure you are querying the same MCP server/environment where that URI is expected to exist.
+4. Re-run the read command with the exact URI from list output.
+
+<details>
+<summary>Fix Example: read a listed resource URI</summary>
+
+```sh
+mcp-layer --server dev resources list
+mcp-layer --server dev resources mcp://docs/changelog exec
+```
+
+</details>
+
+<a id="error-d978d4"></a>
+### Unknown template "{templateUri}".
+
+Thrown from: `cli.render`
+
+This happens on `templates <uriTemplate> exec` when the specified URI template is not present in the server's `resources/templates/list` response.
+
+Step-by-step resolution:
+1. Run `mcp-layer templates list --server <name>`.
+2. Copy the URI template exactly from output (including placeholder names).
+3. Confirm the template is registered on the server instance you are connected to.
+4. Retry with the exact listed template and required parameters.
+
+<details>
+<summary>Fix Example: execute a known template from list output</summary>
+
+```sh
+mcp-layer --server dev templates list
+mcp-layer --server dev templates mcp://docs/{slug} exec --slug release-2026-02
+```
+
+</details>
+
+<a id="error-95b2a5"></a>
+### Unknown tool "{toolName}".
+
+Thrown from: `cli.render`
+
+This happens on `tools <name> exec` when the name is missing from the server's `tools/list` response.
+
+Step-by-step resolution:
+1. Run `mcp-layer tools list --server <name>`.
+2. Use the exact tool name from list output.
+3. If missing unexpectedly, inspect server startup logs to verify tool registration completed.
+4. Re-run execution with the exact name and required arguments.
+
+<details>
+<summary>Fix Example: execute only tools exposed by the current MCP server</summary>
+
+```sh
+mcp-layer --server dev tools list
+mcp-layer --server dev tools weather.get exec --city London
+```
+
+</details>
+
+<a id="error-098879"></a>
+### Invalid integer for "{parameter}": "{value}".
+
+Thrown from: `coercenumber`
+
+This happens while validating tool/prompt/template arguments against the MCP JSON Schema. The target field is typed as `integer`, but the CLI received a non-integer value (for example `3.14`, `1e2`, or text).
+
+Step-by-step resolution:
+1. Inspect the input schema (`detail.input.json`) for the failing parameter and confirm it is `type: "integer"`.
+2. Check the CLI value source: direct flag (`--count`), `--json`, or `--input` file.
+3. Pass an integer literal only (no decimals, no unit suffixes).
+4. Add a command-level validation test covering both rejected (`3.5`) and accepted (`3`) values.
+
+<details>
+<summary>Fix Example: pass an integer that matches the MCP input schema</summary>
+
+```sh
+# Wrong
+mcp-layer tools batch.run exec --count 2.5
+
+# Correct
+mcp-layer tools batch.run exec --count 2
+```
+
+</details>
+
+<a id="error-d25fd2"></a>
+### Invalid number for "{parameter}": "{value}".
+
+Thrown from: `coercenumber`
+
+This happens while coercing CLI argument values for a schema field typed as `number` or `integer`; the received string cannot be parsed to a JavaScript number at all (for example `ten`, `10ms`, or an empty string).
+
+Step-by-step resolution:
+1. Identify where the value came from (`--json`, `--input`, or CLI flags).
+2. Ensure the payload value is numeric JSON (`42`, `3.14`) and not decorated text (`"42ms"`).
+3. If using shell flags, quote safely so the shell does not alter the token.
+4. Re-run with a pure numeric value and add a regression test for the bad literal.
+
+<details>
+<summary>Fix Example: send numeric JSON instead of decorated strings</summary>
+
+```sh
+# Wrong
+mcp-layer tools stats.query exec --threshold ten
+
+# Correct
+mcp-layer tools stats.query exec --threshold 10
+```
+
+</details>
+
+<a id="error-fdcdee"></a>
+### Required parameter "{parameter}" is missing.
+
+Thrown from: `inputs`
+
+This happens after the CLI loads an MCP item's input schema and sees that a field listed in `required` is absent from resolved arguments.
+
+Step-by-step resolution:
+1. Inspect the tool/prompt/template schema and locate `required` fields.
+2. Provide the missing value using the right input channel:
+3. Use `--<name> <value>` for simple values.
+4. Use `--json '{"name":"value"}'` or `--input payload.json` for structured payloads.
+5. Re-run and verify all required keys are present.
+
+<details>
+<summary>Fix Example: include required MCP tool arguments</summary>
+
+```sh
+# Tool schema requires "city"
+mcp-layer tools weather.get exec --city Paris
+```
+
+</details>
+
+<a id="error-8e53d1"></a>
+### Invalid JSON for "{parameter}": {reason}
+
+Thrown from: `parsejson`
+
+This happens when a schema field is an `object` or `array` and the CLI attempts to parse the provided string as JSON, but parsing fails. Typical sources are single quotes, trailing commas, or shell-escaped payload corruption.
+
+Step-by-step resolution:
+1. Identify which argument name the error reports in `{parameter}`.
+2. Validate the raw JSON snippet with `node -e 'JSON.parse(...)'` before passing it to CLI.
+3. Prefer `--input payload.json` for complex nested JSON to avoid shell escaping issues.
+4. Re-run and keep payload examples in docs/tests for that command.
+
+<details>
+<summary>Fix Example: use valid JSON for object/array inputs</summary>
+
+```sh
+# Wrong (single quotes are not valid JSON content)
+mcp-layer tools repo.search exec --filters '{tag: "api"}'
+
+# Correct
+mcp-layer tools repo.search exec --filters '{"tag":"api"}'
+```
+
+</details>
+
+<a id="error-274558"></a>
+### Template parameter "{parameter}" is required but was not provided.
+
+Thrown from: `render`
+
+This happens when executing a resource template and at least one `{placeholder}` in `uriTemplate` has no matching argument in CLI input.
+
+Step-by-step resolution:
+1. Inspect the template string from `templates list` and enumerate placeholders.
+2. Pass each placeholder as a flag with the exact same parameter name.
+3. If arguments are provided via `--json`/`--input`, verify key names exactly match template placeholder names.
+4. Re-run after all placeholders are bound.
+
+<details>
+<summary>Fix Example: provide every URI template placeholder</summary>
+
+```sh
+# Template: mcp://docs/{team}/{slug}
+mcp-layer templates mcp://docs/{team}/{slug} exec --team api --slug auth-flow
+```
+
+</details>
+
+<a id="error-c34e6a"></a>
+### Template URI is missing.
+
+Thrown from: `render`
+
+This happens when template execution reaches URI rendering without a `uriTemplate` value in the selected catalog item. In practice this indicates malformed/partial template metadata from the server.
+
+Step-by-step resolution:
+1. Run `mcp-layer templates list --format json` and inspect `detail.uriTemplate` for the failing entry.
+2. Confirm the server returns a valid MCP resource template object, including `uriTemplate`.
+3. Fix the server-side template registration payload.
+4. Restart the server and verify template metadata again before exec.
+
+<details>
+<summary>Fix Example: return complete MCP template metadata from server</summary>
+
+```js
+{
+  name: 'docs-by-slug',
+  description: 'Read docs by slug',
+  uriTemplate: 'mcp://docs/{slug}'
+}
+```
+
+</details>
+
+<a id="error-03f4bd"></a>
+### Multiple servers found. Provide --server <name>.
+
+Thrown from: `select`
+
+This happens when configuration discovery yields more than one server and no `--server` flag (or default `server` setting) is provided, so CLI cannot safely infer which MCP endpoint to use.
+
+Step-by-step resolution:
+1. Run `mcp-layer servers list` to see discovered server names.
+2. Pick the intended server explicitly with `--server <name>`.
+3. Optionally set a default server in CLI config to avoid repeating the flag.
+4. Re-run the original command with explicit server selection.
+
+<details>
+<summary>Fix Example: disambiguate server selection</summary>
+
+```sh
+mcp-layer servers list
+mcp-layer --server local-dev tools list
+```
+
+</details>
+
+<a id="error-c4d5b8"></a>
+### Server "{server}" was not found.
+
+Thrown from: `select`
+
+This happens when `--server <name>` (or configured default) does not match any server key in the loaded MCP configuration documents.
+
+Step-by-step resolution:
+1. Run `mcp-layer servers list` and verify the actual configured names.
+2. Check that `--config` points to the config file/directory you intended.
+3. Update command/config to use an existing server key exactly.
+4. If the server should exist, add it to config and rerun.
+
+<details>
+<summary>Fix Example: align --server with discovered configuration keys</summary>
+
+```sh
+mcp-layer --config ./mcp.json servers list
+mcp-layer --config ./mcp.json --server integration tools list
+```
+
+</details>

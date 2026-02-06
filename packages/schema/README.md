@@ -143,3 +143,32 @@ Suggested uses for the unified schema:
 ## JSON Schema vs Zod
 
 Zod validators are produced to allow direct runtime validation, but the original JSON Schema is preserved in `detail.input.json` and `detail.output.json` so generators can emit OpenAPI, JSON Schema, or other schema formats without losing fidelity.
+
+## Runtime Error Reference
+
+This section is written for high-pressure debugging moments. Each entry maps directly to schema extraction preconditions.
+
+<a id="error-49ae61"></a>
+### Expected a Session instance.
+
+Thrown from: `extract`
+
+This happens when `extract(link)` is called without a connected `Session` object (or with an object that does not expose `.client`). The extractor relies on MCP client capabilities and list calls.
+
+Step-by-step resolution:
+1. Verify you are passing the `Session` returned by `connect(...)` or `attach(...)`.
+2. Confirm session setup completed and `session.client` is available.
+3. Avoid passing raw MCP client objects directly; wrap flows around `Session`.
+4. Add an integration test that extracts from a real connected session.
+
+<details>
+<summary>Fix Example: extract schemas from a connected Session</summary>
+
+```js
+const session = await connect(config, 'local-dev');
+const catalog = await extract(session);
+console.log(catalog.items.length);
+await session.close();
+```
+
+</details>

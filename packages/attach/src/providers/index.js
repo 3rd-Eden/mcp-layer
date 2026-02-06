@@ -1,4 +1,5 @@
 import { attachPlatformatic, isPlatformaticInstance } from './platformatic.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Determine whether a provider can handle the target instance.
@@ -26,5 +27,10 @@ export async function attachWithProvider(provider, instance, name, opts) {
       opts
     );
   }
-  throw new Error(`Unknown attach provider "${provider}".`);
+  throw new LayerError({
+    name: 'attach',
+    method: 'attachWithProvider',
+    message: 'Unknown attach provider "{provider}".',
+    vars: { provider }
+  });
 }

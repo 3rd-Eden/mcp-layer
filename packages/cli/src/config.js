@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { load } from '@mcp-layer/config';
+import { LayerError } from '@mcp-layer/error';
 
 const read = createRequire(import.meta.url);
 const pkg = read('../package.json');
@@ -61,6 +62,17 @@ export async function select(opts) {
   if (list.length === 1) {
     return { config: cfg, name: list[0] };
   }
-  if (!name) throw new Error('Multiple servers found. Provide --server <name>.');
-  throw new Error(`Server "${name}" not found.`);
+  if (!name) {
+    throw new LayerError({
+      name: 'cli',
+      method: 'select',
+      message: 'Multiple servers found. Provide --server <name>.',
+    });
+  }
+  throw new LayerError({
+    name: 'cli',
+    method: 'select',
+    message: 'Server "{server}" was not found.',
+    vars: { server: name }
+  });
 }

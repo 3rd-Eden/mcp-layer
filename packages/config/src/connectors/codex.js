@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { parse as parseToml } from '@iarna/toml';
 import stringify from '@iarna/toml/stringify.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Resolve project-scoped configuration files for Codex.
@@ -37,7 +38,12 @@ function parse(raw, file) {
   try {
     doc = parseToml(raw);
   } catch (error) {
-    throw new Error(`Failed to parse TOML for ${file}: ${(error instanceof Error ? error.message : 'unknown error')}`);
+    throw new LayerError({
+      name: 'config',
+      method: 'codex.parse',
+      message: 'Failed to parse TOML file "{file}": {reason}',
+      vars: { file, reason: error instanceof Error ? error.message : 'unknown error' }
+    });
   }
 
   const body = doc && typeof doc === 'object' ? doc : {};

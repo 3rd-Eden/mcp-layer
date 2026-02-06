@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Register a tool that always returns isError true.
@@ -46,10 +47,14 @@ export function registerCrash(server) {
 
   /**
    * Throw a protocol-level error.
-   * @throws {Error}
+   * @throws {LayerError}
    */
   async function crashTool() {
-    throw new Error('Protocol failure');
+    throw new LayerError({
+      name: 'test-server',
+      method: 'registerCrash.crashTool',
+      message: 'Protocol failure',
+    });
   }
 
   return server.registerTool(
@@ -115,7 +120,13 @@ export function registerFlap(server) {
    */
   async function flapTool() {
     count += 1;
-    if (count === 1) throw new Error('first failure');
+    if (count === 1) {
+      throw new LayerError({
+        name: 'test-server',
+        method: 'registerFlap.flapTool',
+        message: 'first failure',
+      });
+    }
     return { content: [{ type: 'text', text: 'ok' }] };
   }
 

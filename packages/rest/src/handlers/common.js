@@ -114,11 +114,19 @@ export function mapMcpError(error, instance, requestId, options) {
     const response = createCircuitOpenResponse(instance, error.sessionName, requestId);
     return { status: response.status, body: response };
   }
-  if (error.code === 'AUTH_REQUIRED') {
+  const isManagerIdentityError = error && error.name === 'LayerError'
+    && error.package === '@mcp-layer/manager'
+    && error.method === 'identity';
+  const isAuthRequired = error.code === 'AUTH_REQUIRED'
+    || (isManagerIdentityError && error.message.includes('Authorization header is required.'));
+  const isAuthInvalid = error.code === 'AUTH_INVALID'
+    || (isManagerIdentityError && error.message.includes('Authorization header must use '));
+
+  if (isAuthRequired) {
     const response = createAuthResponse(instance, 'Unauthorized', 'Authorization is required.', requestId);
     return { status: response.status, body: response };
   }
-  if (error.code === 'AUTH_INVALID') {
+  if (isAuthInvalid) {
     const response = createAuthResponse(instance, 'Unauthorized', 'Authorization is invalid.', requestId);
     return { status: response.status, body: response };
   }

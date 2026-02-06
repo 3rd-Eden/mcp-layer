@@ -2,12 +2,26 @@ const DOCS = 'github.com/3rd-Eden/mcp-layer/tree/main/packages';
 const SCOPE = '@mcp-layer';
 
 /**
+ * Replace named placeholders in a template string with provided values.
+ * @param {string} template - Message template.
+ * @param {Record<string, unknown>} values - Substitution values by placeholder name.
+ * @returns {string}
+ */
+function replaceNamed(template, values) {
+  return template.replace(/\{([A-Za-z0-9._-]+)\}/g, function replace(match, key) {
+    if (!Object.hasOwn(values, key)) return match;
+    const value = values[key];
+    return value === undefined ? match : String(value);
+  });
+}
+
+/**
  * Replaces %s placeholders in a template string with provided arguments.
  * @param {string} template - Message template.
  * @param {Array<string | number>} args - Substitution values.
  * @returns {string}
  */
-function replacePlaceholders(template, args) {
+function replacePositional(template, args) {
   let index = 0;
   return template.replace(/%s/g, function replace() {
     const arg = args[index++];
@@ -55,7 +69,7 @@ export function docs(input) {
 }
 
 /**
- * @typedef {{ name: string, method: string, message: string, args?: Array<string | number>, docs?: string, scope?: string, cause?: unknown, [key: string]: unknown }} LayerErrorArgs
+ * @typedef {{ name: string, method: string, message: string, vars?: Record<string, unknown>, args?: Array<string | number>, docs?: string, scope?: string, cause?: unknown, [key: string]: unknown }} LayerErrorArgs
  */
 
 /**
@@ -66,8 +80,9 @@ export class LayerError extends Error {
    * Create an error.
    * @param {LayerErrorArgs} args - Error arguments.
    */
-  constructor({ name, method, message, args = [], docs: docsBase = DOCS, scope = SCOPE, cause, ...data }) {
-    const formatted = args.length > 0 ? replacePlaceholders(message, args) : message;
+  constructor({ name, method, message, vars = {}, args = [], docs: docsBase = DOCS, scope = SCOPE, cause, ...data }) {
+    const byName = Object.keys(vars).length > 0 ? replaceNamed(message, vars) : message;
+    const formatted = args.length > 0 ? replacePositional(byName, args) : byName;
     const meta = pkg({ name, scope });
     const url = docs({ name, method, message, docs: docsBase, scope });
     const tag = hashtag([name, method, message].join('-'));

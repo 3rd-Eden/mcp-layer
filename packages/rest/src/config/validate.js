@@ -1,4 +1,5 @@
 import { DEFAULTS } from './defaults.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Test whether a value is a plain object.
@@ -33,7 +34,12 @@ function merge(base, next) {
  */
 function requirePositiveNumber(name, value) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    throw new TypeError(`${name} must be a positive number.`);
+    throw new LayerError({
+      name: 'rest',
+      method: 'requirePositiveNumber',
+      message: '"{option}" must be a positive number.',
+      vars: { option: name }
+    });
   }
   return value;
 }
@@ -47,7 +53,11 @@ function requirePositiveNumber(name, value) {
  */
 function trustMode(value) {
   if (value === 'auto' || value === true || value === false) return value;
-  throw new TypeError('validation.trustSchemas must be "auto", true, or false.');
+  throw new LayerError({
+    name: 'rest',
+    method: 'trustMode',
+    message: 'validation.trustSchemas must be "auto", true, or false.',
+  });
 }
 
 /**
@@ -63,24 +73,58 @@ export function validateOptions(opts) {
   const session = input.session;
   const manager = input.manager;
 
-  if (!session && !manager) throw new Error('session or manager option is required.');
+  if (!session && !manager) {
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateOptions',
+      message: 'session or manager option is required.',
+    });
+  }
 
   if (manager !== undefined) {
     if (!isrecord(manager) || typeof manager.get !== 'function') {
-      throw new TypeError('manager must be an object with a get(request) function.');
+      throw new LayerError({
+        name: 'rest',
+        method: 'validateOptions',
+        message: 'manager must be an object with a get(request) function.',
+      });
     }
-    if (!session) throw new Error('session is required when manager is provided (used for catalog bootstrap).');
+    if (!session) {
+      throw new LayerError({
+        name: 'rest',
+        method: 'validateOptions',
+        message: 'session is required when manager is provided (used for catalog bootstrap).',
+      });
+    }
     if (Array.isArray(session)) {
-      throw new TypeError('manager does not support multiple sessions. Register multiple plugins instead.');
+      throw new LayerError({
+        name: 'rest',
+        method: 'validateOptions',
+        message: 'manager does not support multiple sessions. Register multiple plugins instead.',
+      });
     }
   }
 
   if (input.prefix !== undefined && typeof input.prefix !== 'string' && typeof input.prefix !== 'function') {
-    throw new TypeError('prefix must be a string or function.');
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateOptions',
+      message: 'prefix must be a string or function.',
+    });
   }
-  if (input.errors !== undefined && !isrecord(input.errors)) throw new TypeError('errors must be an object.');
+  if (input.errors !== undefined && !isrecord(input.errors)) {
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateOptions',
+      message: 'errors must be an object.',
+    });
+  }
   if (input.validation !== undefined && !isrecord(input.validation)) {
-    throw new TypeError('validation must be an object.');
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateOptions',
+      message: 'validation must be an object.',
+    });
   }
 
   const validation = merge(DEFAULTS.validation, input.validation);

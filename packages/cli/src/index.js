@@ -8,6 +8,7 @@ import { render } from './template.js';
 import { outputresult, outputresource } from './format.js';
 import { connect } from '@mcp-layer/connect';
 import { extract } from '@mcp-layer/schema';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Build metadata for help output.
@@ -292,7 +293,12 @@ export function cli(opts = {}) {
           const type = cmd.surface === 'templates' ? 'resource-template' : cmd.surface.slice(0, -1);
           const item = finditem(output.items, type, cmd.target);
           if (!item) {
-            throw new Error(`Unknown ${cmd.surface.slice(0, -1)}: ${cmd.target}`);
+            throw new LayerError({
+              name: 'cli',
+              method: 'cli.render',
+              message: 'Unknown "{targetType}" target "{targetName}".',
+              vars: { targetType: cmd.surface.slice(0, -1), targetName: cmd.target ?? '' }
+            });
           }
           const banner = stderr.text().trim();
           const meta = servermeta(base, output.server.info, info.name, banner, output.server.instructions);
@@ -398,7 +404,12 @@ export function cli(opts = {}) {
         if (cmd.surface === 'tools' && cmd.action === 'exec') {
           const tool = finditem(items, 'tool', cmd.target);
           if (!tool) {
-            throw new Error(`Unknown tool: ${cmd.target}`);
+            throw new LayerError({
+              name: 'cli',
+              method: 'cli.render',
+              message: 'Unknown tool "{toolName}".',
+              vars: { toolName: cmd.target ?? '' }
+            });
           }
           const args = await inputs(global, input.parsed, inputArgs, tool);
           const result = await session.client.callTool({ name: tool.name, arguments: args });
@@ -409,7 +420,12 @@ export function cli(opts = {}) {
         if (cmd.surface === 'prompts' && cmd.action === 'exec') {
           const prompt = finditem(items, 'prompt', cmd.target);
           if (!prompt) {
-            throw new Error(`Unknown prompt: ${cmd.target}`);
+            throw new LayerError({
+              name: 'cli',
+              method: 'cli.render',
+              message: 'Unknown prompt "{promptName}".',
+              vars: { promptName: cmd.target ?? '' }
+            });
           }
           const args = await inputs(global, input.parsed, inputArgs, prompt);
           const result = await session.client.getPrompt({ name: prompt.name, arguments: args });
@@ -420,7 +436,12 @@ export function cli(opts = {}) {
         if (cmd.surface === 'resources' && cmd.action === 'exec') {
           const resource = finditem(items, 'resource', cmd.target);
           if (!resource) {
-            throw new Error(`Unknown resource: ${cmd.target}`);
+            throw new LayerError({
+              name: 'cli',
+              method: 'cli.render',
+              message: 'Unknown resource "{resourceUri}".',
+              vars: { resourceUri: cmd.target ?? '' }
+            });
           }
           const result = await session.client.readResource({ uri: resource.detail.uri });
           if (global.format === 'json') {
@@ -434,7 +455,12 @@ export function cli(opts = {}) {
         if (cmd.surface === 'templates' && cmd.action === 'exec') {
           const template = finditem(items, 'resource-template', cmd.target);
           if (!template) {
-            throw new Error(`Unknown template: ${cmd.target}`);
+            throw new LayerError({
+              name: 'cli',
+              method: 'cli.render',
+              message: 'Unknown template "{templateUri}".',
+              vars: { templateUri: cmd.target ?? '' }
+            });
           }
           const args = await inputs(global, input.parsed, inputArgs, template);
           const uri = render(template.detail?.uriTemplate, args);
@@ -447,7 +473,12 @@ export function cli(opts = {}) {
           return;
         }
 
-        throw new Error(`Unknown command: ${cmd.surface}`);
+        throw new LayerError({
+          name: 'cli',
+          method: 'cli.render',
+          message: 'Unknown command "{command}".',
+          vars: { command: cmd.surface }
+        });
       } finally {
         await session.close();
       }

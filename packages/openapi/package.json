@@ -50,6 +50,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@mcp-layer/error": "workspace:*",
     "uri-js": "^4.4.1"
   },
   "peerDependencies": {

@@ -39,6 +39,7 @@
   "dependencies": {
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/error": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
     "@socketregistry/yocto-spinner": "^1.0.21",
     "argh": "^1.0.0",

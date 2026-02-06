@@ -7,6 +7,7 @@ import { registerRoutes } from './routing/register.js';
 import { validateOptions } from './config/validate.js';
 import { deriveApiVersion } from './routing/version.js';
 import { createTelemetry } from './telemetry/index.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Normalize a session input into an array.
@@ -43,7 +44,13 @@ function ensureBreaker(fastify, session, config, telemetry) {
   if (!config.resilience.enabled) return null;
 
   const map = fastify.mcpBreakers;
-  if (!map) throw new Error('mcpBreakers map is not initialized.');
+  if (!map) {
+    throw new LayerError({
+      name: 'rest',
+      method: 'ensureBreaker',
+      message: 'mcpBreakers map is not initialized.',
+    });
+  }
 
   const existing = map.get(session.name);
   if (existing) return existing;

@@ -101,72 +101,7 @@ Manager runtime errors are thrown as `LayerError` from `@mcp-layer/error`.
 - Every error includes package + method source metadata.
 - Every error includes a stable `reference` id.
 - Every error includes a generated `docs` URL to this package README error section.
-- Machine-readable `code` values are preserved for branching (`AUTH_REQUIRED`, `AUTH_INVALID`, etc).
-
-## Errors
-
-<a id="error-7ef0f5"></a>
-### `7EF0F5` `MANAGER_OPTIONS_REQUIRED`
-
-- Method: `normalize`
-- Message: `Session manager options are required.`
-- Remedy: Call `createManager({ factory })` with a valid options object.
-
-<a id="error-f140a9"></a>
-### `F140A9` `MANAGER_FACTORY_REQUIRED`
-
-- Method: `normalize`
-- Message: `Session manager requires a factory function.`
-- Remedy: Provide `factory: async function factory(ctx) { ... }`.
-
-<a id="error-4bcf88"></a>
-### `4BCF88` `MANAGER_MAX_INVALID`
-
-- Method: `normalize`
-- Message: `max must be a positive number.`
-- Remedy: Set `max` to a finite number greater than `0`.
-
-<a id="error-ed0d39"></a>
-### `ED0D39` `MANAGER_TTL_INVALID`
-
-- Method: `normalize`
-- Message: `ttl must be a positive number.`
-- Remedy: Set `ttl` to milliseconds greater than `0`.
-
-<a id="error-aa7610"></a>
-### `AA7610` `MANAGER_IDENTIFY_INVALID`
-
-- Method: `identity`
-- Message: `identify() must return a string or { key, auth } object.`
-- Remedy: Return a string key or object containing `key`.
-
-<a id="error-bc38ab"></a>
-### `BC38AB` `AUTH_REQUIRED`
-
-- Method: `identity`
-- Message: `Authorization header is required.`
-- Remedy: Send the configured auth header or use `auth.mode: 'optional'`.
-
-<a id="error-828f17"></a>
-### `828F17` `AUTH_INVALID`
-
-- Method: `identity`
-- Message: `Authorization header must use Bearer scheme.`
-- Remedy: Send `Authorization: Bearer <token>` or configure a different scheme.
-
-<a id="error-42f901"></a>
-### `42F901` `AUTH_INVALID`
-
-- Method: `identity`
-- Message: `Authorization header must use Basic scheme.`
-- Remedy: Send `Authorization: Basic <value>` or configure a different scheme.
-
-<a id="error-87a41c"></a>
-### `87A41C` `MANAGER_FACTORY_RESULT_INVALID`
-
-- Method: `get`
-- Message: `factory must return a Session instance.`
-- Remedy: Return an instance from `@mcp-layer/session`.
+- Runtime references and full debugging playbooks are documented in [Runtime Error Reference](#runtime-error-reference).
 
 ## Identity Rules
 
@@ -174,7 +109,7 @@ When `identify` is not supplied, identity is derived from configured auth settin
 
 - `auth.mode = 'disabled'`: always uses `sharedKey`.
 - `auth.mode = 'optional'`: uses auth header when present, otherwise `sharedKey`.
-- `auth.mode = 'required'`: missing header throws `AUTH_REQUIRED`.
+- `auth.mode = 'required'`: missing header raises a documented `LayerError` from `identity`.
 
 Scheme handling:
 
@@ -257,3 +192,246 @@ Call `close()` during process shutdown so cached sessions are closed cleanly.
 ```js
 await manager.close();
 ```
+
+## Runtime Error Reference
+
+This section is written for high-pressure debugging moments. Each entry maps to a specific `createManager(...)` validation or identity-resolution branch.
+
+<a id="error-87a41c"></a>
+### factory must return a Session instance.
+
+Thrown from: `get`
+
+This happens when your `factory(ctx)` returns something other than `@mcp-layer/session` `Session`. Manager cache/storage and route integration require real `Session` instances.
+
+Step-by-step resolution:
+1. Inspect the return value of `factory(ctx)` and verify its constructor/type.
+2. Ensure the factory awaits `connect(...)` or `attach(...)` rather than returning raw clients.
+3. Reject non-Session returns in your own factory wrapper.
+4. Add tests for one invalid factory return and one valid Session return.
+
+<details>
+<summary>Fix Example: return Session objects from manager factory</summary>
+
+```js
+const manager = createManager({
+  factory: async function makeSession() {
+    return connect(config, 'local-dev');
+  }
+});
+
+const session = await manager.get(request);
+```
+
+</details>
+
+<a id="error-bc38ab"></a>
+### Authorization header is required.
+
+Thrown from: `identity`
+
+This happens when `auth.mode` is set to `required` and the configured auth header is missing from the incoming request.
+
+Step-by-step resolution:
+1. Confirm manager auth config (`mode`, `header`, `scheme`) used at runtime.
+2. Check upstream proxy/gateway forwarding for the authorization header.
+3. Ensure requests include the required header when manager auth is `required`.
+4. Add tests for missing-header rejection and valid-header acceptance.
+
+<details>
+<summary>Fix Example: send required auth header for manager identity</summary>
+
+```js
+await fastify.inject({
+  method: 'GET',
+  url: '/v1/tools/weather.get',
+  headers: { authorization: 'Bearer test-token' }
+});
+```
+
+</details>
+
+<a id="error-42f901"></a>
+### Authorization header must use Basic scheme.
+
+Thrown from: `identity`
+
+This happens when manager auth scheme is configured as `basic`, but the request header is not formatted as `Basic <base64>`.
+
+Step-by-step resolution:
+1. Verify manager auth config uses `scheme: "basic"` intentionally.
+2. Check header format and ensure it starts with `Basic `.
+3. Encode credentials as Base64 (`username:password`) before sending.
+4. Add tests for incorrect scheme prefix and valid Basic header parsing.
+
+<details>
+<summary>Fix Example: send correctly formatted Basic auth header</summary>
+
+```js
+const credentials = Buffer.from('user:pass').toString('base64');
+await fastify.inject({
+  method: 'GET',
+  url: '/v1/tools/example',
+  headers: { authorization: `Basic ${credentials}` }
+});
+```
+
+</details>
+
+<a id="error-828f17"></a>
+### Authorization header must use Bearer scheme.
+
+Thrown from: `identity`
+
+This happens when manager auth scheme is `bearer`, but the header does not match `Bearer <token>`.
+
+Step-by-step resolution:
+1. Confirm manager config uses `scheme: "bearer"`.
+2. Check clients/proxies are not rewriting the header prefix.
+3. Ensure token is sent as `Bearer <token>` exactly.
+4. Add tests for malformed bearer headers and valid token headers.
+
+<details>
+<summary>Fix Example: send Bearer token with correct prefix</summary>
+
+```js
+await fastify.inject({
+  method: 'GET',
+  url: '/v1/tools/example',
+  headers: { authorization: 'Bearer abc123' }
+});
+```
+
+</details>
+
+<a id="error-aa7610"></a>
+### identify() must return a string or { key, auth } object.
+
+Thrown from: `identity`
+
+This happens when a custom `identify(request)` hook returns an unsupported shape (for example `undefined`, number, or object missing `key`).
+
+Step-by-step resolution:
+1. Review your custom `identify` implementation return type.
+2. Return either a string key or `{ key, auth?, shared? }`.
+3. If supplying auth metadata, include `token` under `auth`.
+4. Add tests for both supported return shapes.
+
+<details>
+<summary>Fix Example: implement identify with a supported return shape</summary>
+
+```js
+const manager = createManager({
+  identify: function identify(request) {
+    const tenant = String(request.headers['x-tenant-id'] ?? 'shared');
+    return { key: `tenant:${tenant}`, shared: false };
+  },
+  factory: makeSession
+});
+```
+
+</details>
+
+<a id="error-4bcf88"></a>
+### max must be a positive number.
+
+Thrown from: `normalize`
+
+This happens when `createManager` receives `max <= 0`, `NaN`, or non-finite values. `max` controls cache capacity and must be a positive number.
+
+Step-by-step resolution:
+1. Inspect the source of `max` (env/config flags).
+2. Parse/coerce to number and validate positivity before manager creation.
+3. Set a sensible upper bound for your workload to avoid churn.
+4. Add tests for invalid (`0`, `-1`, `NaN`) and valid values.
+
+<details>
+<summary>Fix Example: validate manager max before createManager</summary>
+
+```js
+const max = Number(process.env.MCP_SESSION_MAX ?? 10);
+if (!Number.isFinite(max) || max <= 0)
+  throw new Error('MCP_SESSION_MAX must be a positive number.');
+
+const manager = createManager({ max, ttl: 300000, factory: makeSession });
+```
+
+</details>
+
+<a id="error-7ef0f5"></a>
+### Session manager options are required.
+
+Thrown from: `normalize`
+
+This happens when `createManager(...)` is called with `undefined`, `null`, or a non-object value. Manager initialization requires an options object.
+
+Step-by-step resolution:
+1. Check the code path building manager options.
+2. Ensure options object construction does not short-circuit to `undefined`.
+3. Add a local assertion before calling `createManager`.
+4. Add tests for missing-options and valid-options initialization.
+
+<details>
+<summary>Fix Example: pass an explicit options object to createManager</summary>
+
+```js
+const manager = createManager({
+  factory: makeSession,
+  max: 10,
+  ttl: 300000
+});
+```
+
+</details>
+
+<a id="error-f140a9"></a>
+### Session manager requires a factory function.
+
+Thrown from: `normalize`
+
+This happens when manager options do not include a callable `factory`. Session creation is delegated entirely to this function.
+
+Step-by-step resolution:
+1. Verify `factory` exists and is a function.
+2. Ensure dependency injection/config wiring does not pass factory results instead of function references.
+3. Keep factory async and return `Session`.
+4. Add tests that reject missing factory and accept valid factory functions.
+
+<details>
+<summary>Fix Example: pass a factory callback (not a precomputed value)</summary>
+
+```js
+const manager = createManager({
+  factory: async function makeSession(ctx) {
+    return connect(config, ctx.identity.key);
+  }
+});
+```
+
+</details>
+
+<a id="error-ed0d39"></a>
+### ttl must be a positive number.
+
+Thrown from: `normalize`
+
+This happens when `ttl` is `<= 0`, `NaN`, or non-finite. Session entries use `ttl` for eviction; invalid values break expiration semantics.
+
+Step-by-step resolution:
+1. Trace TTL input from environment/config to manager setup.
+2. Parse as number and enforce `ttl > 0`.
+3. Choose a TTL aligned with upstream session cost and traffic patterns.
+4. Add tests for invalid TTL values and expected expiration behavior.
+
+<details>
+<summary>Fix Example: validate ttl before manager initialization</summary>
+
+```js
+const ttl = Number(process.env.MCP_SESSION_TTL_MS ?? 300000);
+if (!Number.isFinite(ttl) || ttl <= 0)
+  throw new Error('MCP_SESSION_TTL_MS must be a positive number.');
+
+const manager = createManager({ factory: makeSession, max: 10, ttl });
+```
+
+</details>

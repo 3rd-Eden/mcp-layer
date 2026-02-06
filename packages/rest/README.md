@@ -371,3 +371,438 @@ This plugin is designed to compose with standard Fastify plugins:
 ## License
 
 MIT
+
+## Runtime Error Reference
+
+This section is written for high-pressure debugging moments. Each entry maps to concrete REST plugin option validation or route-generation guard rails.
+
+<a id="error-2a0345"></a>
+### mcpBreakers map is not initialized.
+
+Thrown from: `ensureBreaker`
+
+This happens when resilience is enabled and the plugin cannot access `fastify.mcpBreakers`. The map is normally decorated during plugin registration.
+
+Step-by-step resolution:
+1. Ensure you use the exported Fastify plugin (`fastify.register(restPlugin, ...)`) rather than calling internals directly.
+2. Verify no plugin/hook deletes or overwrites `fastify.mcpBreakers`.
+3. In isolated unit tests of internal helpers, decorate the map manually.
+4. Add a startup assertion that `fastify.mcpBreakers` is a `Map` after registration.
+
+<details>
+<summary>Fix Example: register plugin so breaker storage is initialized</summary>
+
+```js
+await fastify.register(restPlugin, { session, resilience: { enabled: true } });
+if (!(fastify.mcpBreakers instanceof Map))
+  throw new Error('rest plugin did not initialize breaker map');
+```
+
+</details>
+
+<a id="error-6d20db"></a>
+### "{option}" must be a positive number.
+
+Thrown from: `requirePositiveNumber`
+
+This happens when numeric validation options are `<= 0`, `NaN`, or non-finite. The plugin validates limits like schema depth/size, name length, and resilience timers.
+
+Step-by-step resolution:
+1. Identify which option name is shown in `{option}`.
+2. Trace that value from env/config to plugin registration.
+3. Coerce to number and enforce `> 0` before passing options.
+4. Add tests for invalid and valid values for that exact option.
+
+<details>
+<summary>Fix Example: sanitize numeric REST plugin options</summary>
+
+```js
+const maxToolNameLength = Number(process.env.MCP_MAX_TOOL_LEN ?? 64);
+if (!Number.isFinite(maxToolNameLength) || maxToolNameLength <= 0)
+  throw new Error('MCP_MAX_TOOL_LEN must be a positive number');
+
+await fastify.register(restPlugin, {
+  session,
+  validation: { maxToolNameLength }
+});
+```
+
+</details>
+
+<a id="error-3869ce"></a>
+### Invalid template expression "{expression}" in template "{template}".
+
+Thrown from: `toFastifyPath`
+
+This happens when a template expression resolves to an unusable parameter name after normalization (for example malformed braces or empty expression content).
+
+Step-by-step resolution:
+1. Inspect `{template}` and the failing `{expression}` from your resource template catalog.
+2. Ensure each placeholder has a concrete name (`{slug}`), not empty or malformed tokens.
+3. Correct template definitions at the MCP server layer before exposing them via REST.
+4. Add validation tests for malformed template expressions.
+
+<details>
+<summary>Fix Example: replace malformed template expressions with named placeholders</summary>
+
+```js
+// Invalid: mcp://docs/{}
+const template = 'mcp://docs/{slug}';
+registerTemplate(template);
+```
+
+</details>
+
+<a id="error-7723da"></a>
+### Template expression "{expression}" is not supported.
+
+Thrown from: `toFastifyPath`
+
+This happens when URI templates use unsupported RFC 6570 operators (`+`, `#`, `.`, `/`, `?`, `&`, `*`, or comma forms). REST route conversion accepts simple `{name}` placeholders only.
+
+Step-by-step resolution:
+1. Find `{expression}` in the failing template.
+2. Remove operator syntax and use plain placeholders.
+3. Move query/path expansion behavior into handler logic instead of template operators.
+4. Add tests for unsupported operator forms and supported simple forms.
+
+<details>
+<summary>Fix Example: convert operator templates to simple placeholders</summary>
+
+```js
+// Unsupported: mcp://docs/{+slug}
+const template = 'mcp://docs/{slug}';
+registerTemplate(template);
+```
+
+</details>
+
+<a id="error-7f1cfb"></a>
+### Template parameter "{parameter}" must be URL-safe.
+
+Thrown from: `toFastifyPath`
+
+This happens when a template parameter name contains invalid identifier characters and cannot be converted to Fastify route params safely.
+
+Step-by-step resolution:
+1. Review placeholder names in URI templates.
+2. Use only URL-safe parameter identifiers (`A-Z`, `a-z`, `0-9`, `.`, `_`, `-`).
+3. Keep human-readable labels outside parameter names.
+4. Add template validation tests for bad and good parameter names.
+
+<details>
+<summary>Fix Example: rename template parameters to URL-safe identifiers</summary>
+
+```js
+// Invalid: mcp://docs/{team name}
+const template = 'mcp://docs/{team_name}';
+registerTemplate(template);
+```
+
+</details>
+
+<a id="error-1a7da5"></a>
+### validation.trustSchemas must be "auto", true, or false.
+
+Thrown from: `trustMode`
+
+This happens when `validation.trustSchemas` is set to anything other than `"auto"`, `true`, or `false`.
+
+Step-by-step resolution:
+1. Inspect plugin options and find `validation.trustSchemas`.
+2. Replace stringified booleans (`"true"`) with actual booleans or `"auto"`.
+3. Keep one explicit trust mode per environment.
+4. Add config tests for each allowed trust mode.
+
+<details>
+<summary>Fix Example: set trustSchemas to an allowed value</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  validation: { trustSchemas: 'auto' }
+});
+```
+
+</details>
+
+<a id="error-587c11"></a>
+### errors must be an object.
+
+Thrown from: `validateOptions`
+
+This happens when `options.errors` is provided as a non-object (for example boolean or string). The REST plugin expects an object like `{ exposeDetails: boolean }`.
+
+Step-by-step resolution:
+1. Inspect the shape of the `errors` option at registration.
+2. Replace primitive values with an options object.
+3. Configure only supported keys under `errors`.
+4. Add option-shape tests for invalid and valid `errors` config.
+
+<details>
+<summary>Fix Example: provide errors settings as an object</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  errors: { exposeDetails: false }
+});
+```
+
+</details>
+
+<a id="error-7a5a51"></a>
+### manager does not support multiple sessions. Register multiple plugins instead.
+
+Thrown from: `validateOptions`
+
+This happens when `manager` is provided together with `session` as an array. Manager mode resolves sessions per request and only supports a single bootstrap session.
+
+Step-by-step resolution:
+1. If using `manager`, pass a single `session` object (not an array).
+2. If you need multiple static sessions, remove `manager` and register multiple plugin instances.
+3. Keep manager-backed and multi-session modes separate in architecture.
+4. Add tests for both registration modes.
+
+<details>
+<summary>Fix Example: choose one mode per plugin instance</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session: bootstrapSession,
+  manager
+});
+```
+
+</details>
+
+<a id="error-6e5a7e"></a>
+### manager must be an object with a get(request) function.
+
+Thrown from: `validateOptions`
+
+This happens when `manager` is not an object exposing `get(request)`. The plugin calls `manager.get` to resolve request-scoped sessions.
+
+Step-by-step resolution:
+1. Confirm `manager` value is an object.
+2. Implement `async get(request)` that returns a `Session`.
+3. Optionally provide `close()` for shutdown cleanup.
+4. Add tests validating manager contract shape.
+
+<details>
+<summary>Fix Example: implement required manager interface</summary>
+
+```js
+const manager = {
+  async get(request) {
+    return resolveSessionForRequest(request);
+  }
+};
+```
+
+</details>
+
+<a id="error-7fd4f0"></a>
+### prefix must be a string or function.
+
+Thrown from: `validateOptions`
+
+This happens when `prefix` is neither a string nor a function. REST version/prefix routing can only be configured with those two forms.
+
+Step-by-step resolution:
+1. Use a string prefix (`/v1`) for static routing.
+2. Use a function `(version, info, name) => string` for dynamic prefixes.
+3. Remove unsupported prefix types from env/config injection.
+4. Add tests for both allowed forms.
+
+<details>
+<summary>Fix Example: configure prefix with supported type</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  prefix: function prefix(version, info, name) {
+    return `/${version}/${name}`;
+  }
+});
+```
+
+</details>
+
+<a id="error-2c7a98"></a>
+### session is required when manager is provided (used for catalog bootstrap).
+
+Thrown from: `validateOptions`
+
+This happens when `manager` mode is enabled but no bootstrap `session` is provided. The plugin still needs one session to build catalog/OpenAPI metadata at startup.
+
+Step-by-step resolution:
+1. Provide a bootstrap `session` alongside `manager`.
+2. Ensure the bootstrap session is connected before plugin registration.
+3. Keep manager responsible for per-request switching, not initial catalog extraction.
+4. Add startup tests for manager mode with and without bootstrap session.
+
+<details>
+<summary>Fix Example: provide bootstrap session in manager mode</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session: bootstrapSession,
+  manager
+});
+```
+
+</details>
+
+<a id="error-69348f"></a>
+### session or manager option is required.
+
+Thrown from: `validateOptions`
+
+This happens when plugin options include neither `session` nor `manager`. REST cannot expose MCP endpoints without at least one session source.
+
+Step-by-step resolution:
+1. Supply a connected `session` for static mode, or `manager` + bootstrap `session` for dynamic mode.
+2. Verify DI wiring does not drop these options before registration.
+3. Add startup assertions for required plugin options.
+4. Add tests that confirm registration fails fast without session sources.
+
+<details>
+<summary>Fix Example: pass required session option to REST plugin</summary>
+
+```js
+await fastify.register(restPlugin, { session });
+```
+
+</details>
+
+<a id="error-92524a"></a>
+### validation must be an object.
+
+Thrown from: `validateOptions`
+
+This happens when `validation` is provided as a non-object. The plugin expects a validation config object with limit/trust fields.
+
+Step-by-step resolution:
+1. Ensure `validation` is an object literal.
+2. Move validation-related keys under `validation` instead of top-level options.
+3. Keep option values typed correctly (numbers/booleans/allowed strings).
+4. Add tests for malformed and valid validation option objects.
+
+<details>
+<summary>Fix Example: pass validation settings in object form</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  validation: {
+    trustSchemas: 'auto',
+    maxToolNameLength: 64
+  }
+});
+```
+
+</details>
+
+<a id="error-01dca8"></a>
+### Tool name "{tool}" exceeds maximum length of {maxLength}.
+
+Thrown from: `validateSegmentName`
+
+This happens when an MCP tool name exceeds the configured maximum route segment length (`validation.maxToolNameLength`).
+
+Step-by-step resolution:
+1. Check `{maxLength}` from plugin validation settings.
+2. Find tool names from `tools/list` that exceed that limit.
+3. Shorten tool identifiers at MCP server registration time.
+4. Add tests for long-name rejection and acceptable-name registration.
+
+<details>
+<summary>Fix Example: keep MCP tool names within route limits</summary>
+
+```js
+const max = 64;
+if (toolName.length > max)
+  throw new Error(`Tool name "${toolName}" exceeds ${max} chars`);
+
+server.registerTool(toolName, meta, handler);
+```
+
+</details>
+
+<a id="error-67adce"></a>
+### Tool name "{tool}" must be URL-safe (letters, digits, ".", "_", "-").
+
+Thrown from: `validateSegmentName`
+
+This happens when a tool name contains characters that cannot be used safely in REST route path segments.
+
+Step-by-step resolution:
+1. Validate tool names against `^[a-z0-9._-]+$` (case-insensitive).
+2. Remove spaces, slashes, colons, and query-style characters.
+3. Keep display labels in description fields, not in tool IDs.
+4. Add tests for invalid characters and sanitized names.
+
+<details>
+<summary>Fix Example: register REST-safe MCP tool identifiers</summary>
+
+```js
+const toolName = rawName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9._-]/g, '');
+if (!toolName)
+  throw new Error('Tool name is empty after normalization');
+
+server.registerTool(toolName, meta, handler);
+```
+
+</details>
+
+<a id="error-1ba529"></a>
+### Tool name must be a non-empty string.
+
+Thrown from: `validateSegmentName`
+
+This happens when the tool name is missing or not a string. Route registration requires a non-empty string key for each tool.
+
+Step-by-step resolution:
+1. Inspect tool definitions produced by your MCP server/catalog extraction.
+2. Ensure every tool has a string `name`.
+3. Reject/skip malformed tool entries before REST route registration.
+4. Add tests for missing-name and valid-name tool definitions.
+
+<details>
+<summary>Fix Example: enforce non-empty tool names before registration</summary>
+
+```js
+if (typeof tool.name !== 'string' || tool.name.length === 0)
+  throw new Error('Each MCP tool must declare a non-empty name');
+
+server.registerTool(tool.name, tool.meta, tool.handler);
+```
+
+</details>
+
+<a id="error-52145c"></a>
+### Tool name "{tool}" conflicts with reserved path. Reserved paths: {reservedPaths}
+
+Thrown from: `validateToolName`
+
+This happens when a tool name collides with reserved REST routes (`prompts`, `resource-templates`, `openapi.json`) or template-derived path segments.
+
+Step-by-step resolution:
+1. Compare the failing name against `{reservedPaths}`.
+2. Rename tool identifiers to avoid route namespace conflicts.
+3. Re-run route registration after renaming and verify no overlap with template prefixes.
+4. Add tests that assert reserved names are rejected.
+
+<details>
+<summary>Fix Example: avoid reserved route names in MCP tool registration</summary>
+
+```js
+const blocked = new Set(['prompts', 'resource-templates', 'openapi.json']);
+if (blocked.has(toolName))
+  throw new Error(`Tool name "${toolName}" is reserved by REST routes`);
+
+server.registerTool(toolName, meta, handler);
+```
+
+</details>

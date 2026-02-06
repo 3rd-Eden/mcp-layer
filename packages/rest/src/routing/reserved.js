@@ -1,3 +1,5 @@
+import { LayerError } from '@mcp-layer/error';
+
 /**
  * Reserved tool path segments.
  * @type {Set<string>}
@@ -23,15 +25,31 @@ const TOOL_NAME_PATTERN = /^[a-z0-9._-]+$/i;
  * @returns {void}
  */
 export function validateSegmentName(name, limits = {}) {
-  if (typeof name !== 'string' || name.length === 0) throw new Error('Tool name must be a non-empty string.');
+  if (typeof name !== 'string' || name.length === 0) {
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateSegmentName',
+      message: 'Tool name must be a non-empty string.',
+    });
+  }
 
   const max = typeof limits.maxToolNameLength === 'number' ? limits.maxToolNameLength : null;
   if (max && name.length > max) {
-    throw new Error(`Tool name "${name}" exceeds maximum length of ${max}.`);
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateSegmentName',
+      message: 'Tool name "{tool}" exceeds maximum length of {maxLength}.',
+      vars: { tool: name, maxLength: max }
+    });
   }
 
   if (!TOOL_NAME_PATTERN.test(name)) {
-    throw new Error(`Tool name "${name}" must be URL-safe (letters, digits, ".", "_", "-").`);
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateSegmentName',
+      message: 'Tool name "{tool}" must be URL-safe (letters, digits, ".", "_", "-").',
+      vars: { tool: name }
+    });
   }
 }
 
@@ -50,8 +68,11 @@ export function validateToolName(name, extra = new Set(), limits = {}) {
   const lower = name.toLowerCase();
   if (RESERVED_PATHS.has(lower) || extra.has(lower)) {
     const list = new Set([...RESERVED_PATHS, ...extra]);
-    throw new Error(
-      `Tool name "${name}" conflicts with reserved path. Reserved paths: ${[...list].join(', ')}`
-    );
+    throw new LayerError({
+      name: 'rest',
+      method: 'validateToolName',
+      message: 'Tool name "{tool}" conflicts with reserved path. Reserved paths: {reservedPaths}',
+      vars: { tool: name, reservedPaths: [...list].join(', ') }
+    });
   }
 }

@@ -1,4 +1,5 @@
 import * as uriLib from 'uri-js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Test whether a value is a non-empty string.
@@ -183,7 +184,13 @@ function buildtemplatepath(scheme, host, tail) {
  * @returns {string} HTTP route path (without version prefix).
  */
 export function path(uri, encode = true) {
-  if (!isstring(uri)) throw new TypeError('Expected resource URI to be a non-empty string.');
+  if (!isstring(uri)) {
+    throw new LayerError({
+      name: 'openapi',
+      method: 'path',
+      message: 'Expected resource URI to be a non-empty string.',
+    });
+  }
 
   if (uri.startsWith('/')) {
     const path = encode ? encodepath(uri) : uri;
@@ -229,7 +236,13 @@ export function path(uri, encode = true) {
  * @returns {string} HTTP route path (without version prefix).
  */
 export function tpath(template, encode = true) {
-  if (!isstring(template)) throw new TypeError('Expected resource URI template to be a non-empty string.');
+  if (!isstring(template)) {
+    throw new LayerError({
+      name: 'openapi',
+      method: 'tpath',
+      message: 'Expected resource URI template to be a non-empty string.',
+    });
+  }
 
   if (!template.includes('{')) return path(template, encode);
 
@@ -272,7 +285,13 @@ export function tpath(template, encode = true) {
  * @returns {string} Original MCP resource URI.
  */
 export function uri(path) {
-  if (!isstring(path)) throw new TypeError('Expected path to be a non-empty string.');
+  if (!isstring(path)) {
+    throw new LayerError({
+      name: 'openapi',
+      method: 'uri',
+      message: 'Expected path to be a non-empty string.',
+    });
+  }
 
   const list = segment(path);
 

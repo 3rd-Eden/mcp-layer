@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Resolve workspace-scoped configuration files for VS Code.
@@ -36,7 +37,12 @@ function parse(raw, file) {
   try {
     doc = JSON.parse(raw);
   } catch (error) {
-    throw new Error(`Failed to parse JSON for ${file}: ${(error instanceof Error ? error.message : 'unknown error')}`);
+    throw new LayerError({
+      name: 'config',
+      method: 'vscode.parse',
+      message: 'Failed to parse JSON file "{file}": {reason}',
+      vars: { file, reason: error instanceof Error ? error.message : 'unknown error' }
+    });
   }
 
   const serversNode = doc && typeof doc === 'object' ? doc.servers : undefined;

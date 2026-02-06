@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createRequire } from 'node:module';
+import { LayerError } from '@mcp-layer/error';
 import { Session } from '@mcp-layer/session';
 import { attachWithProvider, matchProvider } from './providers/index.js';
 
@@ -21,7 +22,11 @@ function resolveServer(instance) {
     if (instance.server && typeof instance.server === 'object') return instance.server;
     return instance;
   }
-  throw new TypeError('Expected an MCP server instance.');
+  throw new LayerError({
+    name: 'attach',
+    method: 'resolveServer',
+    message: 'Expected an MCP server instance.',
+  });
 }
 
 /**
@@ -42,7 +47,11 @@ function isConnected(server) {
  */
 export async function attach(instance, name, opts = {}) {
   if (typeof name !== 'string' || name.length === 0) {
-    throw new TypeError('Expected server name to be a non-empty string.');
+    throw new LayerError({
+      name: 'attach',
+      method: 'attach',
+      message: 'Expected server name to be a non-empty string.',
+    });
   }
 
   const provider = matchProvider(instance);
@@ -50,7 +59,11 @@ export async function attach(instance, name, opts = {}) {
 
   const server = resolveServer(instance);
   if (isConnected(server)) {
-    throw new Error('Server is already connected to a transport; attach requires an unconnected server.');
+    throw new LayerError({
+      name: 'attach',
+      method: 'attach',
+      message: 'Server is already connected to a transport; attach requires an unconnected server.',
+    });
   }
 
   const info = { ...base, ...(opts.info ?? {}) };

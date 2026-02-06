@@ -1,4 +1,5 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { LayerError } from '@mcp-layer/error';
 import { Session } from '@mcp-layer/session';
 import { createRequire } from 'node:module';
 
@@ -52,7 +53,13 @@ class FastifyInjectTransport {
    * @returns {Promise<void>}
    */
   async send(message) {
-    if (!this.active) throw new Error('Transport is not started.');
+    if (!this.active) {
+      throw new LayerError({
+        name: 'attach',
+        method: 'FastifyInjectTransport.send',
+        message: 'Transport is not started.',
+      });
+    }
 
     try {
       const response = await this.app.inject({

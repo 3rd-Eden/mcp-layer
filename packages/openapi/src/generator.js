@@ -1,5 +1,6 @@
 import { schemas } from './schemas/index.js';
 import { path, tpath } from './routing.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Normalize catalog item list into a type-filtered list.
@@ -56,10 +57,20 @@ function label(item, fallback) {
 function assertName(value, maxLength) {
   const pattern = /^[a-z0-9._-]+$/i;
   if (!pattern.test(value)) {
-    throw new Error(`Item name "${value}" must be URL-safe (letters, digits, ".", "_", "-").`);
+    throw new LayerError({
+      name: 'openapi',
+      method: 'assertName',
+      message: 'Item name "{name}" must be URL-safe (letters, digits, ".", "_", "-").',
+      vars: { name: value }
+    });
   }
   if (typeof maxLength === 'number' && value.length > maxLength) {
-    throw new Error(`Item name "${value}" exceeds maximum length of ${maxLength}.`);
+    throw new LayerError({
+      name: 'openapi',
+      method: 'assertName',
+      message: 'Item name "{name}" exceeds maximum length of {maxLength}.',
+      vars: { name: value, maxLength }
+    });
   }
 }
 
@@ -77,10 +88,20 @@ function assertSimpleTemplate(template) {
   while (match) {
     const expr = match[1] ?? '';
     if (/[+#./?&*]/.test(expr) || expr.includes(',')) {
-      throw new Error(`Template expression "${match[0]}" is not supported.`);
+      throw new LayerError({
+        name: 'openapi',
+        method: 'assertSimpleTemplate',
+        message: 'Template expression "{expression}" is not supported.',
+        vars: { expression: match[0] }
+      });
     }
     if (!/^[A-Za-z0-9._-]+$/.test(expr)) {
-      throw new Error(`Template parameter "${expr}" must be URL-safe.`);
+      throw new LayerError({
+        name: 'openapi',
+        method: 'assertSimpleTemplate',
+        message: 'Template parameter "{parameter}" must be URL-safe.',
+        vars: { parameter: expr }
+      });
     }
     match = re.exec(template);
   }
