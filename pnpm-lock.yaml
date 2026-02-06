@@ -48,6 +48,9 @@ importers:
 
   packages/attach:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       '@mcp-layer/session':
         specifier: workspace:*
         version: link:../session
@@ -76,6 +79,9 @@ importers:
       '@mcp-layer/connect':
         specifier: workspace:*
         version: link:../connect
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       '@mcp-layer/schema':
         specifier: workspace:*
         version: link:../schema
@@ -107,12 +113,18 @@ importers:
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       yaml:
         specifier: ^2.8.1
         version: 2.8.1
 
   packages/connect:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       '@mcp-layer/session':
         specifier: workspace:*
         version: link:../session
@@ -150,6 +162,9 @@ importers:
 
   packages/openapi:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       uri-js:
         specifier: ^4.4.1
         version: 4.4.1
@@ -163,6 +178,9 @@ importers:
 
   packages/rest:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       '@mcp-layer/openapi':
         specifier: workspace:*
         version: link:../openapi
@@ -227,6 +245,9 @@ importers:
 
   packages/schema:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -251,6 +272,9 @@ importers:
 
   packages/test-server:
     dependencies:
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
       '@modelcontextprotocol/sdk':
         specifier: ^1.20.2
         version: 1.20.2
