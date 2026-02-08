@@ -27,7 +27,7 @@
   "type": "module",
   "scripts": {
     "prepack": "node src/generate.js",
-    "test": "pnpm -r test",
+    "test": "node --test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
