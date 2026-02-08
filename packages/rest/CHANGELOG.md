@@ -1,5 +1,18 @@
 # @mcp-layer/rest
 
+## 1.2.1
+
+### Patch Changes
+
+- 9a08418: Add a shared `@mcp-layer/gateway` runtime package and a new `@mcp-layer/graphql` adapter package.
+
+  REST now consumes gateway runtime primitives for option normalization, catalog bootstrap, validation, resilience, and telemetry so adapter logic is shared instead of duplicated.
+
+  The root `mcp-layer` package now exports both `gateway` and `graphql` namespaces.
+
+- Updated dependencies [9a08418]
+  - @mcp-layer/gateway@0.2.0
+
 ## 1.2.0
 
 ### Minor Changes

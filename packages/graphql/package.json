@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/graphql",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Fastify GraphQL plugin and schema builder for MCP catalogs with shared gateway runtime primitives.",
   "repository": {
     "type": "git",
