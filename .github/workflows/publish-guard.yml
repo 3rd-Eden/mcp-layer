@@ -131,7 +131,7 @@ jobs:
               const encoded = encodeURIComponent(name);
               lines.push(`Package: ${name}`);
               lines.push(`Package page: https://www.npmjs.com/package/${encoded}`);
-              lines.push(`Settings page: https://www.npmjs.com/package/${encoded}/settings`);
+              lines.push(`Access page: https://www.npmjs.com/package/${encoded}/access`);
               lines.push(`OIDC workflow to select: ${workflowPath}`);
               lines.push('');
             }
