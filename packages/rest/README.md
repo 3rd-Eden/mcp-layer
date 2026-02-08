@@ -4,6 +4,18 @@ Fastify plugin for exposing MCP servers over REST.
 
 `mcpRest` takes one or more MCP `Session` instances and registers HTTP routes that proxy MCP tools, prompts, and resources. A `Session` is the client-side handle you get from `@mcp-layer/attach` (in-process server) or `@mcp-layer/connect` (remote server). A Fastify “app” in this context is just a `Fastify` instance that owns routing, lifecycle hooks, and configuration.
 
+## Shared Runtime
+
+`@mcp-layer/rest` now consumes shared adapter primitives from `@mcp-layer/gateway` for:
+
+- runtime option normalization,
+- catalog bootstrap and validator registration,
+- manager/session request resolution,
+- breaker-backed MCP execution,
+- telemetry helpers and call context instrumentation.
+
+This keeps REST behavior stable while ensuring GraphQL and REST adapters share one runtime backbone instead of duplicating business logic.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -388,31 +400,7 @@ This plugin is designed to compose with standard Fastify plugins:
 
 ## Runtime Error Reference
 
-This section is written for high-pressure debugging moments. Each entry maps to concrete REST plugin option validation or route-generation guard rails.
-
-<a id="error-2a0345"></a>
-### mcpBreakers map is not initialized.
-
-Thrown from: `ensureBreaker`
-
-This happens when resilience is enabled and the plugin cannot access `fastify.mcpBreakers`. The map is normally decorated during plugin registration.
-
-Step-by-step resolution:
-1. Ensure you use the exported Fastify plugin (`fastify.register(restPlugin, ...)`) rather than calling internals directly.
-2. Verify no plugin/hook deletes or overwrites `fastify.mcpBreakers`.
-3. In isolated unit tests of internal helpers, decorate the map manually.
-4. Add a startup assertion that `fastify.mcpBreakers` is a `Map` after registration.
-
-<details>
-<summary>Fix Example: register plugin so breaker storage is initialized</summary>
-
-```js
-await fastify.register(restPlugin, { session, resilience: { enabled: true } });
-if (!(fastify.mcpBreakers instanceof Map))
-  throw new Error('rest plugin did not initialize breaker map');
-```
-
-</details>
+This section is written for high-pressure debugging moments. Each entry maps to concrete REST route guards or runtime option validation branches. Shared option validation entries are delegated to `@mcp-layer/gateway` via `validateRuntimeOptions(...)`.
 
 <a id="error-6d20db"></a>
 ### "{option}" must be a positive number.
@@ -540,10 +528,10 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-587c11"></a>
+<a id="error-98ae3a"></a>
 ### errors must be an object.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `options.errors` is provided as a non-object (for example boolean or string). The REST plugin expects an object like `{ exposeDetails: boolean }`.
 
@@ -565,10 +553,10 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-7a5a51"></a>
+<a id="error-662099"></a>
 ### manager does not support multiple sessions. Register multiple plugins instead.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `manager` is provided together with `session` as an array. Manager mode resolves sessions per request and only supports a single bootstrap session.
 
@@ -590,10 +578,10 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-6e5a7e"></a>
+<a id="error-7606e6"></a>
 ### manager must be an object with a get(request) function.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `manager` is not an object exposing `get(request)`. The plugin calls `manager.get` to resolve request-scoped sessions.
 
@@ -616,10 +604,10 @@ const manager = {
 
 </details>
 
-<a id="error-7fd4f0"></a>
+<a id="error-26c360"></a>
 ### prefix must be a string or function.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `prefix` is neither a string nor a function. REST version/prefix routing can only be configured with those two forms.
 
@@ -643,10 +631,10 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-2c7a98"></a>
+<a id="error-a9f9ff"></a>
 ### session is required when manager is provided (used for catalog bootstrap).
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `manager` mode is enabled but no bootstrap `session` is provided. The plugin still needs one session to build catalog/OpenAPI metadata at startup.
 
@@ -668,10 +656,10 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-69348f"></a>
+<a id="error-664760"></a>
 ### session or manager option is required.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when plugin options include neither `session` nor `manager`. REST cannot expose MCP endpoints without at least one session source.
 
@@ -690,10 +678,10 @@ await fastify.register(restPlugin, { session });
 
 </details>
 
-<a id="error-92524a"></a>
+<a id="error-432a51"></a>
 ### validation must be an object.
 
-Thrown from: `validateOptions`
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when `validation` is provided as a non-object. The plugin expects a validation config object with limit/trust fields.
 
@@ -712,6 +700,33 @@ await fastify.register(restPlugin, {
   validation: {
     trustSchemas: 'auto',
     maxToolNameLength: 64
+  }
+});
+```
+
+</details>
+
+<a id="error-473128"></a>
+### normalizeError must be a function.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `normalizeError` is provided as a non-function value. REST expects a callable custom normalizer when overriding default error mapping.
+
+Step-by-step resolution:
+1. Ensure `normalizeError` is a function reference.
+2. Keep the signature compatible with runtime usage (`error`, `instance`, `requestId`, `options`).
+3. Remove object/string placeholders from config loaders.
+4. Add tests validating custom normalization wiring.
+
+<details>
+<summary>Fix Example: pass a callable normalizeError handler</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  normalizeError: function normalizeError(error, instance, requestId, options) {
+    return mapToProblem(error, instance, requestId, options);
   }
 });
 ```

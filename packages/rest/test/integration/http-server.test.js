@@ -83,13 +83,24 @@ async function getText(url) {
  * @returns {void}
  */
 function httpSuite() {
-  it('serves tools, prompts, and resources over HTTP', async function httpCase() {
+  it('serves tools, prompts, and resources over HTTP', async function httpCase(test) {
     const config = createConfig();
     const session = await connect(config, 'rest-e2e');
     let app;
 
     try {
-      app = await startServer(session);
+      try {
+        app = await startServer(session);
+      } catch (error) {
+        const runtimeError = /** @type {Error & { code?: string }} */ (error);
+        if (runtimeError.code === 'EPERM') {
+          test.skip('Network listen is not permitted in this environment.');
+          return;
+        }
+
+        throw runtimeError;
+      }
+
       const tool = await postJson(`${app.base}/v0/echo`, { text: 'hello', loud: false });
       assert.equal(tool.status, 200);
       assert.equal(tool.body.content[0].text, 'hello');

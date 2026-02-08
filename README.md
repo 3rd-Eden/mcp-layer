@@ -17,6 +17,7 @@
 
 - **CLI layers** that expose MCP tools as commands with validated input.
 - **REST gateways** that generate endpoints and schemas from MCP tool definitions.
+- **GraphQL gateways** that expose generated and generic operations on top of MCP catalogs.
 - **UI renderers** that surface MCP Apps resources using `_meta.ui` metadata.
 - **New MCP layers** that programmatically reason about tool/resource catalogs.
 
@@ -44,6 +45,7 @@ await link.close();
 | [`@mcp-layer/connect`](packages/connect/README.md) | Connect to MCP servers over stdio and return a closeable Session. |
 | [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP SDK servers or Platformatic Fastify MCP plugins and return a Session. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract tools/resources/prompts/templates into a unified Zod-backed schema (including MCP Apps metadata). |
+| [`@mcp-layer/gateway`](packages/gateway/README.md) | Shared adapter runtime primitives for catalog bootstrap, validation, resilience, telemetry, and deterministic mapping. |
 | [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration tests and local exploration. |
 | [`@mcp-layer/openapi`](packages/openapi/README.md) | Generate OpenAPI 3.1 specs from MCP catalogs. |
 | [`@mcp-layer/rest`](packages/rest/README.md) | Fastify plugin that exposes MCP servers over REST. |
@@ -55,6 +57,7 @@ await link.close();
 | [`@mcp-layer/cli`](packages/cli/README.md) | CLI framework for turning MCP schemas into commands. |
 | [`@mcp-layer/openapi`](packages/openapi/README.md) | OpenAPI 3.1 generation for REST surfaces. |
 | [`@mcp-layer/rest`](packages/rest/README.md) | Fastify plugin for HTTP REST exposure. |
+| [`@mcp-layer/graphql`](packages/graphql/README.md) | Fastify plugin and schema builder for GraphQL exposure on MCP catalogs. |
 
 ## CLI quick try
 
@@ -85,6 +88,7 @@ await session.close();
 ## Design principles
 
 - **Single source of truth**: normalized schemas flow from the MCP server, not from tool-specific parsing.
+- **Layered adapters**: `schema -> gateway -> rest/graphql` keeps protocol logic centralized while adapters stay thin.
 - **Minimal surface area**: each package does one job and composes cleanly with the others.
 - **Real integration tests**: no mocks; the test server is used as a real MCP target.
 

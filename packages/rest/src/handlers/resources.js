@@ -12,19 +12,19 @@ const templateLib = require('uri-template');
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolveSession - Session resolver.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @param {(request: import('fastify').FastifyRequest) => { uri?: string, errors?: Array<{ path: string, keyword?: string, message?: string }> }} resolveUri - URI resolver.
- * @param {string} handlerName - Handler name for diagnostics.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-function createReadHandler(resolveSession, telemetry, errors, resolveUri, handlerName) {
+function read(resolveSession, telemetry, normalize, errors, resolveUri) {
   /**
    * Handle a resource read request.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
    * @param {import('fastify').FastifyReply} reply - Fastify reply.
    * @returns {Promise<void>}
    */
-  async function handleRead(request, reply) {
+  async function call(request, reply) {
     const requestId = request.id;
     const instance = request.url;
     const resolved = resolveUri(request);
@@ -75,6 +75,14 @@ function createReadHandler(resolveSession, telemetry, errors, resolveUri, handle
       reply.code(200).send(result);
     } catch (error) {
       ctx?.recordError(error);
+      const mapped = normalize(error, instance, requestId);
+
+      if (mapped && typeof mapped === 'object' && Object.hasOwn(mapped, 'status') && Object.hasOwn(mapped, 'body')) {
+        const response = /** @type {{ status: number, body: Record<string, unknown> }} */ (mapped);
+        reply.code(response.status).send(response.body);
+        return;
+      }
+
       const response = mapMcpError(error, instance, requestId, errors);
       reply.code(response.status).send(response.body);
     } finally {
@@ -82,35 +90,35 @@ function createReadHandler(resolveSession, telemetry, errors, resolveUri, handle
     }
   }
 
-  Object.defineProperty(handleRead, 'name', { value: handlerName });
-  return handleRead;
+  return call;
 }
 
 /**
- * Create a handler for resource reads.
+ * Create a resource read handler.
  *
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
  * @param {string} uri - Resource URI.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createResourceHandler(resolve, uri, telemetry, errors) {
+export function resource(resolve, uri, telemetry, normalize, errors) {
   /**
    * Resolve a fixed resource URI.
    * @param {import('fastify').FastifyRequest} _request - Fastify request.
    * @returns {{ uri: string }}
    */
-  function resolveResource(_request) {
+  function fixed(_request) {
     return { uri };
   }
 
-  return createReadHandler(resolve, telemetry, errors, resolveResource, `handleResourceRead_${encodeURIComponent(uri)}`);
+  return read(resolve, telemetry, normalize, errors, fixed);
 }
 
 /**
- * Create a handler for resource template reads.
+ * Create a resource template read handler.
  *
  * before issuing a resource read.
  *
@@ -118,10 +126,11 @@ export function createResourceHandler(resolve, uri, telemetry, errors) {
  * @param {string} template - Resource URI template.
  * @param {{ maxTemplateParamLength: number }} validation - Validation limits.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createTemplateHandler(resolve, template, validation, telemetry, errors) {
+export function template(resolve, template, validation, telemetry, normalize, errors) {
   const parsed = templateLib.parse(template);
 
   /**
@@ -129,7 +138,7 @@ export function createTemplateHandler(resolve, template, validation, telemetry, 
    * @param {Record<string, unknown>} params - Fastify params.
    * @returns {string}
    */
-  function expandUri(params) {
+  function expand(params) {
     return parsed.expand(params ?? {});
   }
 
@@ -141,7 +150,7 @@ export function createTemplateHandler(resolve, template, validation, telemetry, 
    * @param {Record<string, unknown>} params - Route params.
    * @returns {Array<{ path: string, message: string }>}
    */
-  function validateTemplateParams(params) {
+  function check(params) {
     const errors = [];
     const max = validation.maxTemplateParamLength;
 
@@ -164,15 +173,15 @@ export function createTemplateHandler(resolve, template, validation, telemetry, 
    * @param {import('fastify').FastifyRequest} request - Fastify request.
    * @returns {{ uri?: string, errors?: Array<{ path: string, message: string }> }}
    */
-  function resolveTemplate(request) {
+  function route(request) {
     const params = request.params && typeof request.params === 'object' ? request.params : {};
-    const paramErrors = validateTemplateParams(params);
+    const paramErrors = check(params);
     if (paramErrors.length > 0) {
       return { errors: paramErrors };
     }
 
-    return { uri: expandUri(params) };
+    return { uri: expand(params) };
   }
 
-  return createReadHandler(resolve, telemetry, errors, resolveTemplate, `handleTemplateRead_${encodeURIComponent(template)}`);
+  return read(resolve, telemetry, normalize, errors, route);
 }

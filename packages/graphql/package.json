@@ -1,0 +1,57 @@
+{
+  "name": "@mcp-layer/graphql",
+  "version": "0.1.0",
+  "description": "Fastify GraphQL plugin and schema builder for MCP catalogs with shared gateway runtime primitives.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-layer",
+    "graphql",
+    "fastify",
+    "mercurius",
+    "schema",
+    "adapter",
+    "gateway"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@graphql-tools/schema": "^10.0.31",
+    "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/gateway": "workspace:*",
+    "fastify-plugin": "^5.0.0",
+    "graphql": "^16.12.0",
+    "graphql-type-json": "^0.3.2",
+    "mercurius": "^16.7.0",
+    "uri-template": "^2.0.0"
+  },
+  "peerDependencies": {
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/manager": "workspace:*",
+    "@mcp-layer/test-server": "workspace:*",
+    "fastify": "^5.7.4"
+  }
+}

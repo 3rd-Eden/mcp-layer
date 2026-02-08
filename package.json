@@ -27,7 +27,7 @@
   "type": "module",
   "scripts": {
     "prepack": "node src/generate.js",
-    "test": "node --test",
+    "test": "pnpm -r test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
@@ -41,6 +41,8 @@
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/gateway": "workspace:*",
+    "@mcp-layer/graphql": "workspace:*",
     "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/openapi": "workspace:*",
     "@mcp-layer/rest": "workspace:*",

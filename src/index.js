@@ -35,6 +35,18 @@ export * as connect from '@mcp-layer/connect';
 export * as error from '@mcp-layer/error';
 
 /**
+ * Package namespace from `@mcp-layer/gateway`.
+ * @type {typeof import('@mcp-layer/gateway')}
+ */
+export * as gateway from '@mcp-layer/gateway';
+
+/**
+ * Package namespace from `@mcp-layer/graphql`.
+ * @type {typeof import('@mcp-layer/graphql')}
+ */
+export * as graphql from '@mcp-layer/graphql';
+
+/**
  * Package namespace from `@mcp-layer/manager`.
  * @type {typeof import('@mcp-layer/manager')}
  */

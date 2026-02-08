@@ -53,13 +53,9 @@
   },
   "dependencies": {
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/gateway": "workspace:*",
     "@mcp-layer/openapi": "workspace:*",
-    "ajv": "^8.17.0",
-    "ajv-formats": "^3.0.0",
     "fastify-plugin": "^5.0.0",
-    "json-schema-traverse": "^1.0.0",
-    "opossum": "^8.1.0",
-    "safe-regex2": "^2.0.0",
     "uri-template": "^2.0.0"
   },
   "peerDependencies": {

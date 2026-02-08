@@ -50,7 +50,8 @@
   - generated documentation URL.
 - Preserve machine-readable `code` fields when callers branch on error behavior.
 - Document new error references in the corresponding package README error section before shipping changes.
-- Prefer explicit error constructors/helpers over raw `throw new Error(...)` in library surfaces.
+- Prefer explicit error constructors over raw `throw new Error(...)` in library surfaces.
+- Never create errors through wrapper/helper/convenience functions that return error instances (for example, `throw makeError(...)`). Instantiate errors directly at the throw site so stack traces point to the true call path.
 
 ## Documentation Standards
 - Every JSDoc block must fully describe parameters and return values. Editor hints are treated as part of the developer experience, so keep them precise and complete.

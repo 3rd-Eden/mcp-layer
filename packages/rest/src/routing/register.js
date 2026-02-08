@@ -1,9 +1,9 @@
 import { path, tpath } from '@mcp-layer/openapi';
 import { LayerError } from '@mcp-layer/error';
 import { validateSegmentName, validateToolName } from './reserved.js';
-import { createToolHandler } from '../handlers/tools.js';
-import { createPromptHandler } from '../handlers/prompts.js';
-import { createResourceHandler, createTemplateHandler } from '../handlers/resources.js';
+import { tool } from '../handlers/tools.js';
+import { prompt } from '../handlers/prompts.js';
+import { resource, template } from '../handlers/resources.js';
 
 /**
  * Filter catalog items by type.
@@ -86,7 +86,7 @@ function firstSegment(route) {
  *
  *
  * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
- * @param {{ session: import('@mcp-layer/session').Session, catalog: { items: Array<Record<string, unknown>> }, validator: import('../validation/validator.js').SchemaValidator, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, telemetry: ReturnType<import('../telemetry/index.js').createTelemetry>, errors: { exposeDetails: boolean }, validation: { maxToolNameLength: number, maxTemplateParamLength: number } }} ctx - Route context.
+ * @param {{ session: import('@mcp-layer/session').Session, catalog: { items: Array<Record<string, unknown>> }, validator: import('../validation/validator.js').SchemaValidator, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, telemetry: ReturnType<import('../telemetry/index.js').createTelemetry>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown, errors: { exposeDetails: boolean }, validation: { maxToolNameLength: number, maxTemplateParamLength: number } }} ctx - Route context.
  * @returns {Promise<void>}
  */
 export async function registerRoutes(fastify, ctx) {
@@ -106,7 +106,14 @@ export async function registerRoutes(fastify, ctx) {
   for (const item of tools) {
     if (!item.name) continue;
     validateToolName(String(item.name), extraReserved, { maxToolNameLength: ctx.validation.maxToolNameLength });
-    const handler = createToolHandler(ctx.resolve, String(item.name), ctx.validator, ctx.telemetry, ctx.errors);
+    const handler = tool(
+      ctx.resolve,
+      String(item.name),
+      ctx.validator,
+      ctx.telemetry,
+      ctx.normalize,
+      ctx.errors
+    );
     fastify.post(`/${item.name}`, handler);
   }
 
@@ -114,7 +121,14 @@ export async function registerRoutes(fastify, ctx) {
   for (const item of prompts) {
     if (!item.name) continue;
     validateSegmentName(String(item.name), { maxToolNameLength: ctx.validation.maxToolNameLength });
-    const handler = createPromptHandler(ctx.resolve, String(item.name), ctx.validator, ctx.telemetry, ctx.errors);
+    const handler = prompt(
+      ctx.resolve,
+      String(item.name),
+      ctx.validator,
+      ctx.telemetry,
+      ctx.normalize,
+      ctx.errors
+    );
     fastify.post(`/prompts/${item.name}`, handler);
   }
 
@@ -123,7 +137,7 @@ export async function registerRoutes(fastify, ctx) {
     const uri = item.detail?.uri ? String(item.detail.uri) : null;
     if (!uri) continue;
     const route = path(uri);
-    const handler = createResourceHandler(ctx.resolve, uri, ctx.telemetry, ctx.errors);
+    const handler = resource(ctx.resolve, uri, ctx.telemetry, ctx.normalize, ctx.errors);
     fastify.get(route, handler);
   }
 
@@ -132,7 +146,14 @@ export async function registerRoutes(fastify, ctx) {
     if (!tmpl) continue;
     const route = tpath(tmpl, false);
     const fastifyRoute = toFastifyPath(route);
-    const handler = createTemplateHandler(ctx.resolve, tmpl, ctx.validation, ctx.telemetry, ctx.errors);
+    const handler = template(
+      ctx.resolve,
+      tmpl,
+      ctx.validation,
+      ctx.telemetry,
+      ctx.normalize,
+      ctx.errors
+    );
     fastify.get(fastifyRoute, handler);
   }
 

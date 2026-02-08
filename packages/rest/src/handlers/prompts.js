@@ -3,24 +3,25 @@ import { createValidationErrorResponse } from '../errors/mapping.js';
 import { createCallContext, mapMcpError } from './common.js';
 
 /**
- * Create a handler for prompt invocation.
+ * Create a prompt invocation handler.
  *
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
  * @param {string} name - Prompt name.
  * @param {import('../validation/validator.js').SchemaValidator} validator - Schema validator.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
+ * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function createPromptHandler(resolve, name, validator, telemetry, errors) {
+export function prompt(resolve, name, validator, telemetry, normalize, errors) {
   /**
    * Handle prompt requests.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
    * @param {import('fastify').FastifyReply} reply - Fastify reply.
    * @returns {Promise<void>}
    */
-  async function handlePromptCall(request, reply) {
+  async function call(request, reply) {
     const requestId = request.id;
     const instance = request.url;
     let ctx;
@@ -60,6 +61,14 @@ export function createPromptHandler(resolve, name, validator, telemetry, errors)
       reply.code(200).send(result);
     } catch (error) {
       ctx?.recordError(error);
+      const mapped = normalize(error, instance, requestId);
+
+      if (mapped && typeof mapped === 'object' && Object.hasOwn(mapped, 'status') && Object.hasOwn(mapped, 'body')) {
+        const response = /** @type {{ status: number, body: Record<string, unknown> }} */ (mapped);
+        reply.code(response.status).send(response.body);
+        return;
+      }
+
       const response = mapMcpError(error, instance, requestId, errors);
       reply.code(response.status).send(response.body);
     } finally {
@@ -67,6 +76,5 @@ export function createPromptHandler(resolve, name, validator, telemetry, errors)
     }
   }
 
-  Object.defineProperty(handlePromptCall, 'name', { value: `handlePromptCall_${name}` });
-  return handlePromptCall;
+  return call;
 }
