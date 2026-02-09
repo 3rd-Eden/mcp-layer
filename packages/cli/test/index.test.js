@@ -5,7 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { spawn } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { startHttpServer } from '@mcp-layer/test-server/http';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
@@ -14,6 +16,7 @@ const custom = fileURLToPath(new URL('./fixtures/custom-cli.mjs', import.meta.ur
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
 const entry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
+const exec = promisify(execFile);
 
 /**
  * Create a temporary directory for CLI tests.
@@ -48,66 +51,64 @@ async function hydrateconfig(file) {
 }
 
 /**
- * Run the CLI and capture stdout/stderr.
+ * Start the HTTP fixture server for remote transport tests.
+ * @returns {Promise<{ url: string, close: () => Promise<void> }>}
+ */
+async function startremote() {
+  const server = await startHttpServer({ port: 0 });
+  return {
+    close: server.close,
+    url: `http://127.0.0.1:${server.port}`
+  };
+}
+
+/**
+ * Prepare a temporary config for remote transport CLI tests.
+ * @param {string} url - Endpoint URL for the running test server.
+ * @returns {Promise<{ dir: string, file: string }>}
+ */
+async function setupremoteconfig(url) {
+  const dir = await tempdir();
+  const file = path.join(dir, 'mcp.json');
+  const config = {
+    type: 'http',
+    url
+  };
+
+  const data = { servers: { demo: config } };
+
+  await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  return { dir, file };
+}
+
+/**
+ * Run a CLI binary and capture stdout/stderr.
+ * @param {string} bin - CLI entry file to execute with Node.
  * @param {string[]} args - CLI arguments to pass to the test process.
  * @param {{ cwd?: string }} [options] - Spawn options for working directory.
  * @returns {Promise<{ stdout: string, stderr: string }>}
  */
-async function runcli(args, options = {}) {
-  return new Promise(function executor(resolve, reject) {
-    const child = spawn(process.execPath, [cli, ...args], {
+async function run(bin, args, options = {}) {
+  try {
+    return await exec(process.execPath, [bin, ...args], {
       cwd: options.cwd,
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      maxBuffer: 10 * 1024 * 1024
     });
+  } catch (error) {
+    const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
+    throw new Error(stderr || `CLI exited with ${error?.code ?? 'unknown'}`);
+  }
+}
 
-    let stdout = '';
-    let stderr = '';
-
-    /**
-     * Collect stdout chunks.
-     * @param {Buffer} chunk - Buffer chunk read from stdout.
-     * @returns {void}
-     */
-    function onStdout(chunk) {
-      stdout += chunk.toString();
-    }
-
-    /**
-     * Collect stderr chunks.
-     * @param {Buffer} chunk - Buffer chunk read from stderr.
-     * @returns {void}
-     */
-    function onStderr(chunk) {
-      stderr += chunk.toString();
-    }
-
-    /**
-     * Handle child process errors.
-     * @param {Error} error - Spawn error to surface in the test.
-     * @returns {void}
-     */
-    function onError(error) {
-      reject(error);
-    }
-
-    /**
-     * Handle child process exit.
-     * @param {number | null} code - Exit code from the child process.
-     * @returns {void}
-     */
-    function onClose(code) {
-      if (code === 0) {
-        resolve({ stdout, stderr });
-        return;
-      }
-      reject(new Error(stderr || `CLI exited with ${code}`));
-    }
-
-    child.stdout.on('data', onStdout);
-    child.stderr.on('data', onStderr);
-    child.on('error', onError);
-    child.on('close', onClose);
-  });
+/**
+ * Run the CLI fixture and capture stdout/stderr.
+ * @param {string[]} args - CLI arguments to pass to the fixture.
+ * @param {{ cwd?: string }} [options] - Spawn options for working directory.
+ * @returns {Promise<{ stdout: string, stderr: string }>}
+ */
+async function runcli(args, options = {}) {
+  return run(cli, args, options);
 }
 
 /**
@@ -117,60 +118,7 @@ async function runcli(args, options = {}) {
  * @returns {Promise<{ stdout: string, stderr: string }>}
  */
 async function runcustom(args, options = {}) {
-  return new Promise(function executor(resolve, reject) {
-    const child = spawn(process.execPath, [custom, ...args], {
-      cwd: options.cwd,
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    /**
-     * Collect stdout chunks.
-     * @param {Buffer} chunk - Buffer chunk read from stdout.
-     * @returns {void}
-     */
-    function onStdout(chunk) {
-      stdout += chunk.toString();
-    }
-
-    /**
-     * Collect stderr chunks.
-     * @param {Buffer} chunk - Buffer chunk read from stderr.
-     * @returns {void}
-     */
-    function onStderr(chunk) {
-      stderr += chunk.toString();
-    }
-
-    /**
-     * Handle child process errors.
-     * @param {Error} error - Spawn error to surface in the test.
-     * @returns {void}
-     */
-    function onError(error) {
-      reject(error);
-    }
-
-    /**
-     * Handle child process exit.
-     * @param {number | null} code - Exit code from the child process.
-     * @returns {void}
-     */
-    function onClose(code) {
-      if (code === 0) {
-        resolve({ stdout, stderr });
-        return;
-      }
-      reject(new Error(stderr || `CLI exited with ${code}`));
-    }
-
-    child.stdout.on('data', onStdout);
-    child.stderr.on('data', onStderr);
-    child.on('error', onError);
-    child.on('close', onClose);
-  });
+  return run(custom, args, options);
 }
 
 /**
@@ -481,6 +429,91 @@ function resourceSuite() {
 }
 
 /**
+ * Validate CLI list operations against a Streamable HTTP server.
+ * @returns {Promise<void>}
+ */
+async function remoteStreamableCase() {
+  const server = await startremote();
+
+  try {
+    const setup = await setupremoteconfig(`${server.url}/mcp`);
+    const result = await runcli(['tools', 'list', '--config', setup.file, '--format', 'json']);
+    const data = parsejson(result.stdout);
+    const names = data.filter(function onlyTools(item) {
+      return item.type === 'tool';
+    }).map(function mapName(item) {
+      return item.name;
+    });
+
+    assert.equal(names.includes('echo'), true);
+  } finally {
+    await server.close();
+  }
+}
+
+/**
+ * Validate CLI list operations when transport is inferred from URL config.
+ * @returns {Promise<void>}
+ */
+async function remoteAutoCase() {
+  const server = await startremote();
+
+  try {
+    const setup = await setupremoteconfig(`${server.url}/mcp`);
+    const result = await runcli(['tools', 'list', '--config', setup.file, '--format', 'json']);
+    const data = parsejson(result.stdout);
+    const names = data.filter(function onlyTools(item) {
+      return item.type === 'tool';
+    }).map(function mapName(item) {
+      return item.name;
+    });
+
+    assert.equal(names.includes('echo'), true);
+  } finally {
+    await server.close();
+  }
+}
+
+/**
+ * Validate CLI tool execution against an SSE server.
+ * @returns {Promise<void>}
+ */
+async function remoteSseCase() {
+  const server = await startremote();
+
+  try {
+    const setup = await setupremoteconfig(`${server.url}/sse`);
+    const result = await runcli([
+      'tools',
+      'echo',
+      '--config',
+      setup.file,
+      '--transport',
+      'sse',
+      '--text',
+      'hello',
+      '--raw'
+    ]);
+    const data = parsejson(result.stdout);
+
+    assert.equal(Array.isArray(data.content), true);
+    assert.equal(data.content[0].text, 'hello');
+  } finally {
+    await server.close();
+  }
+}
+
+/**
+ * Run remote transport CLI coverage.
+ * @returns {void}
+ */
+function remoteSuite() {
+  it('lists tools when transport is auto-selected from URL config', remoteAutoCase);
+  it('lists tools over streamable HTTP transport', remoteStreamableCase);
+  it('executes tools over SSE transport', remoteSseCase);
+}
+
+/**
  * Run the CLI test suite.
  * @returns {void}
  */
@@ -496,6 +529,7 @@ function cliSuite() {
   describe('tools formatting', toolsPresentSuite);
   describe('custom help', customHelpSuite);
   describe('resource raw output', resourceSuite);
+  describe('remote transports', remoteSuite);
 }
 
 describe('cli', cliSuite);

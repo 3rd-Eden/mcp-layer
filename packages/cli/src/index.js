@@ -168,6 +168,7 @@ function statichelp(cliName, custom) {
     flags: {
       '--server <name>': 'Select a server from the resolved config.',
       '--config <path>': 'Point at a config file or directory to search.',
+      '--transport <mode>': 'Override transport (stdio, streamable-http, or sse) at runtime.',
       '--format <json>': 'Switch list output to JSON.',
       '--json <string>': 'Provide JSON input for run/render.',
       '--input <path>': 'Provide JSON input from a file.',
@@ -286,7 +287,7 @@ export function cli(opts = {}) {
         const info = await select({ server: global.server || base.server, config: global.config || base.config });
         const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
         gate.start();
-        const session = await connect(info.config, info.name, { stderr: 'pipe' });
+        const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport });
         const stderr = capturestderr(session.transport);
         try {
           const output = await extract(session);
@@ -328,7 +329,7 @@ export function cli(opts = {}) {
             const info = await select({ server: global.server || base.server, config: global.config || base.config });
             const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
             gate.start();
-            const session = await connect(info.config, info.name, { stderr: 'pipe' });
+            const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport });
             const stderr = capturestderr(session.transport);
             try {
               const output = await extract(session);
@@ -368,7 +369,12 @@ export function cli(opts = {}) {
         return;
       }
 
-      const data = await catalog({ server: global.server || base.server, config: global.config || base.config, spinner: base.spinner && global.spinner });
+      const data = await catalog({
+        server: global.server || base.server,
+        config: global.config || base.config,
+        spinner: base.spinner && global.spinner,
+        transport: global.transport
+      });
       const session = data.session;
       const items = data.output.items;
 

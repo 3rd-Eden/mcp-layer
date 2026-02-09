@@ -7,12 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { load } from '@mcp-layer/config';
 import { connect, Session } from '../src/index.js';
+import { startHttpServer } from '@mcp-layer/test-server/http';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
-const entry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
+const stdioEntry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
 
 /**
  * Create a temporary directory for connector tests.
@@ -42,8 +43,38 @@ async function hydrateconfig(file) {
   const raw = await fs.readFile(file, 'utf8');
   const data = JSON.parse(raw);
   data.servers.demo.command = process.execPath;
-  data.servers.demo.args = [entry];
+  data.servers.demo.args = [stdioEntry];
   await fs.writeFile(file, JSON.stringify(data, null, 2), 'utf8');
+}
+
+/**
+ * Start the HTTP transport test server for local integration tests.
+ * @returns {Promise<{ url: string, close: () => Promise<void> }>}
+ */
+async function spawntestserver() {
+  const server = await startHttpServer({ port: 0 });
+  return {
+    close: server.close,
+    url: `http://127.0.0.1:${server.port}`
+  };
+}
+
+/**
+ * Build an HTTP-oriented config file for transport integration tests.
+ * @param {string} dir - Temp directory to write config in.
+ * @param {string} url - Endpoint URL for the mounted test server.
+ * @returns {Promise<string>}
+ */
+async function httpconfig(dir, url) {
+  const file = path.join(dir, 'mcp.json');
+  const config = {
+    type: 'http',
+    url
+  };
+
+  const data = { servers: { demo: config } };
+  await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  return file;
 }
 
 describe('connect', function connectSuite() {
@@ -64,6 +95,76 @@ describe('connect', function connectSuite() {
       const status = await link.client.ping();
       assert.equal(typeof status, 'object');
       assert.equal(link.transport.pid !== null, true);
+      assert.equal(link.source, file);
+      assert.equal(link.name, 'demo');
+      assert.equal(link.transport.constructor?.name, 'StdioClientTransport');
+    });
+
+    it('connects to mounted streamable HTTP server over localhost', async function connectHttpCase(t) {
+      const server = await spawntestserver();
+      t.after(async function cleanupServer() {
+        await server.close();
+      });
+
+      const dir = await tempdir();
+      const file = await httpconfig(dir, `${server.url}/mcp`);
+      const cfg = await load(undefined, dir);
+      const link = await connect(cfg, 'demo');
+
+      t.after(async function cleanup() {
+        await link.close();
+      });
+
+      assert.equal(link instanceof Session, true);
+      const status = await link.client.ping();
+      assert.equal(typeof status, 'object');
+      assert.equal(link.transport.constructor?.name, 'StreamableHTTPClientTransport');
+      assert.equal(link.source, file);
+      assert.equal(link.name, 'demo');
+    });
+
+    it('auto-selects streamable HTTP when URL config is provided', async function connectAutoHttpCase(t) {
+      const server = await spawntestserver();
+      t.after(async function cleanupServer() {
+        await server.close();
+      });
+
+      const dir = await tempdir();
+      const file = await httpconfig(dir, `${server.url}/mcp`);
+      const cfg = await load(undefined, dir);
+      const link = await connect(cfg, 'demo');
+
+      t.after(async function cleanup() {
+        await link.close();
+      });
+
+      assert.equal(link instanceof Session, true);
+      const status = await link.client.ping();
+      assert.equal(typeof status, 'object');
+      assert.equal(link.transport.constructor?.name, 'StreamableHTTPClientTransport');
+      assert.equal(link.source, file);
+      assert.equal(link.name, 'demo');
+    });
+
+    it('connects to mounted SSE server over localhost', async function connectSseCase(t) {
+      const server = await spawntestserver();
+      t.after(async function cleanupServer() {
+        await server.close();
+      });
+
+      const dir = await tempdir();
+      const file = await httpconfig(dir, `${server.url}/sse`);
+      const cfg = await load(undefined, dir);
+      const link = await connect(cfg, 'demo', { transport: 'sse' });
+
+      t.after(async function cleanup() {
+        await link.close();
+      });
+
+      assert.equal(link instanceof Session, true);
+      const status = await link.client.ping();
+      assert.equal(typeof status, 'object');
+      assert.equal(link.transport.constructor?.name, 'SSEClientTransport');
       assert.equal(link.source, file);
       assert.equal(link.name, 'demo');
     });

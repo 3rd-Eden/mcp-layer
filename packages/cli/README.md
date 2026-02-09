@@ -1,6 +1,6 @@
 # @mcp-layer/cli
 
-`@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects over stdio, extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. You can also extend it with custom commands.
+`@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects with the transport defined for that server (`stdio`, Streamable HTTP, or SSE), extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. You can also extend it with custom commands.
 
 ## Table of Contents
 
@@ -33,6 +33,13 @@ Run the CLI against a configured MCP server:
 mcp-layer servers list
 mcp-layer tools list
 mcp-layer tools echo --text "hello"
+```
+
+Run the same commands against a remote server by selecting a config entry that uses `url`/`endpoint`:
+
+```sh
+mcp-layer tools list --server remote
+mcp-layer tools echo --server remote --text "hello"
 ```
 
 ## Command surface
@@ -181,7 +188,23 @@ Run/read/render commands render formatted output by default. Use `--raw` for JSO
 
 ## Configuration and server selection
 
-`@mcp-layer/cli` uses `@mcp-layer/config` to discover MCP server definitions. When multiple servers are configured, choose one with `--server`:
+`@mcp-layer/cli` uses `@mcp-layer/config` to discover MCP server definitions. Transport is selected automatically from the chosen server entry through `@mcp-layer/connect`.
+
+The MCP spec defines available transports, but config keys are host-tool specific. References:
+- MCP transport protocol: [MCP Transports](https://modelcontextprotocol.io/specification/latest/basic/transports)
+- Example host config schemas: [VS Code MCP config](https://code.visualstudio.com/docs/copilot/customization/mcp-servers), [Claude Code MCP config](https://docs.claude.com/en/docs/claude-code/mcp)
+- Connector coverage in this repo: [`@mcp-layer/config` connectors](../config/README.md#connectors-discovery-parsing)
+
+Selection order below is `@mcp-layer/connect` behavior:
+
+Automatic selection behavior:
+- `command` entries connect over stdio.
+- `url`/`endpoint` entries connect over Streamable HTTP by default.
+- `--transport sse` (runtime override) forces legacy SSE for URL-based entries.
+
+Use `--transport` when you need an explicit runtime override (for example, forcing SSE against a legacy endpoint) without adding non-standard keys to shared config files.
+
+When multiple servers are configured, choose one with `--server`:
 
 ```sh
 mcp-layer tools list --server demo
@@ -277,6 +300,7 @@ Executes the CLI. If `argv` is omitted, it uses `process.argv`.
 
 - `--server <name>`: select a configured server.
 - `--config <path>`: point at a config file or directory.
+- `--transport <mode>`: override transport at runtime (`stdio`, `streamable-http`, or `sse`).
 - `--format <json>`: use JSON for list output.
 - `--json <string>`: supply inline JSON input.
 - `--input <path>`: supply JSON input from a file.

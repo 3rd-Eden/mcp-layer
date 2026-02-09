@@ -41,6 +41,22 @@
 - Avoid manual defensive access chains like `a && a.b && a.b.c`; replace with `a?.b?.c`.
 - Avoid behavior-changing refactors without tests. Any syntax modernization that can change semantics must be covered by tests first.
 
+## Standards Compliance Rules
+- Standards are the default contract. For MCP behavior, treat the official MCP specification and official MCP SDK behavior as source of truth.
+- Do not invent or persist non-standard MCP config keys in shared config files (`.mcp.json`, `mcp.json`, connector-managed docs) unless the user explicitly approves an extension.
+- If an extension is unavoidable, it must be explicit and isolated:
+  - Prefer runtime options over stored config keys.
+  - Use a clearly namespaced key (for example `x-mcp-layer-*`) instead of ambiguous generic keys.
+  - Document it as an extension (not a standard) with links to the relevant spec and host-tool docs.
+- Never replace SDK-provided transport/protocol handling with custom protocol glue when the SDK already supports the behavior.
+- All transport/config decisions must prioritize portability across MCP clients; host-specific assumptions must be called out in docs and tests.
+- Any README section that describes MCP transport/config behavior must include links to the relevant official specification or host-tool schema documentation.
+- Enforcement is mandatory for every PR:
+  - Any newly introduced persisted config key must have a linked spec/host-doc source in the README.
+  - If no source exists, do not persist the key; use runtime options instead (or a user-approved namespaced `x-mcp-layer-*` extension).
+  - Any change to config contract or resolution order (accepted keys, precedence, defaults) must include a changeset with correct semver impact (major when behavior is breaking).
+  - PR description must include a "Standards compliance summary" listing keys introduced/removed and the source links that justify them.
+
 ## Error Handling Standards
 - Use `@mcp-layer/error` as the default error pattern for runtime errors that can surface to package consumers.
 - Error instances must include:

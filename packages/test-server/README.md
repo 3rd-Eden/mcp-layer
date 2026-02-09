@@ -49,7 +49,9 @@ npx mcp-test-server-http --port 3333
 
 This exposes:
 - Streamable HTTP on `/mcp`
-- SSE compatibility on `/sse` and `/sse/messages`
+- SSE compatibility on `/sse` (GET stream + POST messages with `?sessionId=...`)
+
+SSE is kept for legacy MCP clients. Streamable HTTP clients should use only `/mcp`.
 
 ## What it provides
 
@@ -127,6 +129,22 @@ const transport = new StdioClientTransport({
 
 const client = new Client({ name: 'demo', version: '0.0.0' });
 await client.connect(transport);
+```
+
+Use this programmatic helper when you need a mounted localhost HTTP endpoint in tests:
+
+```js
+import { startHttpServer } from '@mcp-layer/test-server/http';
+
+const server = await startHttpServer({ port: 0 });
+const url = `http://127.0.0.1:${server.port}`;
+
+// streamable HTTP endpoint
+const mcp = `${url}/mcp`;
+// legacy SSE endpoint
+const sse = `${url}/sse`;
+
+await server.close();
 ```
 
 ## Testing
@@ -258,6 +276,28 @@ setTimeout(function abortLater() {
 }, 30);
 
 await assert.rejects(pending);
+```
+
+</details>
+
+<a id="error-141392"></a>
+### Invalid --port value "{value}".
+
+Thrown from: `port`
+
+This happens when `mcp-test-server-http` is started with a non-integer or out-of-range `--port` argument. The HTTP fixture only accepts numeric TCP ports in the `0-65535` range.
+
+Step-by-step resolution:
+1. Pass `--port` as a base-10 integer (`--port 3333`).
+2. Avoid host:port strings (`127.0.0.1:3333`) and non-numeric values.
+3. If you use environment variables, ensure the value is present and parseable.
+4. In tests, reserve an ephemeral port first and pass that numeric value.
+
+<details>
+<summary>Fix Example: start HTTP fixture with a valid port</summary>
+
+```bash
+npx mcp-test-server-http --port 3333
 ```
 
 </details>

@@ -29,7 +29,7 @@ export function parse(args) {
 /**
  * Build global CLI options from parsed argv.
  * @param {Record<string, unknown>} parsed - Parsed flags from `argh` for the main argument list.
- * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean, ansi: boolean }}
+ * @returns {{ server?: string, config?: string, format?: string, json?: string, input?: string, transport?: string, help: boolean, version: boolean, colors: boolean, spinner: boolean, raw: boolean, markdown: boolean, ansi: boolean }}
  */
 export function globals(parsed) {
   const help = Boolean(parsed.help || parsed.h);
@@ -39,12 +39,13 @@ export function globals(parsed) {
   const format = typeof parsed.format === 'string' ? parsed.format : undefined;
   const json = typeof parsed.json === 'string' ? parsed.json : undefined;
   const input = typeof parsed.input === 'string' ? parsed.input : undefined;
+  const transport = typeof parsed.transport === 'string' ? parsed.transport : undefined;
   const colors = parsed.color === false ? false : true;
   const spinner = parsed.spinner === false ? false : true;
   const raw = Boolean(parsed.raw);
   const markdown = parsed.markdown === false ? false : true;
   const ansi = Boolean(parsed['allow-ansi']);
-  return { server, config, format, json, input, help, version, colors, spinner, raw, markdown, ansi };
+  return { server, config, format, json, input, transport, help, version, colors, spinner, raw, markdown, ansi };
 }
 
 /**

@@ -27,6 +27,10 @@
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
+    "./http": {
+      "import": "./src/transport/http.js",
+      "default": "./src/transport/http.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -39,6 +43,7 @@
   "dependencies": {
     "@mcp-layer/error": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.20.2",
+    "argh": "^1.0.0",
     "express": "^5.0.1",
     "zod": "^3.25.76"
   }

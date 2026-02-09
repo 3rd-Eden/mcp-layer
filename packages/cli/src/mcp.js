@@ -38,7 +38,7 @@ export function spinnertext(name) {
 
 /**
  * Extract schema items for a server.
- * @param {{ server?: string, config?: string, spinner: boolean }} opts - CLI options for server selection and spinner display.
+ * @param {{ server?: string, config?: string, spinner: boolean, transport?: string }} opts - CLI options for server selection and spinner display.
  * @returns {Promise<{ session: import('@mcp-layer/session').Session, output: { items: Array<Record<string, unknown>>, server: Record<string, unknown> } }>} 
  */
 export async function catalog(opts) {
@@ -48,7 +48,7 @@ export async function catalog(opts) {
     const info = await select(opts);
     gate = spinner(opts.spinner, spinnertext(info.name));
     gate.start();
-    session = await connect(info.config, info.name);
+    session = await connect(info.config, info.name, { transport: opts.transport });
     const output = await extract(session);
     return { session, output };
   } catch (error) {
