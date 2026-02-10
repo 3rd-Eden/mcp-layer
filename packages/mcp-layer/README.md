@@ -33,23 +33,23 @@ Running this script prints the number of discovered catalog items for the select
 
 ## API Reference
 
-`mcp-layer` exports namespace bindings. Each export is the module namespace of an underlying package.
+`mcp-layer` exports package namespaces. Use the links below as the canonical API documentation for each namespace.
 
-| Export | Type signature | Documentation |
-| --- | --- | --- |
-| `attach` | `typeof import('@mcp-layer/attach')` | [`@mcp-layer/attach` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/attach/README.md) |
-| `cli` | `typeof import('@mcp-layer/cli')` | [`@mcp-layer/cli` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/cli/README.md) |
-| `config` | `typeof import('@mcp-layer/config')` | [`@mcp-layer/config` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/config/README.md) |
-| `connect` | `typeof import('@mcp-layer/connect')` | [`@mcp-layer/connect` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/connect/README.md) |
-| `error` | `typeof import('@mcp-layer/error')` | [`@mcp-layer/error` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/error/README.md) |
-| `gateway` | `typeof import('@mcp-layer/gateway')` | [`@mcp-layer/gateway` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/gateway/README.md) |
-| `graphql` | `typeof import('@mcp-layer/graphql')` | [`@mcp-layer/graphql` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/graphql/README.md) |
-| `manager` | `typeof import('@mcp-layer/manager')` | [`@mcp-layer/manager` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/manager/README.md) |
-| `openapi` | `typeof import('@mcp-layer/openapi')` | [`@mcp-layer/openapi` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/openapi/README.md) |
-| `rest` | `typeof import('@mcp-layer/rest')` | [`@mcp-layer/rest` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/rest/README.md) |
-| `schema` | `typeof import('@mcp-layer/schema')` | [`@mcp-layer/schema` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/schema/README.md) |
-| `session` | `typeof import('@mcp-layer/session')` | [`@mcp-layer/session` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/session/README.md) |
-| `testServer` | `typeof import('@mcp-layer/test-server')` | [`@mcp-layer/test-server` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/test-server/README.md) |
+| Namespace export | Documentation |
+| --- | --- |
+| `attach` | [`@mcp-layer/attach` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/attach/README.md) |
+| `cli` | [`@mcp-layer/cli` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/cli/README.md) |
+| `config` | [`@mcp-layer/config` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/config/README.md) |
+| `connect` | [`@mcp-layer/connect` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/connect/README.md) |
+| `error` | [`@mcp-layer/error` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/error/README.md) |
+| `gateway` | [`@mcp-layer/gateway` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/gateway/README.md) |
+| `graphql` | [`@mcp-layer/graphql` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/graphql/README.md) |
+| `manager` | [`@mcp-layer/manager` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/manager/README.md) |
+| `openapi` | [`@mcp-layer/openapi` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/openapi/README.md) |
+| `rest` | [`@mcp-layer/rest` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/rest/README.md) |
+| `schema` | [`@mcp-layer/schema` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/schema/README.md) |
+| `session` | [`@mcp-layer/session` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/session/README.md) |
+| `testServer` | [`@mcp-layer/test-server` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/test-server/README.md) |
 
 ### Error Behavior
 
