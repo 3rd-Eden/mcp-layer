@@ -30,9 +30,6 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Ensure npm latest
-        run: npm install -g npm@latest
-
       - name: Create release PR or publish
         uses: changesets/action@v1
         with:
