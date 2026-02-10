@@ -11,7 +11,7 @@ import { startHttpServer } from '@mcp-layer/test-server/http';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
-const cli = fileURLToPath(new URL('../bin/cli.js', import.meta.url));
+const cli = fileURLToPath(new URL('./fixtures/bin-cli.mjs', import.meta.url));
 const custom = fileURLToPath(new URL('./fixtures/custom-cli.mjs', import.meta.url));
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');

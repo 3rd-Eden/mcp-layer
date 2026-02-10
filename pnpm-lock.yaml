@@ -248,6 +248,16 @@ importers:
         specifier: workspace:*
         version: link:../test-server
 
+  packages/mcpcli:
+    dependencies:
+      '@mcp-layer/cli':
+        specifier: workspace:*
+        version: link:../cli
+    devDependencies:
+      '@mcp-layer/test-server':
+        specifier: workspace:*
+        version: link:../test-server
+
   packages/openapi:
     dependencies:
       '@mcp-layer/error':

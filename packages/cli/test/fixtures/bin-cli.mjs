@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cli } from '../src/index.js';
+import { cli } from '../../src/index.js';
 
 /**
  * Entry point for CLI execution.

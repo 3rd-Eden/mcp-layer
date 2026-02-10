@@ -1,0 +1,36 @@
+{
+  "name": "mcpcli",
+  "version": "0.1.0",
+  "description": "Standalone CLI for interacting with MCP servers using discovered schemas.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "cli",
+    "tools",
+    "resources",
+    "prompts"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.js"
+  },
+  "bin": {
+    "mcpcli": "./src/bin.js"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@mcp-layer/test-server": "workspace:*"
+  }
+}

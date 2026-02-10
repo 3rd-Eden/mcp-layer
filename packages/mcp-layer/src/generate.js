@@ -68,6 +68,7 @@ export async function buildIndex(rootDir, selfName = 'mcp-layer') {
   lines.push('');
 
   for (const item of meta) {
+    if (!item.name.startsWith('@mcp-layer/')) continue;
     const namespace = toNamespace(item.dir);
     const importPath = item.name;
 

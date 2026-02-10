@@ -25,12 +25,8 @@
     },
     "./package.json": "./package.json"
   },
-  "bin": {
-    "mcp-layer": "./bin/cli.js"
-  },
   "files": [
     "src",
-    "bin",
     "LICENSE"
   ],
   "publishConfig": {
