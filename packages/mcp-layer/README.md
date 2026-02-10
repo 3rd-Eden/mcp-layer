@@ -33,23 +33,23 @@ Running this script prints the number of discovered catalog items for the select
 
 ## API Reference
 
-`mcp-layer` exports package namespaces. Use the links below as the canonical API documentation for each namespace.
+`mcp-layer` exports package namespaces. If you are new to MCP Layer, this table explains what each namespace is for and links to full package documentation.
 
-| Namespace export | Documentation |
-| --- | --- |
-| `attach` | [`@mcp-layer/attach` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/attach/README.md) |
-| `cli` | [`@mcp-layer/cli` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/cli/README.md) |
-| `config` | [`@mcp-layer/config` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/config/README.md) |
-| `connect` | [`@mcp-layer/connect` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/connect/README.md) |
-| `error` | [`@mcp-layer/error` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/error/README.md) |
-| `gateway` | [`@mcp-layer/gateway` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/gateway/README.md) |
-| `graphql` | [`@mcp-layer/graphql` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/graphql/README.md) |
-| `manager` | [`@mcp-layer/manager` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/manager/README.md) |
-| `openapi` | [`@mcp-layer/openapi` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/openapi/README.md) |
-| `rest` | [`@mcp-layer/rest` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/rest/README.md) |
-| `schema` | [`@mcp-layer/schema` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/schema/README.md) |
-| `session` | [`@mcp-layer/session` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/session/README.md) |
-| `testServer` | [`@mcp-layer/test-server` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/test-server/README.md) |
+| Namespace export | Purpose | Documentation |
+| --- | --- | --- |
+| `attach` | Attach to in-process MCP SDK servers without launching external transports. | [`@mcp-layer/attach` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/attach/README.md) |
+| `cli` | Build command-line interfaces for MCP tools, prompts, resources, and templates. | [`@mcp-layer/cli` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/cli/README.md) |
+| `config` | Discover and normalize MCP server configuration across host tools. | [`@mcp-layer/config` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/config/README.md) |
+| `connect` | Connect to MCP servers over stdio, Streamable HTTP, or SSE. | [`@mcp-layer/connect` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/connect/README.md) |
+| `error` | Create structured runtime errors with stable references and docs links. | [`@mcp-layer/error` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/error/README.md) |
+| `gateway` | Reuse shared adapter runtime primitives for mapping, validation, resilience, and telemetry. | [`@mcp-layer/gateway` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/gateway/README.md) |
+| `graphql` | Expose MCP catalogs and operations through GraphQL. | [`@mcp-layer/graphql` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/graphql/README.md) |
+| `manager` | Manage authenticated and shared MCP sessions with reuse and limits. | [`@mcp-layer/manager` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/manager/README.md) |
+| `openapi` | Generate OpenAPI 3.1 documents from MCP catalogs. | [`@mcp-layer/openapi` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/openapi/README.md) |
+| `rest` | Expose MCP sessions as REST endpoints with Fastify. | [`@mcp-layer/rest` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/rest/README.md) |
+| `schema` | Extract and normalize tools, resources, prompts, and templates into a consistent catalog. | [`@mcp-layer/schema` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/schema/README.md) |
+| `session` | Use the shared session abstraction across connectors and adapters. | [`@mcp-layer/session` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/session/README.md) |
+| `testServer` | Run a feature-complete local MCP server for development and integration tests. | [`@mcp-layer/test-server` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/test-server/README.md) |
 
 ### Error Behavior
 
