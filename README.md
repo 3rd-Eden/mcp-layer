@@ -37,7 +37,6 @@ MCP Layer is a collection of focused packages that help you discover server conf
 
 | Package | Purpose |
 | --- | --- |
-| [`mcpcli`](packages/mcpcli/README.md) | Installable standalone CLI executable package (`mcpcli` command). |
 | [`@mcp-layer/cli`](packages/cli/README.md) | Build CLI surfaces from MCP catalogs. |
 | [`@mcp-layer/openapi`](packages/openapi/README.md) | Generate OpenAPI 3.1 specs from extracted catalogs. |
 | [`@mcp-layer/rest`](packages/rest/README.md) | Expose MCP sessions through Fastify REST routes. |
@@ -117,12 +116,12 @@ A healthy run prints `3.1.0` and gives you a complete OpenAPI document from the 
 
 ## CLI quick try
 
-Install [`mcpcli`](packages/mcpcli/README.md) if you want the prebuilt command binaries, then run these commands to confirm discovery and command generation:
+If you already have an MCP config on disk, this is the quickest way to confirm discovery and command generation are working:
 
 ```sh
-mcpcli servers list
-mcpcli tools list --server <name>
-mcpcli tools <tool> --help
+mcp-layer servers list
+mcp-layer tools list --server <name>
+mcp-layer tools <tool> --help
 ```
 
 You should first see discovered server names, then tool inventory and command-level help for the chosen server.

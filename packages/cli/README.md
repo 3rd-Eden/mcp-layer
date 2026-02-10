@@ -1,11 +1,10 @@
 # @mcp-layer/cli
 
-`@mcp-layer/cli` is the API package for building MCP-aware command-line applications. It discovers a server from configuration, connects with the transport defined for that server (`stdio`, Streamable HTTP, or SSE), extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. You can also extend it with custom commands.
+`@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects with the transport defined for that server (`stdio`, Streamable HTTP, or SSE), extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. You can also extend it with custom commands.
 
 ## Table of Contents
 
 - [Install](#install)
-- [CLI executable package](#cli-executable-package)
 - [Quick start](#quick-start)
 - [Command surface](#command-surface)
 - [Input handling](#input-handling)
@@ -26,38 +25,21 @@
 pnpm add @mcp-layer/cli
 ```
 
-## CLI executable package
-
-Install [`mcpcli`](../mcpcli/README.md) when you want the shipped standalone CLI binary (`mcpcli`) without writing your own entrypoint:
-
-```sh
-pnpm add mcpcli
-```
-
 ## Quick start
 
-Use this package directly by creating a short executable wrapper:
-
-```js
-#!/usr/bin/env node
-import { cli } from '@mcp-layer/cli';
-
-await cli({ name: 'mcp-layer' }).render();
-```
-
-When `mcpcli` is installed, run the CLI against a configured MCP server:
+Run the CLI against a configured MCP server:
 
 ```sh
-mcpcli servers list
-mcpcli tools list
-mcpcli tools echo --text "hello"
+mcp-layer servers list
+mcp-layer tools list
+mcp-layer tools echo --text "hello"
 ```
 
 Run the same commands against a remote server by selecting a config entry that uses `url`/`endpoint`:
 
 ```sh
-mcpcli tools list --server remote
-mcpcli tools echo --server remote --text "hello"
+mcp-layer tools list --server remote
+mcp-layer tools echo --server remote --text "hello"
 ```
 
 ## Command surface
