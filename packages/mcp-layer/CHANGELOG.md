@@ -1,5 +1,12 @@
 # mcp-layer
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [3342b07]
+  - @mcp-layer/cli@2.0.0
+
 ## 0.2.0
 
 ### Minor Changes

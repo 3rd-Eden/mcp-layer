@@ -1,5 +1,15 @@
 # @mcp-layer/cli
 
+## 2.0.0
+
+### Major Changes
+
+- 3342b07: Split CLI distribution into dedicated packages.
+
+  `@mcp-layer/cli` is now API-only and no longer publishes the `mcp-layer` binary.
+
+  Use `mcpcli` for executable installs. It now ships the standalone `mcpcli` command backed by `@mcp-layer/cli`.
+
 ## 1.2.0
 
 ### Minor Changes
