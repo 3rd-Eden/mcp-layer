@@ -1,7 +1,7 @@
 {
   "name": "mcp-layer",
   "version": "0.2.0",
-  "description": "Aggregated MCP Layer entrypoint that re-exports workspace packages under one namespace.",
+  "description": "Build production-ready CLI, REST, GraphQL, and OpenAPI interfaces on top of any MCP server.",
   "repository": {
     "type": "git",
     "url": "https://github.com/3rd-Eden/mcp-layer"

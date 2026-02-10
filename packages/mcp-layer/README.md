@@ -1,8 +1,8 @@
 # mcp-layer
 
-`mcp-layer` is a standalone npm package that re-exports MCP Layer modules behind a single import path.
+`mcp-layer` is the npm entry point for MCP Layer, a toolkit for building production-ready interfaces on top of any MCP server.
 
-It is useful when you want one dependency and one import statement, while still accessing the full public APIs from the underlying `@mcp-layer/*` packages.
+Use it to discover MCP configs, connect sessions, normalize catalogs, and expose those capabilities through CLI, REST, GraphQL, and OpenAPI layers in one cohesive stack.
 
 ## Install
 
