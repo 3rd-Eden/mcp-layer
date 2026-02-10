@@ -57,6 +57,22 @@ This package does not introduce a custom runtime layer. Errors are raised by whi
 
 For structured runtime errors, refer to the package-level error sections in the linked namespace READMEs.
 
+<a id="error-58ed2a"></a>
+#### `findWorkspaceRoot`: Unable to locate workspace root from mcp-layer package.
+
+This error is raised when `mcp-layer` package generation runs in a directory tree that does not contain `pnpm-workspace.yaml`.
+
+Step-by-step resolution:
+1. Run generation from inside a checkout of the MCP Layer repository.
+2. Confirm `pnpm-workspace.yaml` exists at the repository root.
+3. Run `pnpm --filter mcp-layer prepack` from the repository root.
+
+<details>
+<summary>Debug example</summary>
+
+If you copy `packages/mcp-layer` into a standalone folder and run `node src/generate.js`, `findWorkspaceRoot` cannot locate the workspace marker and throws this error.
+</details>
+
 ## Standards and Portability
 
 MCP behavior follows the official MCP specification and official TypeScript SDK contracts:
