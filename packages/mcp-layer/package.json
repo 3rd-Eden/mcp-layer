@@ -1,0 +1,62 @@
+{
+  "name": "mcp-layer",
+  "version": "0.2.0",
+  "description": "Aggregated MCP Layer entrypoint that re-exports workspace packages under one namespace.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "keywords": [
+    "mcp",
+    "layer",
+    "mcp-layer",
+    "communication",
+    "cli",
+    "api",
+    "http",
+    "graphql",
+    "openapi",
+    "swagger",
+    "protocol",
+    "ui",
+    "rendering"
+  ],
+  "license": "MIT",
+  "author": "Arnout Kazemier",
+  "type": "module",
+  "scripts": {
+    "prepack": "node src/generate.js",
+    "test": "node --test ./test/**/*.js"
+  },
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/cli": "workspace:*",
+    "@mcp-layer/config": "workspace:*",
+    "@mcp-layer/connect": "workspace:*",
+    "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/gateway": "workspace:*",
+    "@mcp-layer/graphql": "workspace:*",
+    "@mcp-layer/manager": "workspace:*",
+    "@mcp-layer/openapi": "workspace:*",
+    "@mcp-layer/rest": "workspace:*",
+    "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/session": "workspace:*",
+    "@mcp-layer/test-server": "workspace:*"
+  }
+}

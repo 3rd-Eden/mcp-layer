@@ -74,6 +74,7 @@
     "@mcp-layer/attach": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/session": "workspace:*",
     "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/test-server": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.20.2",

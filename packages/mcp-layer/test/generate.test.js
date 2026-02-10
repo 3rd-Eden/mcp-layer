@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
-import { buildIndex, collectPackageMeta, readJson } from './generate.js';
+import { buildIndex, collectPackageMeta, findWorkspaceRoot, readJson } from '../src/generate.js';
 
 /**
  * Ensure the generated index.js matches the committed file.
  * @returns {Promise<void>}
  */
 async function matchesGeneratedOutput() {
-  const rootDir = process.cwd();
-  const outFile = path.join(rootDir, 'src', 'index.js');
+  const rootDir = await findWorkspaceRoot(process.cwd());
+  const pkgDir = path.join(rootDir, 'packages', 'mcp-layer');
+  const outFile = path.join(pkgDir, 'src', 'index.js');
   const expected = await buildIndex(rootDir);
   const actual = await readFile(outFile, 'utf8');
 
@@ -20,18 +21,19 @@ async function matchesGeneratedOutput() {
 test('mcp-layer index matches generator output', matchesGeneratedOutput);
 
 /**
- * Ensure root package.json dependencies include all workspace packages.
+ * Ensure mcp-layer package dependencies include all workspace packages.
  * @returns {Promise<void>}
  */
 async function matchesDependencies() {
-  const rootDir = process.cwd();
-  const pkgPath = path.join(rootDir, 'package.json');
-  const rootPkg = await readJson(pkgPath);
-  const deps = rootPkg.dependencies ?? {};
-  const meta = await collectPackageMeta(rootDir);
+  const rootDir = await findWorkspaceRoot(process.cwd());
+  const pkgPath = path.join(rootDir, 'packages', 'mcp-layer', 'package.json');
+  const pkg = await readJson(pkgPath);
+  const deps = pkg.dependencies ?? {};
+  const meta = await collectPackageMeta(rootDir, new Set(['mcp-layer']));
   const names = new Set();
 
   for (const item of meta) {
+    if (!item.name.startsWith('@mcp-layer/')) continue;
     names.add(item.name);
     assert.equal(
       deps[item.name],

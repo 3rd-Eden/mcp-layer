@@ -1,32 +1,9 @@
 {
-  "name": "mcp-layer",
-  "version": "0.2.1",
-  "description": "Layers of functionality that can be add to any MCP server. ",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/3rd-Eden/mcp-layer"
-  },
-  "keywords": [
-    "mcp",
-    "layer",
-    "mcp-layer",
-    "communication",
-    "cli",
-    "api",
-    "http",
-    "graphql",
-    "openapi",
-    "swagger",
-    "protocol",
-    "ui",
-    "rendering"
-  ],
-  "license": "MIT",
-  "author": "Arnout Kazemier",
+  "name": "mcp-layer-workspace",
+  "private": true,
   "packageManager": "pnpm@8.15.4",
   "type": "module",
   "scripts": {
-    "prepack": "node src/generate.js",
     "test": "node --test",
     "changeset": "changeset",
     "changeset:version": "changeset version",
@@ -34,29 +11,5 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.2"
-  },
-  "dependencies": {
-    "@mcp-layer/attach": "workspace:*",
-    "@mcp-layer/cli": "workspace:*",
-    "@mcp-layer/config": "workspace:*",
-    "@mcp-layer/connect": "workspace:*",
-    "@mcp-layer/error": "workspace:*",
-    "@mcp-layer/gateway": "workspace:*",
-    "@mcp-layer/graphql": "workspace:*",
-    "@mcp-layer/manager": "workspace:*",
-    "@mcp-layer/openapi": "workspace:*",
-    "@mcp-layer/rest": "workspace:*",
-    "@mcp-layer/schema": "workspace:*",
-    "@mcp-layer/session": "workspace:*",
-    "@mcp-layer/test-server": "workspace:*"
-  },
-  "main": "./src/index.js",
-  "files": [
-    "src",
-    "README.md",
-    "LICENSE"
-  ],
-  "exports": {
-    ".": "./src/index.js"
   }
 }

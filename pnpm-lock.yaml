@@ -7,46 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@mcp-layer/attach':
-        specifier: workspace:*
-        version: link:packages/attach
-      '@mcp-layer/cli':
-        specifier: workspace:*
-        version: link:packages/cli
-      '@mcp-layer/config':
-        specifier: workspace:*
-        version: link:packages/config
-      '@mcp-layer/connect':
-        specifier: workspace:*
-        version: link:packages/connect
-      '@mcp-layer/error':
-        specifier: workspace:*
-        version: link:packages/error
-      '@mcp-layer/gateway':
-        specifier: workspace:*
-        version: link:packages/gateway
-      '@mcp-layer/graphql':
-        specifier: workspace:*
-        version: link:packages/graphql
-      '@mcp-layer/manager':
-        specifier: workspace:*
-        version: link:packages/manager
-      '@mcp-layer/openapi':
-        specifier: workspace:*
-        version: link:packages/openapi
-      '@mcp-layer/rest':
-        specifier: workspace:*
-        version: link:packages/rest
-      '@mcp-layer/schema':
-        specifier: workspace:*
-        version: link:packages/schema
-      '@mcp-layer/session':
-        specifier: workspace:*
-        version: link:packages/session
-      '@mcp-layer/test-server':
-        specifier: workspace:*
-        version: link:packages/test-server
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.2
@@ -177,6 +137,9 @@ importers:
       '@mcp-layer/attach':
         specifier: workspace:*
         version: link:../attach
+      '@mcp-layer/manager':
+        specifier: workspace:*
+        version: link:../manager
       '@mcp-layer/test-server':
         specifier: workspace:*
         version: link:../test-server
@@ -243,6 +206,48 @@ importers:
         specifier: ^5.7.4
         version: 5.7.4
 
+  packages/mcp-layer:
+    dependencies:
+      '@mcp-layer/attach':
+        specifier: workspace:*
+        version: link:../attach
+      '@mcp-layer/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@mcp-layer/config':
+        specifier: workspace:*
+        version: link:../config
+      '@mcp-layer/connect':
+        specifier: workspace:*
+        version: link:../connect
+      '@mcp-layer/error':
+        specifier: workspace:*
+        version: link:../error
+      '@mcp-layer/gateway':
+        specifier: workspace:*
+        version: link:../gateway
+      '@mcp-layer/graphql':
+        specifier: workspace:*
+        version: link:../graphql
+      '@mcp-layer/manager':
+        specifier: workspace:*
+        version: link:../manager
+      '@mcp-layer/openapi':
+        specifier: workspace:*
+        version: link:../openapi
+      '@mcp-layer/rest':
+        specifier: workspace:*
+        version: link:../rest
+      '@mcp-layer/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@mcp-layer/session':
+        specifier: workspace:*
+        version: link:../session
+      '@mcp-layer/test-server':
+        specifier: workspace:*
+        version: link:../test-server
+
   packages/openapi:
     dependencies:
       '@mcp-layer/error':
@@ -252,9 +257,15 @@ importers:
         specifier: ^4.4.1
         version: 4.4.1
     devDependencies:
+      '@mcp-layer/attach':
+        specifier: workspace:*
+        version: link:../attach
       '@mcp-layer/schema':
         specifier: workspace:*
         version: link:../schema
+      '@mcp-layer/test-server':
+        specifier: workspace:*
+        version: link:../test-server
       '@modelcontextprotocol/sdk':
         specifier: ^1.20.2
         version: 1.20.2
@@ -295,6 +306,9 @@ importers:
       '@mcp-layer/schema':
         specifier: workspace:*
         version: link:../schema
+      '@mcp-layer/session':
+        specifier: workspace:*
+        version: link:../session
       '@mcp-layer/test-server':
         specifier: workspace:*
         version: link:../test-server

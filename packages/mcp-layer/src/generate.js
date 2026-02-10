@@ -1,6 +1,7 @@
 import { access, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * Convert a package folder name into a namespace export name.
@@ -55,8 +56,8 @@ export async function hasPackageJson(pkgPath) {
  * @param {string} rootDir - Repository root directory.
  * @returns {Promise<string>} Generated index.js content.
  */
-export async function buildIndex(rootDir) {
-  const meta = await collectPackageMeta(rootDir);
+export async function buildIndex(rootDir, selfName = 'mcp-layer') {
+  const meta = await collectPackageMeta(rootDir, new Set([selfName]));
   const lines = [];
 
   lines.push('/**');
@@ -84,15 +85,17 @@ export async function buildIndex(rootDir) {
 /**
  * Collect package metadata from workspace folders.
  * @param {string} rootDir - Repository root directory.
+ * @param {Set<string>} omit - Package names to skip.
  * @returns {Promise<Array<{name: string, dir: string}>>} Package metadata.
  */
-export async function collectPackageMeta(rootDir) {
+export async function collectPackageMeta(rootDir, omit = new Set()) {
   const packages = await collectPackages(rootDir);
   const meta = [];
 
   for (const dir of packages) {
     const pkgPath = path.join(rootDir, 'packages', dir, 'package.json');
     const data = await readJson(pkgPath);
+    if (omit.has(data.name)) continue;
     meta.push({ name: data.name, dir });
   }
 
@@ -100,18 +103,21 @@ export async function collectPackageMeta(rootDir) {
 }
 
 /**
- * Update root package.json dependencies to match workspace packages.
+ * Update mcp-layer package dependencies to match workspace packages.
+ * @param {string} pkgDir - mcp-layer package directory.
  * @param {string} rootDir - Repository root directory.
+ * @param {string} selfName - mcp-layer package name.
  * @returns {Promise<void>} Resolves when dependencies are updated.
  */
-export async function syncDependencies(rootDir) {
-  const pkgPath = path.join(rootDir, 'package.json');
+export async function syncDependencies(pkgDir, rootDir, selfName = 'mcp-layer') {
+  const pkgPath = path.join(pkgDir, 'package.json');
   const data = await readJson(pkgPath);
   const deps = { ...(data.dependencies ?? {}) };
-  const meta = await collectPackageMeta(rootDir);
+  const meta = await collectPackageMeta(rootDir, new Set([selfName]));
   const names = new Set();
 
   for (const item of meta) {
+    if (!item.name.startsWith('@mcp-layer/')) continue;
     names.add(item.name);
     deps[item.name] = 'workspace:*';
   }
@@ -130,8 +136,8 @@ export async function syncDependencies(rootDir) {
  * @param {string} outFile - Output file path.
  * @returns {Promise<void>} Resolves when the file is written or unchanged.
  */
-export async function writeIndex(rootDir, outFile) {
-  const next = await buildIndex(rootDir);
+export async function writeIndex(rootDir, outFile, selfName = 'mcp-layer') {
+  const next = await buildIndex(rootDir, selfName);
   const current = await readMaybe(outFile);
 
   if (current === next) return;
@@ -194,15 +200,42 @@ export function sortObject(input) {
 }
 
 /**
+ * Find the workspace root directory by locating pnpm-workspace.yaml.
+ * @param {string} start - Directory to start searching from.
+ * @returns {Promise<string>} Workspace root directory.
+ */
+export async function findWorkspaceRoot(start) {
+  let current = path.resolve(start);
+
+  while (true) {
+    const marker = path.join(current, 'pnpm-workspace.yaml');
+    if (await hasPackageJson(marker)) return current;
+
+    const parent = path.dirname(current);
+    if (parent === current)
+      throw new LayerError({
+        name: 'mcp-layer',
+        method: 'findWorkspaceRoot',
+        message: 'Unable to locate workspace root from mcp-layer package.',
+      });
+
+    current = parent;
+  }
+}
+
+/**
  * Run the generator when executed as a script.
  * @returns {Promise<void>} Resolves when generation completes.
  */
 export async function run() {
-  const rootDir = process.cwd();
-  const outFile = path.join(rootDir, 'src', 'index.js');
+  const fileDir = path.dirname(fileURLToPath(import.meta.url));
+  const pkgDir = path.resolve(fileDir, '..');
+  const rootDir = await findWorkspaceRoot(pkgDir);
+  const outFile = path.join(pkgDir, 'src', 'index.js');
+  const data = await readJson(path.join(pkgDir, 'package.json'));
 
-  await syncDependencies(rootDir);
-  await writeIndex(rootDir, outFile);
+  await syncDependencies(pkgDir, rootDir, data.name);
+  await writeIndex(rootDir, outFile, data.name);
 }
 
 const entry = fileURLToPath(import.meta.url);

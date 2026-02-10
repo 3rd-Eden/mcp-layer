@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@mcp-layer/attach": "workspace:*",
+    "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/test-server": "workspace:*",
     "fastify": "^5.7.4"
   }
