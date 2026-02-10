@@ -29,6 +29,7 @@ jobs:
         id: pr
         uses: actions/github-script@v7
         with:
+          result-encoding: string
           script: |
             function hasVersionTitle(pull) {
               return typeof pull.title === 'string' && pull.title.startsWith('Version Packages');
@@ -46,7 +47,7 @@ jobs:
               for (const pull of response.data) {
                 if (hasVersionTitle(pull)) {
                   core.info(`Found version PR #${pull.number}.`);
-                  return pull.number;
+                  return String(pull.number);
                 }
               }
               core.info('No open "Version Packages" PR found.');
@@ -70,9 +71,18 @@ jobs:
 
           async function listPackages(root) {
             const items = [];
+
+            function include(data) {
+              if (typeof data?.name !== 'string')
+                return false;
+              if (data?.private === true)
+                return false;
+              return true;
+            }
+
             const rootFile = join(root, 'package.json');
             const rootData = await readJson(rootFile);
-            if (typeof rootData.name === 'string') {
+            if (include(rootData)) {
               items.push(rootData.name);
             }
             const base = join(root, 'packages');
@@ -91,7 +101,7 @@ jobs:
                 continue;
               }
               const data = await readJson(file);
-              if (typeof data.name === 'string') {
+              if (include(data)) {
                 items.push(data.name);
               }
             }
