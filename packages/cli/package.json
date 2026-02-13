@@ -40,13 +40,16 @@
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/guardrails": "workspace:*",
+    "@mcp-layer/plugin": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
+    "@mcp-layer/stateful": "workspace:*",
     "@socketregistry/yocto-spinner": "^1.0.21",
     "argh": "^1.0.0",
     "cli-table3": "^0.6.5",
     "marked": "^15.0.0",
     "marked-terminal": "^7.3.0",
-    "terminal-image": "^3.1.1"
+    "terminal-image": "^4.2.0"
   },
   "devDependencies": {
     "@mcp-layer/test-server": "workspace:*"

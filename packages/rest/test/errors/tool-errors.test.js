@@ -44,6 +44,28 @@ function toolErrorSuite() {
       await closeTestApp(app);
     }
   });
+
+  it('returns a policy response when guardrails deny a tool', async function guardrailCase() {
+    const app = await createTestApp({}, {
+      guardrails: {
+        denyTools: ['echo']
+      }
+    });
+
+    try {
+      const res = await app.fastify.inject({
+        method: 'POST',
+        url: '/v0/echo',
+        payload: { text: 'blocked' }
+      });
+
+      assert.equal(res.statusCode, 403);
+      const body = res.json();
+      assert.equal(body.code, 'GUARDRAIL_DENIED');
+    } finally {
+      await closeTestApp(app);
+    }
+  });
 }
 
 describe('tool errors vs protocol errors', toolErrorSuite);

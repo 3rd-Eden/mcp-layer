@@ -42,9 +42,9 @@
   },
   "dependencies": {
     "@mcp-layer/error": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.20.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "argh": "^1.0.0",
-    "express": "^5.0.1",
+    "express": "^5.2.1",
     "zod": "^3.25.76"
   }
 }

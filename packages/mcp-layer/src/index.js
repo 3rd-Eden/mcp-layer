@@ -47,6 +47,12 @@ export * as gateway from '@mcp-layer/gateway';
 export * as graphql from '@mcp-layer/graphql';
 
 /**
+ * Package namespace from `@mcp-layer/guardrails`.
+ * @type {typeof import('@mcp-layer/guardrails')}
+ */
+export * as guardrails from '@mcp-layer/guardrails';
+
+/**
  * Package namespace from `@mcp-layer/manager`.
  * @type {typeof import('@mcp-layer/manager')}
  */
@@ -57,6 +63,12 @@ export * as manager from '@mcp-layer/manager';
  * @type {typeof import('@mcp-layer/openapi')}
  */
 export * as openapi from '@mcp-layer/openapi';
+
+/**
+ * Package namespace from `@mcp-layer/plugin`.
+ * @type {typeof import('@mcp-layer/plugin')}
+ */
+export * as plugin from '@mcp-layer/plugin';
 
 /**
  * Package namespace from `@mcp-layer/rest`.
@@ -75,6 +87,12 @@ export * as schema from '@mcp-layer/schema';
  * @type {typeof import('@mcp-layer/session')}
  */
 export * as session from '@mcp-layer/session';
+
+/**
+ * Package namespace from `@mcp-layer/stateful`.
+ * @type {typeof import('@mcp-layer/stateful')}
+ */
+export * as stateful from '@mcp-layer/stateful';
 
 /**
  * Package namespace from `@mcp-layer/test-server`.
