@@ -1,4 +1,3 @@
-import { executeWithBreaker } from '../resilience/breaker.js';
 import { createValidationErrorResponse } from '../errors/mapping.js';
 import { createCallContext, mapMcpError } from './common.js';
 
@@ -7,6 +6,7 @@ import { createCallContext, mapMcpError } from './common.js';
  *
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
+ * @param {(request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>} execute - Runtime execution function.
  * @param {string} name - Prompt name.
  * @param {import('../validation/validator.js').SchemaValidator} validator - Schema validator.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
@@ -14,7 +14,7 @@ import { createCallContext, mapMcpError } from './common.js';
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function prompt(resolve, name, validator, telemetry, normalize, errors) {
+export function prompt(resolve, execute, name, validator, telemetry, normalize, errors) {
   /**
    * Handle prompt requests.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
@@ -29,7 +29,6 @@ export function prompt(resolve, name, validator, telemetry, normalize, errors) {
     try {
       const resolved = await resolve(request);
       const session = resolved.session;
-      const breaker = resolved.breaker;
 
       ctx = createCallContext({
         telemetry,
@@ -51,10 +50,17 @@ export function prompt(resolve, name, validator, telemetry, normalize, errors) {
         return;
       }
 
-      const result = await executeWithBreaker(breaker, session, 'prompts/get', {
-        name,
-        arguments: request.body
-      });
+      const result = await execute(
+        request,
+        'prompts/get',
+        { name, arguments: request.body },
+        {
+          surface: 'prompts',
+          promptName: name,
+          sessionId: session.name
+        },
+        resolved
+      );
 
       ctx.recordSuccess();
 

@@ -56,6 +56,13 @@ mcp-layer resources list
 mcp-layer resources <uri>
 mcp-layer templates list
 mcp-layer templates <template>
+mcp-layer session list
+mcp-layer session stop --name <id>
+mcp-layer session stop --all
+mcp-layer session [--name <id>] tools <tool>
+mcp-layer session [--name <id>] prompts <prompt>
+mcp-layer session [--name <id>] resources <uri>
+mcp-layer session [--name <id>] templates <template>
 ```
 
 Shorthand form:
@@ -68,6 +75,14 @@ mcp-layer tools:echo --text "hello"
 mcp-layer prompts:kickoff --json '{"topic":"launch"}'
 ```
 </details>
+
+Stateful session mode (`session ...`) reuses one long-lived MCP connection and tracks session metadata in `~/.mcp-layer/sessions`. When `--name` is omitted, an id is generated and printed to stderr so the session can be resumed later.
+
+`session stop` semantics are explicit:
+
+- `mcp-layer session stop --name <id>` stops one session.
+- `mcp-layer session stop --all` stops all active sessions.
+- Bare `mcp-layer session stop` succeeds only when exactly one active session exists; otherwise it fails with an ambiguity error and guidance.
 
 ## Input handling
 
@@ -282,6 +297,8 @@ Options:
 - `server`: default server name.
 - `config`: default config path.
 - `showServers`: show or hide the Servers section in help output.
+- `plugins`: additional pipeline plugins executed in transport/schema/operation phases.
+- `guardrails`: guardrail profile/options passed to `@mcp-layer/guardrails` (defaults to `{ profile: 'strict' }`).
 
 ### `cli().command(options, handler)`
 
@@ -301,6 +318,8 @@ Executes the CLI. If `argv` is omitted, it uses `process.argv`.
 - `--server <name>`: select a configured server.
 - `--config <path>`: point at a config file or directory.
 - `--transport <mode>`: override transport at runtime (`stdio`, `streamable-http`, or `sse`).
+- `--name <id>`: stateful session id for `session` commands.
+- `--all`: stop all active stateful sessions for `session stop`.
 - `--format <json>`: use JSON for list output.
 - `--json <string>`: supply inline JSON input.
 - `--input <path>`: supply JSON input from a file.
@@ -366,6 +385,75 @@ Step-by-step resolution:
 ```sh
 # Wrong: tool list
 mcp-layer tools list
+```
+
+</details>
+
+<a id="error-64f4e2"></a>
+### session stop is ambiguous with {count} active sessions. Use --name <id> or --all.
+
+Thrown from: `cli.render`
+
+This happens when `session stop` is called without `--name` or `--all` and the local tracker has zero or multiple active sessions.
+
+Step-by-step resolution:
+1. Run `mcp-layer session list --format json` to inspect active sessions.
+2. Use `mcp-layer session stop --name <id>` to stop one specific session.
+3. Use `mcp-layer session stop --all` when intended.
+4. For automation, avoid bare `session stop` and always pass intent explicitly.
+
+<details>
+<summary>Fix Example: explicit stop intent</summary>
+
+```sh
+mcp-layer session stop --name alpha
+mcp-layer session stop --all
+```
+
+</details>
+
+<a id="error-59a3b4"></a>
+### Unknown session command.
+
+Thrown from: `cli.render`
+
+This happens when the token after `session` does not match `list`, `stop`, or a valid surface command (`tools`, `prompts`, `resources`, `templates`).
+
+Step-by-step resolution:
+1. Run `mcp-layer session --help` and use one of the listed command forms.
+2. Check for misspelling in the command after `session`.
+3. Keep the supported shape: `session [--name <id>] <surface> ...`.
+4. Retry with a valid subcommand.
+
+<details>
+<summary>Fix Example: valid session commands</summary>
+
+```sh
+mcp-layer session list
+mcp-layer session tools echo --text "hello"
+```
+
+</details>
+
+<a id="error-d8702e"></a>
+### Unknown session target "{target}".
+
+Thrown from: `cli.render`
+
+This happens when a session surface command references a tool/prompt/resource/template that is not in the active session catalog.
+
+Step-by-step resolution:
+1. Run the matching list command in the same session context.
+2. Copy the target name/URI exactly from list output.
+3. Confirm you are using the intended session id and server.
+4. Retry with the exact target.
+
+<details>
+<summary>Fix Example: list then execute in session mode</summary>
+
+```sh
+mcp-layer session --name alpha tools list
+mcp-layer session --name alpha tools echo --text "hello"
 ```
 
 </details>

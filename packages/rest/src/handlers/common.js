@@ -1,4 +1,4 @@
-import { createCallContext } from '@mcp-layer/gateway';
+import { createCallContext, policy } from '@mcp-layer/gateway';
 import { createAuthResponse, createCircuitOpenResponse, createMcpErrorResponse } from '../errors/mapping.js';
 
 export { createCallContext };
@@ -12,6 +12,21 @@ export { createCallContext };
  * @returns {{ status: number, body: Record<string, unknown> }}
  */
 export function mapMcpError(error, instance, requestId, options) {
+  const mapped = policy(error.code);
+  if (mapped) {
+    const body = {
+      type: 'https://github.com/3rd-Eden/mcp-layer/tree/main/packages/rest#error-policy',
+      title: mapped.httpTitle,
+      status: mapped.httpStatus,
+      detail: options?.exposeDetails ? error.message : 'Request denied by runtime policy.',
+      instance,
+      code: error.code
+    };
+
+    if (requestId) body.requestId = requestId;
+    return { status: mapped.httpStatus, body };
+  }
+
   if (error.code === 'CIRCUIT_OPEN') {
     const response = createCircuitOpenResponse(instance, error.sessionName, requestId);
     return { status: response.status, body: response };

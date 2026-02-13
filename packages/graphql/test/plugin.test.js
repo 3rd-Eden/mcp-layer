@@ -138,6 +138,28 @@ function suite() {
     assert.equal(response.body.errors[0].extensions.code, 'TOOL_ERROR');
   });
 
+  it('maps guardrail denials to GraphQL policy errors', async function guardrail() {
+    const svc = server();
+    const active = await session(svc, 'gql');
+    const fastify = await app(active, {
+      guardrails: {
+        denyTools: ['echo']
+      }
+    });
+
+    const response = await graphql(
+      fastify,
+      '/v0/graphql',
+      'mutation ($input: JSON) { callTool(name: "echo", input: $input) { isError } }',
+      { input: { text: 'blocked', loud: false } }
+    );
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.data, null);
+    assert.equal(response.body.errors[0].extensions.code, 'FORBIDDEN');
+    assert.equal(response.body.errors[0].extensions.policyCode, 'GUARDRAIL_DENIED');
+  });
+
   it('supports manager auth flows like REST', async function manager() {
     const svc = server();
     const bootstrap = await session(svc, 'bootstrap');

@@ -8,7 +8,7 @@ const pkg = read('../package.json');
 
 /**
  * Default CLI configuration.
- * @returns {{ name: string, version: string, description: string, colors: boolean, accent: string, subtle: string, spinner: boolean, markdown: boolean, ansi: boolean, server: string | undefined, config: string | undefined, showServers: boolean | undefined }}
+ * @returns {{ name: string, version: string, description: string, colors: boolean, accent: string, subtle: string, spinner: boolean, markdown: boolean, ansi: boolean, server: string | undefined, config: string | undefined, showServers: boolean | undefined, plugins: Array<Record<string, unknown>>, guardrails: Record<string, unknown> }}
  */
 export function defaults() {
   return {
@@ -23,7 +23,11 @@ export function defaults() {
     ansi: false,
     server: undefined,
     config: undefined,
-    showServers: true
+    showServers: true,
+    plugins: [],
+    guardrails: {
+      profile: 'strict'
+    }
   };
 }
 

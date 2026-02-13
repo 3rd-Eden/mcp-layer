@@ -30,6 +30,9 @@ MCP Layer is a collection of focused packages that help you discover server conf
 | [`@mcp-layer/connect`](packages/connect/README.md) | Connect to stdio, Streamable HTTP, or SSE MCP servers. |
 | [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP SDK servers. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract and normalize tool/resource/prompt/template catalogs. |
+| [`@mcp-layer/plugin`](packages/plugin/README.md) | Shared plugin pipeline for transport, schema, and operation phases. |
+| [`@mcp-layer/guardrails`](packages/guardrails/README.md) | First-party guardrail plugins for deny/allow, redaction, egress, approval, and rate policies. |
+| [`@mcp-layer/stateful`](packages/stateful/README.md) | Persistent session lifecycle manager with `~/.mcp-layer/sessions` tracking. |
 | [`@mcp-layer/gateway`](packages/gateway/README.md) | Shared adapter runtime primitives for validation, resilience, telemetry, and mapping. |
 | [`@mcp-layer/test-server`](packages/test-server/README.md) | Feature-complete MCP server for integration testing and local exploration. |
 
@@ -47,6 +50,41 @@ MCP Layer is a collection of focused packages that help you discover server conf
 | Package | Purpose |
 | --- | --- |
 | [`mcp-layer`](packages/mcp-layer/README.md) | Re-export workspace packages as a single namespace import. |
+
+## Architecture overview
+
+This diagram shows the intended execution path and extension points across surfaces.
+
+```mermaid
+flowchart LR
+  A["@mcp-layer/config"] --> B["@mcp-layer/connect / @mcp-layer/attach"]
+  B --> C["@mcp-layer/session"]
+  C --> D["@mcp-layer/schema"]
+  D --> E["@mcp-layer/gateway runtime"]
+  E --> F["@mcp-layer/plugin pipeline"]
+  F --> G["@mcp-layer/guardrails"]
+  E --> H["@mcp-layer/cli"]
+  E --> I["@mcp-layer/rest"]
+  E --> J["@mcp-layer/graphql"]
+  H --> K["@mcp-layer/stateful (optional for CLI continuity)"]
+```
+
+### Policy parity across surfaces
+
+- CLI, REST, and GraphQL use the same plugin/guardrail model.
+- Gateway-backed surfaces default to strict guardrails; CLI defaults are aligned to strict as well.
+- For equivalent operation input, expected allow/deny behavior should match across surfaces; only error envelope shape differs (CLI exit/error text vs REST Problem Details vs GraphQL extensions).
+
+## Choose an entrypoint
+
+| Goal | Start here | Add next |
+| --- | --- | --- |
+| Connect to one MCP server and call methods | `@mcp-layer/connect` | `@mcp-layer/schema` |
+| Build terminal workflows | `@mcp-layer/cli` | `@mcp-layer/stateful` for resumable sessions |
+| Expose REST API | `@mcp-layer/rest` | `@mcp-layer/manager` for per-request identity |
+| Expose GraphQL API | `@mcp-layer/graphql` | `@mcp-layer/manager` for per-request identity |
+| Apply custom policy/middleware | `@mcp-layer/plugin` | `@mcp-layer/guardrails` |
+| Import everything from one namespace | `mcp-layer` | package-specific imports for fine-grained control |
 
 ## Quick start
 
@@ -140,12 +178,15 @@ import {
   connect,
   error,
   gateway,
+  guardrails,
   graphql,
   manager,
   openapi,
+  plugin,
   rest,
   schema,
   session,
+  stateful,
   testServer
 } from 'mcp-layer';
 ```
@@ -162,12 +203,15 @@ Each namespace value is the module namespace of its underlying package (`typeof 
 | `connect` | `typeof import('@mcp-layer/connect')` | [`packages/connect/README.md`](packages/connect/README.md) |
 | `error` | `typeof import('@mcp-layer/error')` | [`packages/error/README.md`](packages/error/README.md) |
 | `gateway` | `typeof import('@mcp-layer/gateway')` | [`packages/gateway/README.md`](packages/gateway/README.md) |
+| `guardrails` | `typeof import('@mcp-layer/guardrails')` | [`packages/guardrails/README.md`](packages/guardrails/README.md) |
 | `graphql` | `typeof import('@mcp-layer/graphql')` | [`packages/graphql/README.md`](packages/graphql/README.md) |
 | `manager` | `typeof import('@mcp-layer/manager')` | [`packages/manager/README.md`](packages/manager/README.md) |
 | `openapi` | `typeof import('@mcp-layer/openapi')` | [`packages/openapi/README.md`](packages/openapi/README.md) |
+| `plugin` | `typeof import('@mcp-layer/plugin')` | [`packages/plugin/README.md`](packages/plugin/README.md) |
 | `rest` | `typeof import('@mcp-layer/rest')` | [`packages/rest/README.md`](packages/rest/README.md) |
 | `schema` | `typeof import('@mcp-layer/schema')` | [`packages/schema/README.md`](packages/schema/README.md) |
 | `session` | `typeof import('@mcp-layer/session')` | [`packages/session/README.md`](packages/session/README.md) |
+| `stateful` | `typeof import('@mcp-layer/stateful')` | [`packages/stateful/README.md`](packages/stateful/README.md) |
 | `testServer` | `typeof import('@mcp-layer/test-server')` | [`packages/test-server/README.md`](packages/test-server/README.md) |
 
 ### Error behavior
@@ -195,9 +239,14 @@ For host-tool config schema references (Claude, Cursor, Codex, VS Code, Cline, a
 ```sh
 pnpm install
 pnpm test
+pnpm verify
+pnpm lint
+pnpm typecheck
+pnpm security:deps
+pnpm release:check
 ```
 
-These commands install workspace dependencies and run all package test suites from the repository root.
+These commands install workspace dependencies, run root-level tests, run package-level verification, execute workspace lint/type checks when present, audit high-severity production dependency issues, and run release-readiness checks.
 
 When iterating on a single area, run package-scoped commands:
 
@@ -219,7 +268,10 @@ The aggregate package prepack behavior is maintained in [`packages/mcp-layer`](p
 
 ## Repository guidelines
 
-Contributor standards and required workflows are documented in [`AGENTS.md`](AGENTS.md).
+Contributor standards and required workflows are documented in:
+
+- [`AGENTS.md`](AGENTS.md) for coding, testing, and standards constraints.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) for PR/doc quality gates and verification checklist.
 
 ## License
 

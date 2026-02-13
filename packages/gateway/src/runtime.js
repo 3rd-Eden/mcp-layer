@@ -1,4 +1,6 @@
 import { extract } from '@mcp-layer/schema';
+import { createGuardrails } from '@mcp-layer/guardrails';
+import { createPipeline, runPipeline, runSchema, runTransport } from '@mcp-layer/plugin';
 import { createValidator } from './validation/validator.js';
 import { createCircuitBreaker, executeWithBreaker } from './resilience/breaker.js';
 import { deriveApiVersion, resolvePrefix } from './version.js';
@@ -12,6 +14,16 @@ import { validateRuntimeOptions } from './config/validate.js';
  */
 function list(session) {
   return Array.isArray(session) ? session : [session];
+}
+
+/**
+ * Normalize a value into a plain object.
+ * @param {unknown} value - Value to normalize.
+ * @returns {Record<string, unknown>}
+ */
+function record(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return /** @type {Record<string, unknown>} */ (value);
 }
 
 /**
@@ -86,13 +98,19 @@ async function resolveSession(bootstrap, config, breakers, telemetry, request) {
  * Create shared runtime contexts for MCP adapters.
  * @param {Record<string, unknown>} opts - Runtime options.
  * @param {{ name?: string, serviceName?: string }} [meta] - Runtime metadata.
- * @returns {Promise<{ config: ReturnType<typeof validateRuntimeOptions>, contexts: Array<{ session: import('@mcp-layer/session').Session, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, version: string, prefix: string, validator: import('./validation/validator.js').SchemaValidator, telemetry: ReturnType<typeof createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }>, breakers: Map<string, import('opossum')>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown, close: () => Promise<void> }>}
+ * @returns {Promise<{ config: ReturnType<typeof validateRuntimeOptions>, contexts: Array<{ session: import('@mcp-layer/session').Session, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, version: string, prefix: string, validator: import('./validation/validator.js').SchemaValidator, telemetry: ReturnType<typeof createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }>, breakers: Map<string, import('opossum')>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown, close: () => Promise<void> }>}
  */
 export async function createRuntime(opts, meta = {}) {
   const config = validateRuntimeOptions(opts, meta);
   const sessions = config.manager ? [config.session] : list(config.session);
   const breakers = new Map();
   const contexts = [];
+  const builtin = createGuardrails(config.guardrails);
+  const custom = Array.isArray(config.plugins) ? config.plugins : [];
+  const pipeline = createPipeline({
+    plugins: [...builtin, ...custom],
+    trace: config.pipeline?.trace
+  });
 
   /**
    * Normalize adapter errors using configured mapper.
@@ -115,7 +133,16 @@ export async function createRuntime(opts, meta = {}) {
   }
 
   for (const session of sessions) {
-    const catalog = await extract(session);
+    const extracted = await extract(session);
+    const shaped = await runSchema(pipeline, {
+      surface: 'schema',
+      method: 'schema/extract',
+      sessionId: session.name,
+      serverName: session.name,
+      catalog: extracted,
+      meta: {}
+    });
+    const catalog = record(shaped.catalog);
     const info = catalog.server?.info;
     const version = deriveApiVersion(info);
     const prefix = resolvePrefix(config.prefix, version, info, session.name);
@@ -138,11 +165,41 @@ export async function createRuntime(opts, meta = {}) {
      * @param {import('fastify').FastifyRequest} request - Incoming request.
      * @param {string} method - MCP method.
      * @param {Record<string, unknown>} params - MCP params.
+     * @param {Record<string, unknown>} [meta] - Runtime metadata for pipeline hooks.
+     * @param {{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }} [resolved] - Optional pre-resolved session context.
      * @returns {Promise<Record<string, unknown>>}
      */
-    async function execute(request, method, params) {
-      const resolved = await resolve(request);
-      return executeWithBreaker(resolved.breaker, resolved.session, method, params);
+    async function execute(request, method, params, meta = {}, resolved) {
+      const selected = resolved
+        && typeof resolved === 'object'
+        && resolved.session
+        ? resolved
+        : await resolve(request);
+      const transport = await runTransport(pipeline, {
+        surface: String(method.split('/')[0] ?? 'unknown'),
+        method,
+        params: record(params),
+        sessionId: selected.session.name,
+        serverName: selected.session.name,
+        session: selected.session,
+        breaker: selected.breaker,
+        meta: record(meta)
+      });
+
+      const state = await runPipeline(pipeline, transport, async function invoke(run) {
+        const targetSession = run.session && typeof run.session === 'object'
+          ? run.session
+          : selected.session;
+        const targetBreaker = Object.hasOwn(run, 'breaker')
+          ? /** @type {import('opossum') | null} */ (run.breaker)
+          : selected.breaker;
+        const targetMethod = typeof run.method === 'string' ? run.method : method;
+        const targetParams = record(run.params);
+
+        return executeWithBreaker(targetBreaker, targetSession, targetMethod, targetParams);
+      });
+
+      return /** @type {Record<string, unknown>} */ (state.result);
     }
 
     /**

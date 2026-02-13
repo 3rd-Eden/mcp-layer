@@ -52,11 +52,14 @@
     "@mcp-layer/error": "workspace:*",
     "@mcp-layer/gateway": "workspace:*",
     "@mcp-layer/graphql": "workspace:*",
+    "@mcp-layer/guardrails": "workspace:*",
     "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/openapi": "workspace:*",
+    "@mcp-layer/plugin": "workspace:*",
     "@mcp-layer/rest": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
     "@mcp-layer/session": "workspace:*",
+    "@mcp-layer/stateful": "workspace:*",
     "@mcp-layer/test-server": "workspace:*"
   }
 }

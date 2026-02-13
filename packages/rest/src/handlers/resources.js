@@ -1,4 +1,3 @@
-import { executeWithBreaker } from '../resilience/breaker.js';
 import { createCallContext, mapMcpError } from './common.js';
 import { createValidationErrorResponse } from '../errors/mapping.js';
 import { createRequire } from 'node:module';
@@ -11,13 +10,14 @@ const templateLib = require('uri-template');
  *
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolveSession - Session resolver.
+ * @param {(request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>} execute - Runtime execution function.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @param {(request: import('fastify').FastifyRequest) => { uri?: string, errors?: Array<{ path: string, keyword?: string, message?: string }> }} resolveUri - URI resolver.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-function read(resolveSession, telemetry, normalize, errors, resolveUri) {
+function read(resolveSession, execute, telemetry, normalize, errors, resolveUri) {
   /**
    * Handle a resource read request.
    * @param {import('fastify').FastifyRequest} request - Fastify request.
@@ -47,7 +47,6 @@ function read(resolveSession, telemetry, normalize, errors, resolveUri) {
     try {
       const resolvedSession = await resolveSession(request);
       const session = resolvedSession.session;
-      const breaker = resolvedSession.breaker;
 
       ctx = createCallContext({
         telemetry,
@@ -60,7 +59,17 @@ function read(resolveSession, telemetry, normalize, errors, resolveUri) {
         labels: { resource: uri, session: session.name }
       });
 
-      const result = await executeWithBreaker(breaker, session, 'resources/read', { uri });
+      const result = await execute(
+        request,
+        'resources/read',
+        { uri },
+        {
+          surface: 'resources',
+          resourceUri: uri,
+          sessionId: session.name
+        },
+        resolvedSession
+      );
 
       ctx.recordSuccess();
 
@@ -98,13 +107,14 @@ function read(resolveSession, telemetry, normalize, errors, resolveUri) {
  *
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
+ * @param {(request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>} execute - Runtime execution function.
  * @param {string} uri - Resource URI.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
  * @param {(error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown} normalize - Error normalization helper.
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function resource(resolve, uri, telemetry, normalize, errors) {
+export function resource(resolve, execute, uri, telemetry, normalize, errors) {
   /**
    * Resolve a fixed resource URI.
    * @param {import('fastify').FastifyRequest} _request - Fastify request.
@@ -114,7 +124,7 @@ export function resource(resolve, uri, telemetry, normalize, errors) {
     return { uri };
   }
 
-  return read(resolve, telemetry, normalize, errors, fixed);
+  return read(resolve, execute, telemetry, normalize, errors, fixed);
 }
 
 /**
@@ -123,6 +133,7 @@ export function resource(resolve, uri, telemetry, normalize, errors) {
  * before issuing a resource read.
  *
  * @param {(request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>} resolve - Session resolver.
+ * @param {(request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>} execute - Runtime execution function.
  * @param {string} template - Resource URI template.
  * @param {{ maxTemplateParamLength: number }} validation - Validation limits.
  * @param {ReturnType<import('../telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
@@ -130,7 +141,7 @@ export function resource(resolve, uri, telemetry, normalize, errors) {
  * @param {{ exposeDetails: boolean }} errors - Error exposure configuration.
  * @returns {import('fastify').RouteHandlerMethod}
  */
-export function template(resolve, template, validation, telemetry, normalize, errors) {
+export function template(resolve, execute, template, validation, telemetry, normalize, errors) {
   const parsed = templateLib.parse(template);
 
   /**
@@ -183,5 +194,5 @@ export function template(resolve, template, validation, telemetry, normalize, er
     return { uri: expand(params) };
   }
 
-  return read(resolve, telemetry, normalize, errors, route);
+  return read(resolve, execute, telemetry, normalize, errors, route);
 }
