@@ -1,5 +1,11 @@
 # @mcp-layer/connect
 
+## 1.1.1
+
+### Patch Changes
+
+- 842299b: Fix stdio environment propagation so spawned servers inherit the caller shell environment (`process.env`) before applying `config.env` and runtime `options.env` overrides.
+
 ## 1.1.0
 
 ### Minor Changes
