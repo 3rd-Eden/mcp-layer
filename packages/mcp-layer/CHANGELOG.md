@@ -1,5 +1,15 @@
 # mcp-layer
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [842299b]
+  - @mcp-layer/connect@1.1.1
+  - @mcp-layer/cli@1.2.1
+  - @mcp-layer/rest@1.2.1
+  - @mcp-layer/schema@1.0.2
+
 ## 0.2.0
 
 ### Minor Changes

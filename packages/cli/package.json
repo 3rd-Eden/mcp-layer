@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "CLI framework for interacting with MCP servers using discovered schemas.",
   "repository": {
     "type": "git",
