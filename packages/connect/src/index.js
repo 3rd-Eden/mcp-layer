@@ -61,8 +61,9 @@ export function setup(item, opts = {}) {
   // We pick config directory as default working directory so relative paths stay aligned with user expectations.
   const cwd = opts.cwd ?? (cfg.cwd ? path.resolve(dir, String(cfg.cwd)) : dir);
 
-  // We merge caller env with config env to honour explicit overrides while preserving defaults.
+  // We inherit process env by default, then apply config and runtime overrides in order.
   const env = {
+    ...process.env,
     ...(cfg.env && typeof cfg.env === 'object' ? cfg.env : {}),
     ...(opts.env ?? {}),
     MCP_CLIENT_AGENT: `${base.name}/${base.version}`

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { load } from '@mcp-layer/config';
-import { connect, Session } from '../src/index.js';
+import { connect, Session, setup } from '../src/index.js';
 import { startHttpServer } from '@mcp-layer/test-server/http';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
@@ -78,6 +78,48 @@ async function httpconfig(dir, url) {
 }
 
 describe('connect', function connectSuite() {
+  describe('setup', function setupSuite() {
+    it('inherits process env values and keeps override precedence', function setupEnvCase() {
+      const key = 'MCP_LAYER_CONNECT_SETUP_ENV';
+      const passthrough = 'MCP_LAYER_CONNECT_SETUP_PROCESS_ONLY';
+      const prev = process.env[key];
+      const prevPassthrough = process.env[passthrough];
+      process.env[key] = 'from-process';
+      process.env[passthrough] = 'process-only';
+
+      try {
+        const entry = {
+          name: 'demo',
+          source: '/tmp/mcp.json',
+          config: {
+            command: process.execPath,
+            env: {
+              [key]: 'from-config',
+              FROM_CONFIG: '1'
+            }
+          }
+        };
+
+        const out = setup(entry, {
+          env: {
+            [key]: 'from-opts',
+            FROM_OPTS: '1'
+          }
+        });
+
+        assert.equal(out.env[key], 'from-opts');
+        assert.equal(out.env.FROM_CONFIG, '1');
+        assert.equal(out.env.FROM_OPTS, '1');
+        assert.equal(out.env[passthrough], 'process-only');
+      } finally {
+        if (prev === undefined) delete process.env[key];
+        else process.env[key] = prev;
+        if (prevPassthrough === undefined) delete process.env[passthrough];
+        else process.env[passthrough] = prevPassthrough;
+      }
+    });
+  });
+
   describe('connect', function connectMethodSuite() {
     it('spawns stdio server and completes handshake', async function connectHandshakeCase(t) {
       const dir = await tempdir();

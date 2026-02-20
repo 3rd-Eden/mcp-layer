@@ -143,6 +143,7 @@ Method:
 ## Behavior details
 
 - Stdio defaults `cwd` to the config file directory.
+- Stdio env is merged in this order: `process.env` -> entry `config.env` -> `options.env` -> enforced `MCP_CLIENT_AGENT`.
 - `opts.env` overrides entry `env` values.
 - URL-based entries default to Streamable HTTP unless `options.transport` is explicitly `sse`.
 - Invalid transport and URL values fail fast with `LayerError`.
