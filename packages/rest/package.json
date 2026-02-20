@@ -77,7 +77,7 @@
     "@mcp-layer/session": "workspace:*",
     "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/test-server": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.20.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@opentelemetry/api": "^1.9.0",
     "autocannon": "^7.13.0",
     "fastify": "^5.7.4",

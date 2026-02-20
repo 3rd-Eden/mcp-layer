@@ -2,6 +2,8 @@
 
 `@mcp-layer/gateway` provides shared runtime primitives for MCP adapter packages. It centralizes catalog bootstrap, request-scoped session resolution, schema validation, breaker-backed execution, telemetry helpers, and deterministic item mapping so adapter packages (for example REST and GraphQL) stay thin.
 
+It also applies the shared plugin pipeline (`@mcp-layer/plugin`) and first-party guardrails (`@mcp-layer/guardrails`) so adapter surfaces evaluate the same runtime policies.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -108,6 +110,18 @@ createRuntime(
     errors?: {
       exposeDetails?: boolean;
     };
+    plugins?: Array<Record<string, unknown>>;
+    guardrails?: Record<string, unknown>;
+    pipeline?: {
+      trace?: {
+        enabled?: boolean;
+        collect?: boolean;
+        sink?: (event: Record<string, unknown>) => void;
+      };
+    };
+    policy?: {
+      lock?: boolean;
+    };
     normalizeError?: (error, instance, requestId, options) => unknown;
   },
   meta?: {
@@ -125,7 +139,7 @@ createRuntime(
     validator;
     telemetry;
     resolve(request): Promise<{ session, breaker }>;
-    execute(request, method, params): Promise<Record<string, unknown>>;
+    execute(request, method, params, meta?): Promise<Record<string, unknown>>;
     normalize(error, instance, requestId?): unknown;
   }>;
   breakers: Map<string, CircuitBreaker>;
@@ -140,6 +154,16 @@ Behavior notes:
 - manager mode does not support `session` arrays.
 - `close()` shuts down breaker instances and calls `manager.close()` when available.
 - validation registration is preloaded from catalog tool/prompt input schemas.
+- default guardrail profile is `strict` unless explicitly overridden.
+- plugin phases run in this order:
+  - `transport` before request execution setup,
+  - `schema` after catalog extraction,
+  - `before`/`after`/`error` around method execution.
+- guardrail profiles are runtime options; shared MCP config files are not extended with custom persisted keys.
+- `policy.lock=true` enables locked mode:
+  - requires `guardrails.profile === 'strict'`,
+  - rejects custom `plugins`.
+- `pipeline.trace` forwards plugin trace controls into `@mcp-layer/plugin` for runtime-level diagnostics.
 
 ### `createMap(catalog)`
 
@@ -458,6 +482,352 @@ await createRuntime({
   normalizeError: function normalizeError(error, instance, requestId, options) {
     return { error, instance, requestId, options };
   }
+});
+```
+
+</details>
+
+<a id="error-4ec917"></a>
+### `plugins must be an array.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `plugins` is provided with a non-array value.
+
+Step-by-step resolution:
+1. Pass `plugins` as an array of plugin definitions.
+2. Remove object/scalar placeholder values from runtime config.
+3. Ensure each plugin entry has a valid `name` and hook functions.
+4. Re-run runtime creation after config correction.
+
+This example shows valid runtime plugin array configuration. This matters because transport/schema/operation hook chains are assembled from this list. Expected behavior: runtime starts and executes with deterministic plugin order.
+
+<details>
+<summary>Fix Example: provide plugins as array</summary>
+
+```js
+await createRuntime({
+  session,
+  plugins: [{
+    name: 'trace',
+    before: function before(context) {
+      return context;
+    }
+  }]
+});
+```
+
+</details>
+
+<a id="error-cf074f"></a>
+### `guardrails must be an object.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `guardrails` is provided with a non-object value.
+
+Step-by-step resolution:
+1. Provide `guardrails` as an object.
+2. Pass profile/settings keys inside that object.
+3. Remove string/array placeholders from adapter config.
+4. Re-run runtime initialization.
+
+This example shows valid guardrails configuration. This matters because first-party policy plugins are generated from this object. Expected behavior: runtime composes guardrail plugins before user plugins.
+
+<details>
+<summary>Fix Example: provide guardrails as object</summary>
+
+```js
+await createRuntime({
+  session,
+  guardrails: {
+    profile: 'strict'
+  }
+});
+```
+
+</details>
+
+<a id="error-38a31b"></a>
+### `pipeline must be an object.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `pipeline` is provided as a non-object value.
+
+Step-by-step resolution:
+1. Provide `pipeline` as an object.
+2. Move trace controls into `pipeline.trace`.
+3. Remove scalar placeholders from runtime config.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: provide pipeline trace configuration as object</summary>
+
+```js
+await createRuntime({
+  session,
+  pipeline: {
+    trace: {
+      enabled: true,
+      collect: false
+    }
+  }
+});
+```
+
+</details>
+
+<a id="error-3bb796"></a>
+### `policy must be an object.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `policy` is provided as a non-object value.
+
+Step-by-step resolution:
+1. Provide `policy` as an object.
+2. Move lock settings under `policy.lock`.
+3. Remove scalar placeholders from runtime config.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: provide policy configuration as object</summary>
+
+```js
+await createRuntime({
+  session,
+  policy: {
+    lock: true
+  }
+});
+```
+
+</details>
+
+<a id="error-7adf99"></a>
+### `pipeline.trace must be an object.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `pipeline.trace` is not a plain object.
+
+Step-by-step resolution:
+1. Provide trace settings as an object under `pipeline.trace`.
+2. Remove scalar/array placeholders from trace config.
+3. Keep only supported keys (`enabled`, `collect`, `sink`).
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: provide trace object shape</summary>
+
+```js
+await createRuntime({
+  session,
+  pipeline: {
+    trace: {
+      enabled: true
+    }
+  }
+});
+```
+
+</details>
+
+<a id="error-af9d4b"></a>
+### `pipeline.trace.enabled must be a boolean.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `pipeline.trace.enabled` is not a boolean value.
+
+Step-by-step resolution:
+1. Convert string/number environment inputs to booleans before runtime creation.
+2. Keep `enabled` strictly `true` or `false`.
+3. Validate config parsing logic before calling `createRuntime`.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: strict boolean trace enabled flag</summary>
+
+```js
+await createRuntime({
+  session,
+  pipeline: {
+    trace: {
+      enabled: true
+    }
+  }
+});
+```
+
+</details>
+
+<a id="error-da2f49"></a>
+### `pipeline.trace.collect must be a boolean.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `pipeline.trace.collect` is not a boolean value.
+
+Step-by-step resolution:
+1. Convert external config values to booleans before runtime creation.
+2. Keep `collect` strictly `true` or `false`.
+3. Use `collect=true` only when context trace arrays are desired.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: strict boolean trace collect flag</summary>
+
+```js
+await createRuntime({
+  session,
+  pipeline: {
+    trace: {
+      enabled: true,
+      collect: false
+    }
+  }
+});
+```
+
+</details>
+
+<a id="error-3a06fc"></a>
+### `pipeline.trace.sink must be a function.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `pipeline.trace.sink` is provided as a non-function value.
+
+Step-by-step resolution:
+1. Pass a callable function for `sink`.
+2. Ensure sink handlers are side-effect safe and fast.
+3. Avoid passing logger configuration objects directly as sink values.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: valid trace sink callback</summary>
+
+```js
+function sink(event) {
+  console.log(event);
+}
+
+await createRuntime({
+  session,
+  pipeline: {
+    trace: {
+      enabled: true,
+      sink
+    }
+  }
+});
+```
+
+</details>
+
+<a id="error-43d120"></a>
+### `policy.lock must be a boolean.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `policy.lock` is provided as a non-boolean value.
+
+Step-by-step resolution:
+1. Convert external lock flags to booleans during config loading.
+2. Keep lock mode strictly `true` or `false`.
+3. Avoid using string flags like `"true"` directly.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: strict boolean lock flag</summary>
+
+```js
+await createRuntime({
+  session,
+  policy: {
+    lock: true
+  }
+});
+```
+
+</details>
+
+<a id="error-0109d5"></a>
+### `guardrails.profile must be "baseline" or "strict".`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `guardrails.profile` uses an unsupported value.
+
+Step-by-step resolution:
+1. Set profile to `baseline` or `strict`.
+2. Avoid custom profile labels in runtime config.
+3. If custom behavior is needed, use explicit guardrail options with a valid profile.
+4. Re-run runtime initialization.
+
+<details>
+<summary>Fix Example: supported guardrail profile value</summary>
+
+```js
+await createRuntime({
+  session,
+  guardrails: {
+    profile: 'strict'
+  }
+});
+```
+
+</details>
+
+<a id="error-306cc6"></a>
+### `policy.lock requires guardrails.profile to be "strict".`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when policy lock mode is enabled with a non-strict guardrail profile.
+
+Step-by-step resolution:
+1. Set `guardrails.profile` to `strict`.
+2. Keep `policy.lock` enabled only in production policies.
+3. Re-run runtime initialization and verify policy lock passes.
+4. Add tests that assert strict mode under lock.
+
+<details>
+<summary>Fix Example: strict guardrails with policy lock enabled</summary>
+
+```js
+await createRuntime({
+  session,
+  policy: { lock: true },
+  guardrails: { profile: 'strict' }
+});
+```
+
+</details>
+
+<a id="error-b7dc10"></a>
+### `policy.lock forbids custom runtime plugins.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when custom plugins are passed while policy lock mode is enabled.
+
+Step-by-step resolution:
+1. Remove `plugins` from locked runtime config.
+2. Move required policy behavior into first-party guardrails.
+3. Keep lock mode for hardened production profiles only.
+4. Re-run runtime initialization and verify no plugin policy conflict.
+
+<details>
+<summary>Fix Example: locked runtime without custom plugins</summary>
+
+```js
+await createRuntime({
+  session,
+  policy: { lock: true },
+  guardrails: { profile: 'strict' }
 });
 ```
 

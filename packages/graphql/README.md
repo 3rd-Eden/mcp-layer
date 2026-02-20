@@ -33,6 +33,7 @@ yarn add @mcp-layer/graphql
 - Endpoint: `/{version}/graphql`
 - IDE route: disabled by default
 - Operation surface: generated operations + generic fallback operations
+- Guardrail profile: `strict` (from shared gateway runtime defaults)
 - Subscription root: intentionally omitted in v1
 
 ## Quick Start
@@ -100,6 +101,14 @@ Options:
 | `resilience.*` | object | gateway defaults | Breaker options. |
 | `telemetry.*` | object | gateway defaults | OpenTelemetry API options. |
 | `errors.exposeDetails` | `boolean` | `false` | Include raw upstream error message in GraphQL error text. |
+| `plugins` | `Array<Record<string, unknown>>` | `[]` | Additional `@mcp-layer/plugin` middleware appended after built-in guardrails. |
+| `guardrails` | `Record<string, unknown>` | `{ profile: 'strict' }` | Guardrail profile/options passed to `@mcp-layer/guardrails`. |
+
+Policy ordering and parity:
+
+- GraphQL and REST share the same gateway runtime pipeline.
+- Guardrails run before user plugins by default.
+- Identical operation inputs should evaluate to identical guardrail outcomes across CLI, REST, and GraphQL.
 
 ### `schema(catalog, options?)`
 
@@ -782,6 +791,157 @@ await fastify.register(mcpGraphql, {
 ```
 
 </details>
+
+<a id="error-5e7bcf"></a>
+### `plugins must be an array.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `plugins` is configured with a non-array value.
+
+Step-by-step resolution:
+1. Pass `plugins` as an array in plugin registration options.
+2. Keep each element as a plugin definition object.
+3. Remove scalar/object placeholders produced by config loaders.
+4. Add startup tests for plugin option shape validation.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-4ec917).
+
+<details>
+<summary>Fix Example: provide GraphQL plugins array</summary>
+
+```js
+await fastify.register(mcpGraphql, {
+  session,
+  plugins: [{
+    name: 'trace',
+    before: function before(context) {
+      return context;
+    }
+  }]
+});
+```
+
+</details>
+
+<a id="error-1138bd"></a>
+### `guardrails must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `guardrails` is configured with a non-object value.
+
+Step-by-step resolution:
+1. Provide `guardrails` as an object.
+2. Set profile/options inside that object.
+3. Remove primitive placeholders from env-to-config conversion.
+4. Add startup tests that assert invalid shapes fail fast.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-cf074f).
+
+<details>
+<summary>Fix Example: provide GraphQL guardrails object</summary>
+
+```js
+await fastify.register(mcpGraphql, {
+  session,
+  guardrails: {
+    profile: 'strict'
+  }
+});
+```
+
+</details>
+
+<a id="error-9b2a16"></a>
+### `pipeline must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-38a31b).
+
+<a id="error-bc1ae6"></a>
+### `policy must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `policy` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-3bb796).
+
+<a id="error-f78e38"></a>
+### `pipeline.trace must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-7adf99).
+
+<a id="error-cac730"></a>
+### `pipeline.trace.enabled must be a boolean.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.enabled` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-af9d4b).
+
+<a id="error-12b2a6"></a>
+### `pipeline.trace.collect must be a boolean.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.collect` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-da2f49).
+
+<a id="error-5cc6ef"></a>
+### `pipeline.trace.sink must be a function.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.sink` is not callable.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-3a06fc).
+
+<a id="error-c5cabb"></a>
+### `policy.lock must be a boolean.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `policy.lock` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-43d120).
+
+<a id="error-2c9b15"></a>
+### `guardrails.profile must be "baseline" or "strict".`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `guardrails.profile` is not one of the supported values.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-0109d5).
+
+<a id="error-a8f450"></a>
+### `policy.lock requires guardrails.profile to be "strict".`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when lock mode is enabled but guardrails are not strict.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-306cc6).
+
+<a id="error-0bf492"></a>
+### `policy.lock forbids custom runtime plugins.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when custom plugins are passed while lock mode is enabled.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-b7dc10).
 
 ## License
 

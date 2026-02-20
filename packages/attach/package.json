@@ -34,7 +34,7 @@
   "dependencies": {
     "@mcp-layer/error": "workspace:*",
     "@mcp-layer/session": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.20.2"
+    "@modelcontextprotocol/sdk": "^1.26.0"
   },
   "devDependencies": {
     "@mcp-layer/schema": "workspace:*",

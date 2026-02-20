@@ -1,7 +1,7 @@
 /**
  * Build runtime defaults for an adapter.
  * @param {string} serviceName - Default telemetry service name.
- * @returns {{ prefix: string | undefined, validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, metricPrefix: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean } }}
+ * @returns {{ prefix: string | undefined, validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, metricPrefix: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, plugins: Array<Record<string, unknown>>, guardrails: { profile: 'baseline' | 'strict' }, pipeline: { trace: { enabled: boolean, collect: boolean, sink?: (event: Record<string, unknown>) => void } }, policy: { lock: boolean } }}
  */
 export function defaults(serviceName) {
   return {
@@ -34,6 +34,20 @@ export function defaults(serviceName) {
     errors: {
       // Avoid leaking upstream details in default adapter responses.
       exposeDetails: false,
+    },
+    plugins: [],
+    guardrails: {
+      profile: 'strict'
+    },
+    pipeline: {
+      trace: {
+        enabled: false,
+        collect: false,
+        sink: undefined
+      }
+    },
+    policy: {
+      lock: false
     }
   };
 }

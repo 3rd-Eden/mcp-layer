@@ -121,6 +121,8 @@ Top-level options:
 | `resilience` | `object` | see below | Circuit breaker configuration. |
 | `telemetry` | `object` | see below | OpenTelemetry API integration. |
 | `errors` | `object` | see below | Error response behavior. |
+| `plugins` | `Array<Record<string, unknown>>` | `[]` | Additional `@mcp-layer/plugin` middleware appended after built-in guardrails. |
+| `guardrails` | `Record<string, unknown>` | `{ profile: 'strict' }` | Guardrail profile/options passed to `@mcp-layer/guardrails`. |
 | `exposeOpenAPI` | `boolean` | `true` | Serve `/openapi.json` for each session prefix. |
 
 Validation options:
@@ -160,6 +162,12 @@ Error options:
 | --- | --- | --- |
 | `exposeDetails` | `false` | If true, Problem Details responses include upstream error messages. |
 
+Policy pipeline options:
+
+- `guardrails` defaults to strict profile behavior, matching gateway defaults used by REST and GraphQL runtime execution.
+- `plugins` receive the same transport/schema/operation contexts as other runtime surfaces.
+- Expected ordering: built-in guardrails first, then user-provided plugins.
+
 ## Configuration Example
 
 This example shows a multi-session setup with a prefix strategy that keeps per-server routes isolated while tightening validation and circuit breaker thresholds. It demonstrates how the REST layer can enforce consistent safety limits even when multiple servers are attached.
@@ -192,6 +200,20 @@ await app.register(mcpRest, {
   errors: {
     exposeDetails: false
   },
+  guardrails: {
+    profile: 'strict'
+  },
+  plugins: [{
+    name: 'rest-trace',
+    before: function before(context) {
+      return {
+        meta: {
+          ...context.meta,
+          traceTag: 'rest'
+        }
+      };
+    }
+  }],
   exposeOpenAPI: true
 });
 ```
@@ -733,6 +755,63 @@ await fastify.register(restPlugin, {
 
 </details>
 
+<a id="error-0fed0f"></a>
+### plugins must be an array.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `plugins` is provided with a non-array value.
+
+Step-by-step resolution:
+1. Pass `plugins` as an array.
+2. Keep each item as a plugin definition object.
+3. Remove scalar/object placeholders from config parsing.
+4. Add startup tests for invalid and valid plugin list shapes.
+
+<details>
+<summary>Fix Example: provide plugins as an array</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  plugins: [{
+    name: 'trace',
+    before: function before(context) {
+      return context;
+    }
+  }]
+});
+```
+
+</details>
+
+<a id="error-1963b9"></a>
+### guardrails must be an object.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `guardrails` is provided with a non-object value.
+
+Step-by-step resolution:
+1. Pass `guardrails` as an object.
+2. Set guardrail settings under that object.
+3. Remove array/string placeholders from environment mapping.
+4. Add startup tests for guardrails option shape.
+
+<details>
+<summary>Fix Example: provide guardrails object</summary>
+
+```js
+await fastify.register(restPlugin, {
+  session,
+  guardrails: {
+    profile: 'strict'
+  }
+});
+```
+
+</details>
+
 <a id="error-01dca8"></a>
 ### Tool name "{tool}" exceeds maximum length of {maxLength}.
 
@@ -835,6 +914,96 @@ server.registerTool(toolName, meta, handler);
 ```
 
 </details>
+
+<a id="error-72745b"></a>
+### pipeline must be an object.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-38a31b).
+
+<a id="error-3ca025"></a>
+### policy must be an object.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `policy` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-3bb796).
+
+<a id="error-333616"></a>
+### pipeline.trace must be an object.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace` is configured as a non-object value.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-7adf99).
+
+<a id="error-05e7d9"></a>
+### pipeline.trace.enabled must be a boolean.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.enabled` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-af9d4b).
+
+<a id="error-262e11"></a>
+### pipeline.trace.collect must be a boolean.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.collect` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-da2f49).
+
+<a id="error-62d3a4"></a>
+### pipeline.trace.sink must be a function.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `pipeline.trace.sink` is not callable.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-3a06fc).
+
+<a id="error-7b5b26"></a>
+### policy.lock must be a boolean.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `policy.lock` is not a boolean.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-43d120).
+
+<a id="error-356629"></a>
+### guardrails.profile must be "baseline" or "strict".
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `guardrails.profile` is not one of the supported values.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-0109d5).
+
+<a id="error-61f7bd"></a>
+### policy.lock requires guardrails.profile to be "strict".
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when lock mode is enabled but guardrails are not strict.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-306cc6).
+
+<a id="error-e6445b"></a>
+### policy.lock forbids custom runtime plugins.
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when custom plugins are passed while lock mode is enabled.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-b7dc10).
 
 ## License
 

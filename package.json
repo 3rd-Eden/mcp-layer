@@ -5,11 +5,22 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "verify": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "security:deps": "pnpm audit --prod --audit-level high",
+    "release:check": "pnpm verify && node ./scripts/changeset-status.js",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "phin": "^3.7.1",
+      "qs": "^6.14.1"
+    }
   }
 }

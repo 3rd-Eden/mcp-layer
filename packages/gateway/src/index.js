@@ -7,5 +7,6 @@ export { createCircuitBreaker, executeWithBreaker } from './resilience/breaker.j
 export { createValidator, SchemaValidator } from './validation/validator.js';
 export { shouldTrustSchemas } from './validation/trust.js';
 export { checkSchemaSafety } from './validation/safety.js';
+export { policy } from './errors/policy.js';
 export { defaults } from './config/defaults.js';
 export { validateRuntimeOptions } from './config/validate.js';

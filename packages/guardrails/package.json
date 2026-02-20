@@ -1,0 +1,39 @@
+{
+  "name": "@mcp-layer/guardrails",
+  "version": "0.1.0",
+  "description": "First-party guardrail plugins for MCP operation governance.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-layer",
+    "guardrails",
+    "security",
+    "policy"
+  ],
+  "scripts": {
+    "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/error": "workspace:*"
+  }
+}

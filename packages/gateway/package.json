@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/guardrails": "workspace:*",
+    "@mcp-layer/plugin": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
     "ajv": "^8.17.0",
     "ajv-formats": "^3.0.0",

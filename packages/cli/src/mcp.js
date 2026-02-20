@@ -1,5 +1,6 @@
 import { connect } from '@mcp-layer/connect';
 import { extract } from '@mcp-layer/schema';
+import { runSchema, runTransport } from '@mcp-layer/plugin';
 import yoctoSpinner from '@socketregistry/yocto-spinner';
 import { select } from './config.js';
 
@@ -37,19 +38,55 @@ export function spinnertext(name) {
 }
 
 /**
+ * Normalize a value into a plain object.
+ * @param {unknown} value - Input value.
+ * @returns {Record<string, unknown>}
+ */
+function record(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return /** @type {Record<string, unknown>} */ (value);
+}
+
+/**
  * Extract schema items for a server.
- * @param {{ server?: string, config?: string, spinner: boolean, transport?: string }} opts - CLI options for server selection and spinner display.
- * @returns {Promise<{ session: import('@mcp-layer/session').Session, output: { items: Array<Record<string, unknown>>, server: Record<string, unknown> } }>} 
+ * @param {{ server?: string, config?: string, spinner: boolean, transport?: string, pipeline?: { transport: any, schema: any, before: any, after: any, error: any }, meta?: Record<string, unknown> }} opts - CLI options for server selection and spinner display.
+ * @returns {Promise<{ session: import('@mcp-layer/session').Session, output: { items: Array<Record<string, unknown>>, server: Record<string, unknown> } }>}
  */
 export async function catalog(opts) {
   let gate = null;
   let session;
   try {
     const info = await select(opts);
+    const transport = opts.pipeline
+      ? await runTransport(opts.pipeline, {
+        surface: 'transport',
+        method: 'transport/connect',
+        sessionId: info.name,
+        serverName: info.name,
+        params: { transport: opts.transport },
+        meta: record(opts.meta)
+      })
+      : { params: { transport: opts.transport } };
+
+    const mode = typeof transport.params?.transport === 'string'
+      ? transport.params.transport
+      : opts.transport;
+
     gate = spinner(opts.spinner, spinnertext(info.name));
     gate.start();
-    session = await connect(info.config, info.name, { transport: opts.transport });
-    const output = await extract(session);
+    session = await connect(info.config, info.name, { transport: mode });
+    const extracted = await extract(session);
+    const shaped = opts.pipeline
+      ? await runSchema(opts.pipeline, {
+        surface: 'schema',
+        method: 'schema/extract',
+        sessionId: info.name,
+        serverName: info.name,
+        catalog: extracted,
+        meta: record(opts.meta)
+      })
+      : { catalog: extracted };
+    const output = record(shaped.catalog);
     return { session, output };
   } catch (error) {
     if (session) await session.close();

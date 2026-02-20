@@ -3,7 +3,7 @@ import mercurius from 'mercurius';
 import { GraphQLError } from 'graphql';
 import { createRequire } from 'node:module';
 import { LayerError } from '@mcp-layer/error';
-import { createCallContext, createRuntime, executeWithBreaker } from '@mcp-layer/gateway';
+import { createCallContext, createRuntime, policy } from '@mcp-layer/gateway';
 import { schema as buildSchema } from './schema.js';
 import { validateOptions } from './config/validate.js';
 
@@ -36,6 +36,31 @@ function asRecord(value) {
   }
 
   return {};
+}
+
+/**
+ * Convert known policy/runtime string codes into GraphQL errors.
+ * @param {Error & { code?: string | number }} error - Runtime error.
+ * @param {string} instance - Request path.
+ * @param {string | undefined} requestId - Request id.
+ * @param {boolean} exposeDetails - Detail exposure flag.
+ * @returns {GraphQLError | null}
+ */
+function policyError(error, instance, requestId, exposeDetails) {
+  const mapped = policy(error.code);
+  if (!mapped) return null;
+
+  const detail = exposeDetails ? error.message : 'Request denied by runtime policy';
+  return new GraphQLError(detail, {
+    extensions: {
+      code: mapped.graphqlCode,
+      title: mapped.graphqlTitle,
+      type: 'error-policy',
+      instance,
+      requestId,
+      policyCode: mapped.code
+    }
+  });
 }
 
 /**
@@ -130,7 +155,7 @@ function graphiqlRedirect(prefix) {
 
 /**
  * Create Mercurius context factory for a runtime session.
- * @param {{ session: import('@mcp-layer/session').Session, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} runtime - Runtime context.
+ * @param {{ session: import('@mcp-layer/session').Session, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} runtime - Runtime context.
  * @param {{ validation: { maxTemplateParamLength: number }, errors: { exposeDetails: boolean } }} config - GraphQL plugin config.
  * @returns {(request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => Promise<{ request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply, callTool: (name: string, input: Record<string, unknown>) => Promise<{ content: unknown, isError: boolean, structuredContent?: unknown }>, getPrompt: (name: string, input: Record<string, unknown>) => Promise<{ messages: unknown, payload: unknown }>, readResource: (uri: string) => Promise<{ contents: unknown, text?: string, mimeType?: string, payload: unknown }>, readTemplate: (template: string, params: Record<string, unknown>) => Promise<{ contents: unknown, text?: string, mimeType?: string, payload: unknown }> }>}
  */
@@ -182,10 +207,17 @@ function createContextFactory(runtime, config) {
           validationLabels: { tool: name }
         });
 
-        const result = await executeWithBreaker(resolved.breaker, resolved.session, 'tools/call', {
-          name,
-          arguments: args
-        });
+        const result = await runtime.execute(
+          request,
+          'tools/call',
+          { name, arguments: args },
+          {
+            surface: 'tools',
+            toolName: name,
+            sessionId: resolved.session.name
+          },
+          resolved
+        );
 
         if (result?.isError) {
           trace.recordStatus('tool_error', 'tool_error');
@@ -277,6 +309,9 @@ function createContextFactory(runtime, config) {
           });
         }
 
+        const policy = policyError(runtimeError, instance, requestId, config.errors.exposeDetails);
+        if (policy) throw policy;
+
         const numericCode = typeof runtimeError.code === 'number' ? runtimeError.code : -32603;
         const mapped = MCP_ERROR_MAP[numericCode] ?? MCP_ERROR_MAP[-32603];
         const detail = config.errors.exposeDetails ? runtimeError.message : 'Upstream service error';
@@ -336,10 +371,17 @@ function createContextFactory(runtime, config) {
           validationLabels: { prompt: name }
         });
 
-        const result = await executeWithBreaker(resolved.breaker, resolved.session, 'prompts/get', {
-          name,
-          arguments: args
-        });
+        const result = await runtime.execute(
+          request,
+          'prompts/get',
+          { name, arguments: args },
+          {
+            surface: 'prompts',
+            promptName: name,
+            sessionId: resolved.session.name
+          },
+          resolved
+        );
 
         trace.recordSuccess();
         return promptPayload(result);
@@ -398,6 +440,9 @@ function createContextFactory(runtime, config) {
           });
         }
 
+        const policy = policyError(runtimeError, instance, requestId, config.errors.exposeDetails);
+        if (policy) throw policy;
+
         const numericCode = typeof runtimeError.code === 'number' ? runtimeError.code : -32603;
         const mapped = MCP_ERROR_MAP[numericCode] ?? MCP_ERROR_MAP[-32603];
         const detail = config.errors.exposeDetails ? runtimeError.message : 'Upstream service error';
@@ -441,7 +486,17 @@ function createContextFactory(runtime, config) {
           labels: { resource: uri, session: resolved.session.name }
         });
 
-        const result = await executeWithBreaker(resolved.breaker, resolved.session, 'resources/read', { uri });
+        const result = await runtime.execute(
+          request,
+          'resources/read',
+          { uri },
+          {
+            surface: 'resources',
+            resourceUri: uri,
+            sessionId: resolved.session.name
+          },
+          resolved
+        );
         trace.recordSuccess();
         return resourcePayload(result);
       } catch (error) {
@@ -486,6 +541,9 @@ function createContextFactory(runtime, config) {
             }
           });
         }
+
+        const policy = policyError(runtimeError, instance, requestId, config.errors.exposeDetails);
+        if (policy) throw policy;
 
         const numericCode = typeof runtimeError.code === 'number' ? runtimeError.code : -32603;
         const mapped = MCP_ERROR_MAP[numericCode] ?? MCP_ERROR_MAP[-32603];
@@ -551,7 +609,7 @@ function createContextFactory(runtime, config) {
 /**
  * Register GraphQL routes for a runtime context.
  * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
- * @param {{ catalog: { items?: Array<Record<string, unknown>> }, prefix: string, session: import('@mcp-layer/session').Session, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} runtime - Runtime context.
+ * @param {{ catalog: { items?: Array<Record<string, unknown>> }, prefix: string, session: import('@mcp-layer/session').Session, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} runtime - Runtime context.
  * @param {{ endpoint: string, ide: { enabled: boolean, path: string }, operations: { generated: boolean, generic: boolean }, validation: { maxTemplateParamLength: number }, errors: { exposeDetails: boolean } }} config - Plugin config.
  * @returns {Promise<void>}
  */

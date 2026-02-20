@@ -7,7 +7,7 @@ import { validateOptions } from './config/validate.js';
 /**
  * Register routes for a runtime context.
  * @param {import('fastify').FastifyInstance} fastify - Fastify instance.
- * @param {{ session: import('@mcp-layer/session').Session, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, prefix: string, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} context - Runtime context.
+ * @param {{ session: import('@mcp-layer/session').Session, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, prefix: string, validator: import('@mcp-layer/gateway').SchemaValidator, telemetry: ReturnType<import('@mcp-layer/gateway').createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>, meta?: Record<string, unknown>, resolved?: { session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }} context - Runtime context.
  * @param {{ validation: { maxToolNameLength: number, maxTemplateParamLength: number }, errors: { exposeDetails: boolean }, exposeOpenAPI: boolean }} config - Plugin config.
  * @returns {Promise<void>}
  */
@@ -34,6 +34,7 @@ async function registerContext(fastify, context, config) {
       catalog: context.catalog,
       validator: context.validator,
       resolve: context.resolve,
+      execute: context.execute,
       telemetry: context.telemetry,
       normalize: context.normalize,
       errors: config.errors,

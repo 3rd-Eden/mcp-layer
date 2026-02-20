@@ -1,4 +1,5 @@
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { build } from '../index.js';
@@ -53,8 +54,8 @@ export async function startHttpServer(opts = {}) {
 
   const streamServer = build();
   const streamTransport = new StreamableHTTPServerTransport({
-    // We keep this fixture stateless so tests don't need extra session plumbing.
-    sessionIdGenerator: undefined,
+    // Stateful mode avoids SDK 1.26+ stateless-transport reuse constraints across requests.
+    sessionIdGenerator: randomUUID,
     enableJsonResponse: true
   });
   await streamServer.connect(streamTransport);
