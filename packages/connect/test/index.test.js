@@ -14,6 +14,7 @@ const base = path.join(fixtures, 'config.json');
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
 const stdioEntry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
+const idleEntry = path.join(fixtures, 'idle-server.mjs');
 
 /**
  * Create a temporary directory for connector tests.
@@ -70,6 +71,23 @@ async function httpconfig(dir, url) {
   const config = {
     type: 'http',
     url
+  };
+
+  const data = { servers: { demo: config } };
+  await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  return file;
+}
+
+/**
+ * Build a stdio config for a non-responsive server entry.
+ * @param {string} dir - Temp directory to write config in.
+ * @returns {Promise<string>}
+ */
+async function idleconfig(dir) {
+  const file = path.join(dir, 'mcp.json');
+  const config = {
+    command: process.execPath,
+    args: [idleEntry]
   };
 
   const data = { servers: { demo: config } };
@@ -209,6 +227,24 @@ describe('connect', function connectSuite() {
       assert.equal(link.transport.constructor?.name, 'SSEClientTransport');
       assert.equal(link.source, file);
       assert.equal(link.name, 'demo');
+    });
+
+    it('times out when the server never completes initialization', async function connectTimeoutCase() {
+      const dir = await tempdir();
+      await idleconfig(dir);
+
+      const cfg = await load(undefined, dir);
+      const started = Date.now();
+
+      try {
+        await connect(cfg, 'demo', { timeout: 200 });
+        throw new Error('Expected connect to time out.');
+      } catch (error) {
+        const elapsed = Date.now() - started;
+        const message = error instanceof Error ? error.message : String(error);
+        assert.equal(message.includes('Timed out while connecting to server "demo"'), true);
+        assert.equal(elapsed < 5000, true);
+      }
     });
   });
 });

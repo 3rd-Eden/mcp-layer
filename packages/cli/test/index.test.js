@@ -13,6 +13,7 @@ const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
 const cli = fileURLToPath(new URL('../bin/cli.js', import.meta.url));
 const custom = fileURLToPath(new URL('./fixtures/custom-cli.mjs', import.meta.url));
+const idleEntry = fileURLToPath(new URL('./fixtures/idle-server.mjs', import.meta.url));
 const read = createRequire(import.meta.url);
 const serverpkg = read.resolve('@mcp-layer/test-server/package.json');
 const entry = path.join(path.dirname(serverpkg), 'src', 'bin.js');
@@ -82,6 +83,23 @@ async function setupremoteconfig(url) {
 }
 
 /**
+ * Prepare a temporary config for a non-responsive stdio server.
+ * @returns {Promise<{ dir: string, file: string }>}
+ */
+async function setupidleconfig() {
+  const dir = await tempdir();
+  const file = path.join(dir, 'mcp.json');
+  const config = {
+    command: process.execPath,
+    args: [idleEntry]
+  };
+
+  const data = { servers: { demo: config } };
+  await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  return { dir, file };
+}
+
+/**
  * Run a CLI binary and capture stdout/stderr.
  * @param {string} bin - CLI entry file to execute with Node.
  * @param {string[]} args - CLI arguments to pass to the test process.
@@ -99,6 +117,31 @@ async function run(bin, args, options = {}) {
     const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
     throw new Error(stderr || `CLI exited with ${error?.code ?? 'unknown'}`);
   }
+}
+
+/**
+ * Run a CLI command and capture stderr on failure.
+ * @param {string} bin - CLI entry file to execute with Node.
+ * @param {string[]} args - CLI arguments to pass to the test process.
+ * @param {{ cwd?: string, timeout?: number }} [options] - Spawn options for working directory and timeout.
+ * @returns {Promise<{ stdout: string, stderr: string, code: number | null, signal: NodeJS.Signals | null }>}
+ */
+async function runfailure(bin, args, options = {}) {
+  try {
+    await exec(process.execPath, [bin, ...args], {
+      cwd: options.cwd,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      maxBuffer: 10 * 1024 * 1024,
+      timeout: options.timeout
+    });
+  } catch (error) {
+    const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
+    const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
+    const code = typeof error?.code === 'number' ? error.code : null;
+    const signal = typeof error?.signal === 'string' ? error.signal : null;
+    return { stdout, stderr, code, signal };
+  }
+  throw new Error('Expected CLI execution to fail.');
 }
 
 /**
@@ -514,6 +557,32 @@ function remoteSuite() {
 }
 
 /**
+ * Validate the CLI fails fast when the server never responds.
+ * @returns {Promise<void>}
+ */
+async function timeoutCase() {
+  const setup = await setupidleconfig();
+  const result = await runfailure(cli, [
+    'tools',
+    'list',
+    '--config',
+    setup.file,
+    '--timeout',
+    '200'
+  ], { timeout: 5000 });
+
+  assert.equal(result.stderr.includes('Timed out while connecting to server "demo"'), true);
+}
+
+/**
+ * Run timeout coverage.
+ * @returns {void}
+ */
+function timeoutSuite() {
+  it('errors when connection exceeds the timeout', timeoutCase);
+}
+
+/**
  * Run the CLI test suite.
  * @returns {void}
  */
@@ -530,6 +599,7 @@ function cliSuite() {
   describe('custom help', customHelpSuite);
   describe('resource raw output', resourceSuite);
   describe('remote transports', remoteSuite);
+  describe('timeouts', timeoutSuite);
 }
 
 describe('cli', cliSuite);

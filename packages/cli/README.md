@@ -282,6 +282,7 @@ Options:
 - `server`: default server name.
 - `config`: default config path.
 - `showServers`: show or hide the Servers section in help output.
+- `timeout`: fail if MCP initialization exceeds the timeout in milliseconds (opt-in only).
 
 ### `cli().command(options, handler)`
 
@@ -301,6 +302,7 @@ Executes the CLI. If `argv` is omitted, it uses `process.argv`.
 - `--server <name>`: select a configured server.
 - `--config <path>`: point at a config file or directory.
 - `--transport <mode>`: override transport at runtime (`stdio`, `streamable-http`, or `sse`).
+- `--timeout <ms>`: fail if MCP initialization exceeds the timeout in milliseconds (opt-in).
 - `--format <json>`: use JSON for list output.
 - `--json <string>`: supply inline JSON input.
 - `--input <path>`: supply JSON input from a file.

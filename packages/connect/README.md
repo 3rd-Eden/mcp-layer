@@ -119,6 +119,7 @@ Options include:
 - `info`
 - `transport`
 - `url`
+- `timeout`
 - `cwd`
 - `env`
 - `stderr`
@@ -147,6 +148,7 @@ Method:
 - `opts.env` overrides entry `env` values.
 - URL-based entries default to Streamable HTTP unless `options.transport` is explicitly `sse`.
 - Invalid transport and URL values fail fast with `LayerError`.
+- `options.timeout` fails fast when the MCP initialization handshake exceeds the configured timeout.
 
 ## Testing
 
@@ -231,6 +233,30 @@ Step-by-step resolution:
 ```js
 const config = await load(undefined, process.cwd());
 const session = await connect(config, 'demo');
+```
+
+</details>
+
+<a id="error-1e2f95"></a>
+### Timed out while connecting to server "{server}" after {timeout}ms.
+
+Thrown from: `connect`
+
+The server accepted the transport but never completed the MCP initialization handshake before the deadline.
+
+Step-by-step resolution:
+1. Verify the server process is running and logging output.
+2. Confirm the transport config (command/url) is correct.
+3. Increase `timeout` if the server requires more startup time.
+4. Add integration coverage for slow-start servers.
+
+<details>
+<summary>Fix Example: set a timeout for unresponsive servers</summary>
+
+Use a connection timeout to fail fast when a server never completes initialization, and expect `connect` to reject with a `LayerError` if the deadline is exceeded.
+
+```js
+const session = await connect(config, 'demo', { timeout: 10_000 });
 ```
 
 </details>

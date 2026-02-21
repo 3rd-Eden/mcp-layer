@@ -94,6 +94,45 @@ function text(value) {
 }
 
 /**
+ * Normalize timeout values to a positive millisecond number.
+ * @param {unknown} value - Raw timeout input.
+ * @returns {number | undefined}
+ */
+function timeoutms(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return value;
+}
+
+/**
+ * Build a standardized connection timeout error.
+ * @param {string} name - Server name.
+ * @param {number} timeout - Timeout in milliseconds.
+ * @returns {LayerError}
+ */
+function timeouterror(name, timeout) {
+  return new LayerError({
+    name: 'connect',
+    method: 'connect',
+    message: 'Timed out while connecting to server "{server}" after {timeout}ms.',
+    vars: { server: name, timeout }
+  });
+}
+
+/**
+ * Close the client after a timeout without masking the original error.
+ * @param {Client} client - MCP client instance.
+ * @returns {Promise<void>}
+ */
+async function closeclient(client) {
+  try {
+    await client.close();
+  } catch {
+    // Ignore cleanup failures after timing out.
+  }
+}
+
+/**
  * Resolve the remote transport URL from options/config and validate it.
  * @param {{ name: string, config: Record<string, unknown> }} item - Config entry with possible url/endpoint values.
  * @param {{ url?: string }} [opts] - Optional explicit URL override.
@@ -193,7 +232,7 @@ export { Session };
  * Connect to a configured MCP server using the official SDK.
  * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src - Config source map or map-like wrapper.
  * @param {string} name - Server name to connect to.
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string }, transport?: 'stdio' | 'http' | 'streamable-http' | 'streamableHttp' | 'sse', url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number } }} [opts] - Transport overrides and client metadata.
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string }, transport?: 'stdio' | 'http' | 'streamable-http' | 'streamableHttp' | 'sse', url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number }, timeout?: number }} [opts] - Transport overrides and client metadata.
  * @returns {Promise<Session>}
  */
 export async function connect(src, name, opts = {}) {
@@ -226,7 +265,46 @@ export async function connect(src, name, opts = {}) {
       : streamable(item, opts);
 
   // We rely on the official client to orchestrate handshake semantics.
-  await client.connect(link);
+  const limit = timeoutms(opts.timeout);
+  let timerId = null;
+  let timedOut = false;
+  const connectPromise = client.connect(link);
+
+  /**
+   * Swallow connect errors after the timeout has already fired.
+   * @param {unknown} error - Connection error to rethrow or ignore.
+   * @returns {void}
+   */
+  function onConnectError(error) {
+    if (timedOut) return;
+    throw error;
+  }
+
+  /**
+   * Build a timeout promise that rejects when the deadline is exceeded.
+   * @returns {Promise<void>}
+   */
+  function timeoutpromise() {
+    return new Promise(function timeoutExecutor(resolve, reject) {
+      function onTimeout() {
+        timedOut = true;
+        reject(timeouterror(name, limit));
+      }
+      timerId = setTimeout(onTimeout, limit);
+    });
+  }
+
+  const guarded = connectPromise.catch(onConnectError);
+  const race = limit ? Promise.race([guarded, timeoutpromise()]) : guarded;
+
+  try {
+    await race;
+  } catch (error) {
+    if (timedOut) await closeclient(client);
+    throw error;
+  } finally {
+    if (timerId) clearTimeout(timerId);
+  }
 
   return new Session({
     name,

@@ -152,10 +152,10 @@ async function closeSession(session) {
  * exit promptly.
  *
  * @param {import('node:child_process').ChildProcess} child - Spawned process.
- * @param {number} timeoutMs - Timeout to wait before giving up.
+ * @param {number} timeout - Timeout to wait before giving up.
  * @returns {Promise<void>}
  */
-function waitForExit(child, timeoutMs) {
+function waitForExit(child, timeout) {
   return new Promise(function wait(resolve) {
     let done = false;
 
@@ -170,7 +170,7 @@ function waitForExit(child, timeoutMs) {
 
     const timer = setTimeout(function onTimeout() {
       finish();
-    }, timeoutMs);
+    }, timeout);
 
     timer.unref();
   });

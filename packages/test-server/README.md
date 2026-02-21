@@ -52,6 +52,7 @@ This exposes:
 - SSE compatibility on `/sse` (GET stream + POST messages with `?sessionId=...`)
 
 SSE is kept for legacy MCP clients. Streamable HTTP clients should use only `/mcp`.
+The HTTP fixture issues Streamable HTTP session IDs so a single transport can safely handle multiple requests with the current MCP SDK.
 
 ## What it provides
 

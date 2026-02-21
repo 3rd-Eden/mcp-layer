@@ -57,6 +57,28 @@ function metadetail(banner, instructions) {
 }
 
 /**
+ * Normalize timeout values to positive millisecond numbers.
+ * @param {number | undefined} value - Raw timeout value.
+ * @returns {number | undefined}
+ */
+function timeoutvalue(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return value;
+}
+
+/**
+ * Resolve an effective timeout from defaults and overrides.
+ * @param {number | undefined} baseTimeout - Default timeout value.
+ * @param {number | undefined} override - CLI override timeout.
+ * @returns {number | undefined}
+ */
+function resolvetimeout(baseTimeout, override) {
+  if (override !== undefined) return timeoutvalue(override);
+  return timeoutvalue(baseTimeout);
+}
+
+/**
  * Capture stderr output from a transport to reorder banners in help output.
  * @param {{ stderr?: NodeJS.ReadableStream | null }} transport - Transport exposing a stderr stream.
  * @returns {{ text: () => string, stop: () => void }}
@@ -169,6 +191,7 @@ function statichelp(cliName, custom) {
       '--server <name>': 'Select a server from the resolved config.',
       '--config <path>': 'Point at a config file or directory to search.',
       '--transport <mode>': 'Override transport (stdio, streamable-http, or sse) at runtime.',
+      '--timeout <ms>': 'Fail if server initialization exceeds the timeout (ms).',
       '--format <json>': 'Switch list output to JSON.',
       '--json <string>': 'Provide JSON input for run/render.',
       '--input <path>': 'Provide JSON input from a file.',
@@ -219,7 +242,7 @@ function findcustom(custom, target) {
 
 /**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean }} [opts] - CLI defaults override.
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean, timeout?: number }} [opts] - CLI defaults override (timeout is opt-in).
  * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
@@ -250,6 +273,7 @@ export function cli(opts = {}) {
       const colors = base.colors && global.colors;
       const markdown = base.markdown && global.markdown;
       const ansi = base.ansi || global.ansi;
+      const timeout = resolvetimeout(base.timeout, global.timeout);
       const theme = { accent: base.accent, subtle: base.subtle };
       const tty = Boolean(process.stdout.isTTY);
       const cliName = base.name || 'mcp-layer';
@@ -287,7 +311,7 @@ export function cli(opts = {}) {
         const info = await select({ server: global.server || base.server, config: global.config || base.config });
         const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
         gate.start();
-        const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport });
+        const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport, timeout });
         const stderr = capturestderr(session.transport);
         try {
           const output = await extract(session);
@@ -329,7 +353,7 @@ export function cli(opts = {}) {
             const info = await select({ server: global.server || base.server, config: global.config || base.config });
             const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
             gate.start();
-            const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport });
+            const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport, timeout });
             const stderr = capturestderr(session.transport);
             try {
               const output = await extract(session);
@@ -373,7 +397,8 @@ export function cli(opts = {}) {
         server: global.server || base.server,
         config: global.config || base.config,
         spinner: base.spinner && global.spinner,
-        transport: global.transport
+        transport: global.transport,
+        timeout
       });
       const session = data.session;
       const items = data.output.items;

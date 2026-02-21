@@ -8,7 +8,7 @@ const pkg = read('../package.json');
 
 /**
  * Default CLI configuration.
- * @returns {{ name: string, version: string, description: string, colors: boolean, accent: string, subtle: string, spinner: boolean, markdown: boolean, ansi: boolean, server: string | undefined, config: string | undefined, showServers: boolean | undefined }}
+ * @returns {{ name: string, version: string, description: string, colors: boolean, accent: string, subtle: string, spinner: boolean, markdown: boolean, ansi: boolean, server: string | undefined, config: string | undefined, showServers: boolean | undefined, timeout?: number }}
  */
 export function defaults() {
   return {
