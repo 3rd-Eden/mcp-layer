@@ -1,5 +1,15 @@
 # @mcp-layer/connect
 
+## 1.2.0
+
+### Minor Changes
+
+- 11f686b: Add connection timeouts to avoid hanging CLI sessions and update the test server to use stateful Streamable HTTP sessions.
+
+### Patch Changes
+
+- 77e8932: Ensure connect timeout cleanup fully tears down stalled stdio connections by wiring timeout into SDK initialization and closing transport/client on timeout.
+
 ## 1.1.1
 
 ### Patch Changes
