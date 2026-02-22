@@ -216,7 +216,11 @@ MCP Layer uses Changesets and a GitHub Actions release workflow.
 
 1. Create a changeset with `pnpm changeset`.
 2. Merge the generated version PR (`changeset-release/main`).
-3. Publish through the `Release` GitHub Actions workflow (npm Trusted Publishing / OIDC).
+3. Publish through the `Release` GitHub Actions workflow (npm Trusted Publishing / OIDC), which runs on `node-version: lts/*`.
+
+Trusted publishing requirements are defined by npm:
+- [Trusted publishing with OIDC](https://docs.npmjs.com/trusted-publishers/)
+- [Generating provenance statements](https://docs.npmjs.com/generating-provenance-statements)
 
 The aggregate package prepack behavior is maintained in [`packages/mcp-layer`](packages/mcp-layer/README.md).
 
