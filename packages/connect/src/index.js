@@ -133,6 +133,21 @@ async function closeclient(client) {
 }
 
 /**
+ * Close the transport directly so timed-out stdio handshakes cannot leave child processes alive.
+ * @param {unknown} link - Transport instance returned by the SDK transport constructors.
+ * @returns {Promise<void>}
+ */
+async function closetransport(link) {
+  if (!link || typeof link !== 'object' || typeof link.close !== 'function') return;
+
+  try {
+    await link.close();
+  } catch {
+    // Ignore cleanup failures after timing out.
+  }
+}
+
+/**
  * Resolve the remote transport URL from options/config and validate it.
  * @param {{ name: string, config: Record<string, unknown> }} item - Config entry with possible url/endpoint values.
  * @param {{ url?: string }} [opts] - Optional explicit URL override.
@@ -268,7 +283,9 @@ export async function connect(src, name, opts = {}) {
   const limit = timeoutms(opts.timeout);
   let timerId = null;
   let timedOut = false;
-  const connectPromise = client.connect(link);
+  const connectPromise = limit
+    ? client.connect(link, { timeout: limit })
+    : client.connect(link);
 
   /**
    * Swallow connect errors after the timeout has already fired.
@@ -300,7 +317,10 @@ export async function connect(src, name, opts = {}) {
   try {
     await race;
   } catch (error) {
-    if (timedOut) await closeclient(client);
+    if (timedOut) {
+      await closetransport(link);
+      await closeclient(client);
+    }
     throw error;
   } finally {
     if (timerId) clearTimeout(timerId);

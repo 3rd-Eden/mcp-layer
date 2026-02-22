@@ -4,7 +4,7 @@
   "packageManager": "pnpm@8.15.4",
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test --test-timeout=30000 \"packages/*/test/**/*.test.js\"",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"

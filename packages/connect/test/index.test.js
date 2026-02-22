@@ -25,6 +25,71 @@ async function tempdir() {
 }
 
 /**
+ * Sleep for a short interval to allow async cleanup to settle.
+ * @param {number} ms - Delay in milliseconds.
+ * @returns {Promise<void>}
+ */
+async function sleep(ms) {
+  return new Promise(function sleepExecutor(resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Read the fixture child process id from disk with retries.
+ * @param {string} file - File path written by the idle fixture.
+ * @param {number} [tries=100] - Number of read attempts before giving up.
+ * @returns {Promise<number | undefined>}
+ */
+async function readpid(file, tries = 100) {
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      const raw = await fs.readFile(file, 'utf8');
+      const pid = Number.parseInt(raw.trim(), 10);
+      if (Number.isInteger(pid) && pid > 0) return pid;
+    } catch (error) {
+      const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+      if (code !== 'ENOENT') throw error;
+    }
+
+    await sleep(20);
+  }
+
+  return undefined;
+}
+
+/**
+ * Check whether a process id is still alive.
+ * @param {number} pid - Process id to probe.
+ * @returns {boolean}
+ */
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+    if (code === 'ESRCH') return false;
+    throw error;
+  }
+}
+
+/**
+ * Wait for a process to stop after timeout cleanup.
+ * @param {number} pid - Process id to observe.
+ * @param {number} [tries=100] - Number of retry checks before failing.
+ * @returns {Promise<boolean>}
+ */
+async function waitstop(pid, tries = 100) {
+  for (let i = 0; i < tries; i += 1) {
+    if (!alive(pid)) return true;
+    await sleep(20);
+  }
+
+  return false;
+}
+
+/**
  * Materialise a config file derived from the base fixture.
  * @param {string} dir - Temporary directory to receive the config file.
  * @returns {Promise<string>}
@@ -81,13 +146,14 @@ async function httpconfig(dir, url) {
 /**
  * Build a stdio config for a non-responsive server entry.
  * @param {string} dir - Temp directory to write config in.
+ * @param {string} [pid] - Optional file path where the fixture should record its pid.
  * @returns {Promise<string>}
  */
-async function idleconfig(dir) {
+async function idleconfig(dir, pid) {
   const file = path.join(dir, 'mcp.json');
   const config = {
     command: process.execPath,
-    args: [idleEntry]
+    args: pid ? [idleEntry, pid] : [idleEntry]
   };
 
   const data = { servers: { demo: config } };
@@ -231,7 +297,8 @@ describe('connect', function connectSuite() {
 
     it('times out when the server never completes initialization', async function connectTimeoutCase() {
       const dir = await tempdir();
-      await idleconfig(dir);
+      const pid = path.join(dir, 'idle.pid');
+      await idleconfig(dir, pid);
 
       const cfg = await load(undefined, dir);
       const started = Date.now();
@@ -245,6 +312,11 @@ describe('connect', function connectSuite() {
         assert.equal(message.includes('Timed out while connecting to server "demo"'), true);
         assert.equal(elapsed < 5000, true);
       }
+
+      const child = await readpid(pid);
+      assert.equal(typeof child, 'number');
+      assert.equal(Number.isInteger(child), true);
+      assert.equal(await waitstop(child), true);
     });
   });
 });
