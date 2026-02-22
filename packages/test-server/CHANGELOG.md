@@ -1,5 +1,11 @@
 # @mcp-layer/test-server
 
+## 1.0.3
+
+### Patch Changes
+
+- 11f686b: Add connection timeouts to avoid hanging CLI sessions and update the test server to use stateful Streamable HTTP sessions.
+
 ## 1.0.2
 
 ### Patch Changes
