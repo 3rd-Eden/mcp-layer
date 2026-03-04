@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build:types": "pnpm -r --if-present build:types",
-    "test": "pnpm build:types && node --test --test-timeout=30000 test/**/*.test.js packages/*/test/*.test.js packages/*/test/**/*.test.js",
+    "test": "pnpm build:types && pnpm -r --if-present test && node --test --test-timeout=30000 ./test/*.test.js",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
