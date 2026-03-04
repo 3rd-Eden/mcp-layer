@@ -25,12 +25,16 @@
   "author": "Arnout Kazemier",
   "type": "module",
   "scripts": {
+    "build:types": "node src/generate.js && tsc -p tsconfig.json",
     "prepack": "node src/generate.js",
+    "prepublishOnly": "pnpm run build:types",
     "test": "node --test ./test/**/*.js"
   },
   "main": "./src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
@@ -38,6 +42,7 @@
   },
   "files": [
     "src",
+    "types",
     "README.md",
     "LICENSE"
   ],

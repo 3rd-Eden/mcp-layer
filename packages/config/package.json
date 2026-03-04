@@ -18,33 +18,86 @@
     "configuration"
   ],
   "main": "src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
-    "./claude-code": "./src/connectors/claude-code.js",
-    "./codex": "./src/connectors/codex.js",
-    "./cursor": "./src/connectors/cursor.js",
-    "./vscode": "./src/connectors/vscode.js",
-    "./cline": "./src/connectors/cline.js",
-    "./windsurf": "./src/connectors/windsurf.js",
-    "./claude-desktop": "./src/connectors/claude-desktop.js",
-    "./gemini-cli": "./src/connectors/gemini.js",
-    "./neovim": "./src/connectors/neovim.js",
-    "./helix": "./src/connectors/helix.js",
-    "./zed": "./src/connectors/zed.js",
-    "./generic": "./src/connectors/generic.js",
+    "./claude-code": {
+      "types": "./types/connectors/claude-code.d.ts",
+      "import": "./src/connectors/claude-code.js",
+      "default": "./src/connectors/claude-code.js"
+    },
+    "./codex": {
+      "types": "./types/connectors/codex.d.ts",
+      "import": "./src/connectors/codex.js",
+      "default": "./src/connectors/codex.js"
+    },
+    "./cursor": {
+      "types": "./types/connectors/cursor.d.ts",
+      "import": "./src/connectors/cursor.js",
+      "default": "./src/connectors/cursor.js"
+    },
+    "./vscode": {
+      "types": "./types/connectors/vscode.d.ts",
+      "import": "./src/connectors/vscode.js",
+      "default": "./src/connectors/vscode.js"
+    },
+    "./cline": {
+      "types": "./types/connectors/cline.d.ts",
+      "import": "./src/connectors/cline.js",
+      "default": "./src/connectors/cline.js"
+    },
+    "./windsurf": {
+      "types": "./types/connectors/windsurf.d.ts",
+      "import": "./src/connectors/windsurf.js",
+      "default": "./src/connectors/windsurf.js"
+    },
+    "./claude-desktop": {
+      "types": "./types/connectors/claude-desktop.d.ts",
+      "import": "./src/connectors/claude-desktop.js",
+      "default": "./src/connectors/claude-desktop.js"
+    },
+    "./gemini-cli": {
+      "types": "./types/connectors/gemini.d.ts",
+      "import": "./src/connectors/gemini.js",
+      "default": "./src/connectors/gemini.js"
+    },
+    "./neovim": {
+      "types": "./types/connectors/neovim.d.ts",
+      "import": "./src/connectors/neovim.js",
+      "default": "./src/connectors/neovim.js"
+    },
+    "./helix": {
+      "types": "./types/connectors/helix.d.ts",
+      "import": "./src/connectors/helix.js",
+      "default": "./src/connectors/helix.js"
+    },
+    "./zed": {
+      "types": "./types/connectors/zed.d.ts",
+      "import": "./src/connectors/zed.js",
+      "default": "./src/connectors/zed.js"
+    },
+    "./generic": {
+      "types": "./types/connectors/generic.d.ts",
+      "import": "./src/connectors/generic.js",
+      "default": "./src/connectors/generic.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "src",
+    "types",
     "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build:types",
     "test": "node --test --experimental-test-coverage \"./test/**/*.js\""
   },
   "dependencies": {

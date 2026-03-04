@@ -194,13 +194,15 @@ For host-tool config schema references (Claude, Cursor, Codex, VS Code, Cline, a
 
 ```sh
 pnpm install
+pnpm build:types
 pnpm test
 ```
 
-These commands install workspace dependencies and run all package test suites from the repository root.
+These commands install workspace dependencies, generate declaration files from the package JSDoc into each package-local `types/` directory, and run all package test suites from the repository root.
 Root test discovery intentionally targets `packages/*/test/**/*.test.js` so fixture programs in
 `test/fixtures/` are never executed as standalone tests.
 The repository CI workflow also enforces job/step timeouts and cancels superseded runs per branch to avoid stuck jobs consuming runner minutes.
+Generated declaration output is intentionally ignored from Git and rebuilt during `pnpm test` and package publish flows.
 
 When iterating on a single area, run package-scoped commands:
 

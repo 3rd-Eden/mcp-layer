@@ -17,11 +17,15 @@
     "proxy"
   ],
   "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build:types",
     "test": "node --test --experimental-test-coverage ./test/**/*.test.js"
   },
   "main": "src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
@@ -29,6 +33,7 @@
   },
   "files": [
     "src",
+    "types",
     "LICENSE"
   ],
   "publishConfig": {

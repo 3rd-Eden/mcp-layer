@@ -1,10 +1,43 @@
 /**
+ * @typedef {object} Entry
+ * @property {string} name
+ * @property {string} source
+ * @property {Record<string, unknown>} config
+ */
+
+/**
+ * @typedef {object} Client
+ * @property {() => Promise<void>} close
+ */
+
+/**
+ * @typedef {object} Transport
+ * @property {() => Promise<void>} close
+ */
+
+/**
+ * @typedef {object} Info
+ * @property {string} name
+ * @property {string} version
+ */
+
+/**
+ * @typedef {object} Data
+ * @property {string} name
+ * @property {string} source
+ * @property {Entry | null} entry
+ * @property {Client} client
+ * @property {Transport | null | undefined} transport
+ * @property {Info} info
+ */
+
+/**
  * Shared MCP session wrapper used by connect and attach.
  * @class
  */
 export class Session {
   /**
-   * @param {{ name: string, source: string, entry: { name: string, source: string, config: Record<string, unknown> } | null, client: import('@modelcontextprotocol/sdk/client/index.js').Client, transport: unknown, info: { name: string, version: string } }} data
+   * @param {Data} data
    */
   constructor(data) {
     this.name = data.name;

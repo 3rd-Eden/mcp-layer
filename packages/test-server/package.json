@@ -15,6 +15,8 @@
     "model-context-protocol"
   ],
   "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build:types",
     "test": "node --test --experimental-test-coverage ./test/**/*.js"
   },
   "bin": {
@@ -22,12 +24,15 @@
     "mcp-test-server-http": "src/http.js"
   },
   "main": "src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
     "./http": {
+      "types": "./types/transport/http.d.ts",
       "import": "./src/transport/http.js",
       "default": "./src/transport/http.js"
     },
@@ -35,6 +40,7 @@
   },
   "files": [
     "src",
+    "types",
     "LICENSE"
   ],
   "publishConfig": {
