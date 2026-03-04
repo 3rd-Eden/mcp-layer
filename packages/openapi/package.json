@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/openapi",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "OpenAPI 3.1 generator for REST APIs backed by MCP catalogs, documentation tooling, and client generation.",
   "repository": {
     "type": "git",
@@ -59,7 +59,7 @@
     "uri-js": "^4.4.1"
   },
   "peerDependencies": {
-    "@mcp-layer/schema": "^1.0.2"
+    "@mcp-layer/schema": "^1.0.3"
   },
   "devDependencies": {
     "@mcp-layer/attach": "workspace:*",

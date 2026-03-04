@@ -1,5 +1,25 @@
 # mcp-layer
 
+## 0.2.3
+
+### Patch Changes
+
+- 35172f0: Add generated TypeScript declaration exports for every package and verify them in the workspace test suite.
+- Updated dependencies [35172f0]
+  - @mcp-layer/attach@1.1.2
+  - @mcp-layer/cli@1.3.1
+  - @mcp-layer/config@1.0.2
+  - @mcp-layer/connect@1.2.1
+  - @mcp-layer/error@0.2.1
+  - @mcp-layer/gateway@0.2.1
+  - @mcp-layer/graphql@0.2.1
+  - @mcp-layer/manager@0.2.1
+  - @mcp-layer/openapi@1.1.2
+  - @mcp-layer/rest@1.2.2
+  - @mcp-layer/schema@1.0.3
+  - @mcp-layer/session@1.0.1
+  - @mcp-layer/test-server@1.0.4
+
 ## 0.2.2
 
 ### Patch Changes
