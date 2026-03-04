@@ -35,7 +35,7 @@
   "scripts": {
     "build:types": "tsc -p tsconfig.json",
     "prepublishOnly": "pnpm run build:types",
-    "test": "node --test --experimental-test-coverage ./test/**/*.test.js",
+    "test": "node --test --experimental-test-coverage \"./test/**/*.test.js\"",
     "benchmark:load": "node ./benchmark/run.js"
   },
   "main": "src/index.js",

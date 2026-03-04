@@ -17,7 +17,7 @@
   "scripts": {
     "build:types": "tsc -p tsconfig.json",
     "prepublishOnly": "pnpm run build:types",
-    "test": "node --test --experimental-test-coverage ./test/**/*.js"
+    "test": "node --test --experimental-test-coverage \"./test/**/*.js\""
   },
   "bin": {
     "mcp-test-server": "src/bin.js",
