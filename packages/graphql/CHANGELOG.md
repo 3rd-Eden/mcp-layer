@@ -1,5 +1,12 @@
 # @mcp-layer/graphql
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [6d94f04]
+  - @mcp-layer/gateway@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

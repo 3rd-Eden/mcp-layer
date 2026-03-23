@@ -1,5 +1,13 @@
 # @mcp-layer/schema
 
+## 1.0.4
+
+### Patch Changes
+
+- 6d94f04: Add `composeCatalog()` support for precomputed MCP catalogs and let gateway-backed adapters bootstrap manager mode from catalog metadata when no eager session exists.
+
+  This release also hardens the catalog bootstrap path by distrusting catalog-only schemas by default, preferring live bootstrap session metadata when available, and validating invalid catalog inputs before manager bootstrap checks.
+
 ## 1.0.3
 
 ### Patch Changes

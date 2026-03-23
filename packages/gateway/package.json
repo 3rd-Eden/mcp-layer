@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/gateway",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Shared runtime primitives for MCP HTTP/GraphQL adapters with validation, resilience, telemetry, and catalog mapping.",
   "repository": {
     "type": "git",

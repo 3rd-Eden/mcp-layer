@@ -1,5 +1,14 @@
 # @mcp-layer/rest
 
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [6d94f04]
+  - @mcp-layer/gateway@0.2.2
+  - @mcp-layer/schema@1.0.4
+  - @mcp-layer/openapi@1.1.2
+
 ## 1.2.2
 
 ### Patch Changes
