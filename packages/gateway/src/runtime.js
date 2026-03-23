@@ -1,4 +1,5 @@
 import { extract } from '@mcp-layer/schema';
+import { LayerError } from '@mcp-layer/error';
 import { createValidator } from './validation/validator.js';
 import { createCircuitBreaker, executeWithBreaker } from './resilience/breaker.js';
 import { deriveApiVersion, resolvePrefix } from './version.js';
@@ -12,6 +13,28 @@ import { validateRuntimeOptions } from './config/validate.js';
  */
 function list(session) {
   return Array.isArray(session) ? session : [session];
+}
+
+/**
+ * Resolve the logical context name used for prefix callbacks.
+ * Prefer the explicit session name, then the catalog server name, and finally a
+ * stable fallback so catalog-driven manager mode can register routes without a
+ * bootstrap session.
+ *
+ * @param {import('@mcp-layer/session').Session | undefined} session - Optional bootstrap session.
+ * @param {Record<string, unknown> | undefined} info - Catalog server metadata.
+ * @returns {string}
+ */
+function contextName(session, info) {
+  if (session && typeof session.name === 'string' && session.name.length > 0) {
+    return session.name;
+  }
+
+  if (info && typeof info.name === 'string' && info.name.length > 0) {
+    return String(info.name);
+  }
+
+  return 'session';
 }
 
 /**
@@ -69,7 +92,7 @@ function ensureBreaker(breakers, session, config, telemetry) {
 
 /**
  * Resolve request-scoped session and breaker.
- * @param {import('@mcp-layer/session').Session} bootstrap - Bootstrap session.
+ * @param {import('@mcp-layer/session').Session | undefined} bootstrap - Optional bootstrap session.
  * @param {{ manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session> }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number } }} config - Runtime config.
  * @param {Map<string, import('opossum')>} breakers - Breaker storage.
  * @param {ReturnType<import('./telemetry/index.js').createTelemetry> | null} telemetry - Telemetry helper.
@@ -78,6 +101,13 @@ function ensureBreaker(breakers, session, config, telemetry) {
  */
 async function resolveSession(bootstrap, config, breakers, telemetry, request) {
   const target = config.manager ? await config.manager.get(request) : bootstrap;
+  if (!target) {
+    throw new LayerError({
+      name: 'gateway',
+      method: 'resolveSession',
+      message: 'No session available for request resolution.',
+    });
+  }
   const breaker = ensureBreaker(breakers, target, config.resilience, telemetry);
   return { session: target, breaker };
 }
@@ -86,11 +116,13 @@ async function resolveSession(bootstrap, config, breakers, telemetry, request) {
  * Create shared runtime contexts for MCP adapters.
  * @param {Record<string, unknown>} opts - Runtime options.
  * @param {{ name?: string, serviceName?: string }} [meta] - Runtime metadata.
- * @returns {Promise<{ config: ReturnType<typeof validateRuntimeOptions>, contexts: Array<{ session: import('@mcp-layer/session').Session, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, version: string, prefix: string, validator: import('./validation/validator.js').SchemaValidator, telemetry: ReturnType<typeof createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }>, breakers: Map<string, import('opossum')>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown, close: () => Promise<void> }>}
+ * @returns {Promise<{ config: ReturnType<typeof validateRuntimeOptions>, contexts: Array<{ session: import('@mcp-layer/session').Session | undefined, catalog: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, info: Record<string, unknown> | undefined, version: string, prefix: string, validator: import('./validation/validator.js').SchemaValidator, telemetry: ReturnType<typeof createTelemetry> | null, resolve: (request: import('fastify').FastifyRequest) => Promise<{ session: import('@mcp-layer/session').Session, breaker: import('opossum') | null }>, execute: (request: import('fastify').FastifyRequest, method: string, params: Record<string, unknown>) => Promise<Record<string, unknown>>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown }>, breakers: Map<string, import('opossum')>, normalize: (error: Error & { code?: string | number }, instance: string, requestId?: string) => unknown, close: () => Promise<void> }>}
  */
 export async function createRuntime(opts, meta = {}) {
   const config = validateRuntimeOptions(opts, meta);
-  const sessions = config.manager ? [config.session] : list(config.session);
+  const sessions = config.manager
+    ? (config.session ? [config.session] : [])
+    : list(config.session);
   const breakers = new Map();
   const contexts = [];
 
@@ -114,11 +146,19 @@ export async function createRuntime(opts, meta = {}) {
     };
   }
 
-  for (const session of sessions) {
-    const catalog = await extract(session);
+  /**
+   * Build and store one runtime context from a bootstrap session or a
+   * precomputed catalog. Manager mode can omit the session entirely when a
+   * catalog was provided explicitly.
+   *
+   * @param {import('@mcp-layer/session').Session | undefined} session - Optional bootstrap session.
+   * @param {{ server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }} catalog - Extracted or precomputed catalog.
+   * @returns {void}
+   */
+  function pushContext(session, catalog) {
     const info = catalog.server?.info;
     const version = deriveApiVersion(info);
-    const prefix = resolvePrefix(config.prefix, version, info, session.name);
+    const prefix = resolvePrefix(config.prefix, version, info, contextName(session, info));
     const validator = createValidator(config.validation, session);
     const telemetry = createTelemetry(config.telemetry);
 
@@ -168,6 +208,15 @@ export async function createRuntime(opts, meta = {}) {
       execute,
       normalize: contextNormalize
     });
+  }
+
+  if (config.manager && !config.session) {
+    pushContext(undefined, config.catalog);
+  } else {
+    for (const session of sessions) {
+      const catalog = config.catalog ?? await extract(session);
+      pushContext(session, catalog);
+    }
   }
 
   /**

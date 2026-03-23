@@ -59,7 +59,7 @@ function trustMode(value, pack) {
  * Validate base runtime options and apply defaults.
  * @param {Record<string, unknown>} opts - User-supplied options.
  * @param {{ name?: string, serviceName?: string }} [meta] - Validation metadata.
- * @returns {{ session: unknown, manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session>, close?: () => Promise<void> }, prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, metricPrefix: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, normalizeError?: (error: Error & { code?: string | number }, instance: string, requestId?: string, options?: { exposeDetails?: boolean }) => unknown }}
+ * @returns {{ session: unknown, catalog?: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> }, manager?: { get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session>, close?: () => Promise<void> }, prefix?: string | ((version: string, info: Record<string, unknown> | undefined, name: string) => string), validation: { trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }, resilience: { enabled: boolean, timeout: number, errorThresholdPercentage: number, resetTimeout: number, volumeThreshold: number }, telemetry: { enabled: boolean, serviceName: string, metricPrefix: string, api?: import('@opentelemetry/api') }, errors: { exposeDetails: boolean }, normalizeError?: (error: Error & { code?: string | number }, instance: string, requestId?: string, options?: { exposeDetails?: boolean }) => unknown }}
  */
 export function validateRuntimeOptions(opts, meta = {}) {
   const pack = typeof meta.name === 'string' && meta.name.length > 0 ? meta.name : 'gateway';
@@ -69,6 +69,7 @@ export function validateRuntimeOptions(opts, meta = {}) {
   const base = defaults(serviceName);
   const input = isrecord(opts) ? opts : {};
   const session = input.session;
+  const catalog = input.catalog;
   const manager = input.manager;
 
   if (!session && !manager) {
@@ -87,11 +88,11 @@ export function validateRuntimeOptions(opts, meta = {}) {
         message: 'manager must be an object with a get(request) function.',
       });
     }
-    if (!session) {
+    if (!session && !catalog) {
       throw new LayerError({
         name: pack,
         method: 'validateRuntimeOptions',
-        message: 'session is required when manager is provided (used for catalog bootstrap).',
+        message: 'session or catalog is required when manager is provided (used for catalog bootstrap).',
       });
     }
     if (Array.isArray(session)) {
@@ -101,6 +102,14 @@ export function validateRuntimeOptions(opts, meta = {}) {
         message: 'manager does not support multiple sessions. Register multiple plugins instead.',
       });
     }
+  }
+
+  if (catalog !== undefined && !isrecord(catalog)) {
+    throw new LayerError({
+      name: pack,
+      method: 'validateRuntimeOptions',
+      message: 'catalog must be an object.',
+    });
   }
 
   if (input.prefix !== undefined && typeof input.prefix !== 'string' && typeof input.prefix !== 'function') {
@@ -154,6 +163,7 @@ export function validateRuntimeOptions(opts, meta = {}) {
 
   return {
     session,
+    catalog: /** @type {{ server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> } | undefined} */ (catalog),
     manager: /** @type {{ get: (request: import('fastify').FastifyRequest) => Promise<import('@mcp-layer/session').Session>, close?: () => Promise<void> } | undefined} */ (manager),
     prefix: input.prefix,
     validation: normalizedValidation,

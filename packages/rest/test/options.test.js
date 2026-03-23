@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestMcpServer } from './helpers.js';
 import { attach } from '@mcp-layer/attach';
+import { composeCatalog } from '@mcp-layer/schema';
 import { validateOptions } from '../src/config/validate.js';
 
 /**
@@ -73,13 +74,41 @@ function optionsSuite() {
     }
   });
 
-  it('requires a catalog session when manager is provided', async function managerCase() {
+  it('requires a bootstrap session or catalog when manager is provided', async function managerCase() {
     await assert.rejects(
       async function run() {
         validateOptions({ manager: { get: async function get() {} } });
       },
-      /session.*required/i
+      /session.*catalog.*required|catalog.*session.*required/i
     );
+  });
+
+  it('accepts a catalog when manager is provided without a bootstrap session', async function managerCatalogCase() {
+    const catalog = composeCatalog({
+      server: {
+        info: { name: 'catalog', version: '1.0.0' },
+        capabilities: { tools: {} },
+      },
+      tools: [{
+        name: 'echo',
+        description: 'Echo text.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            text: { type: 'string' },
+          },
+          required: ['text'],
+        },
+      }],
+    });
+
+    const cfg = validateOptions({
+      catalog,
+      manager: { get: async function get() {} },
+    });
+
+    assert.equal(cfg.catalog.server.info.name, 'catalog');
+    assert.equal(Array.isArray(cfg.catalog.items), true);
   });
 
   it('rejects manager with multiple sessions', async function managerMultiCase() {

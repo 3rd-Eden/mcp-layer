@@ -4,18 +4,25 @@ import Fastify from 'fastify';
 import { attach } from '@mcp-layer/attach';
 import { build } from '@mcp-layer/test-server';
 import { createManager } from '@mcp-layer/manager';
+import { extract } from '@mcp-layer/schema';
 import mcpRest from '@mcp-layer/rest';
 import { ERROR_TYPES } from '../src/errors/types.js';
 
 /**
- * Create a catalog session for REST routing.
+ * Create a catalog for REST routing.
  * @param {Array<import('@modelcontextprotocol/sdk/server/mcp.js').McpServer>} servers - Server list to populate.
- * @returns {Promise<import('@mcp-layer/session').Session>}
+ * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
  */
-async function createCatalogSession(servers) {
+async function createCatalog(servers) {
   const server = build({ info: { name: 'catalog', version: '1.0.0' } });
   servers.push(server);
-  return attach(server, 'catalog');
+  const session = await attach(server, 'catalog');
+
+  try {
+    return await extract(session);
+  } finally {
+    await session.close();
+  }
 }
 
 /**
@@ -57,7 +64,7 @@ async function closeServers(servers) {
 function suite() {
   it('routes requests through the session manager', async function managerCase() {
     const state = { servers: [], count: 0 };
-    const catalogSession = await createCatalogSession(state.servers);
+    const catalog = await createCatalog(state.servers);
     const manager = createManager({
       max: 5,
       ttl: 60000,
@@ -66,7 +73,7 @@ function suite() {
     const app = Fastify({ logger: false });
 
     await app.register(mcpRest, {
-      session: catalogSession,
+      catalog,
       manager: manager
     });
 
@@ -96,7 +103,7 @@ function suite() {
 
   it('returns a 401 when auth is required', async function authCase() {
     const state = { servers: [], count: 0 };
-    const catalogSession = await createCatalogSession(state.servers);
+    const catalog = await createCatalog(state.servers);
     const manager = createManager({
       max: 2,
       ttl: 60000,
@@ -106,7 +113,7 @@ function suite() {
     const app = Fastify({ logger: false });
 
     await app.register(mcpRest, {
-      session: catalogSession,
+      catalog,
       manager: manager
     });
 

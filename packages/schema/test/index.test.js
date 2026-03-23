@@ -9,7 +9,7 @@ import { load } from '@mcp-layer/config';
 import { connect } from '@mcp-layer/connect';
 import { attach } from '@mcp-layer/attach';
 import { build } from '@mcp-layer/test-server';
-import { extract } from '../src/index.js';
+import { composeCatalog, extract } from '../src/index.js';
 
 const fixtures = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const base = path.join(fixtures, 'config.json');
@@ -159,6 +159,69 @@ describe('schema', function schemaSuite() {
       await assert.rejects(async function run() {
         await extract({});
       }, /Expected a Session/);
+    });
+  });
+
+  describe('composeCatalog', function composeSuite() {
+    it('builds a unified catalog from raw MCP definitions', function composeCase() {
+      const out = composeCatalog({
+        server: {
+          info: { name: 'composed', version: '2.0.0' },
+          capabilities: { tools: {}, resources: {}, prompts: {} },
+          instructions: 'Use the composed catalog.',
+        },
+        tools: [{
+          name: 'sum',
+          description: 'Add two numbers.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              left: { type: 'number' },
+              right: { type: 'number' },
+            },
+            required: ['left', 'right'],
+          },
+        }],
+        resources: [{
+          name: 'config',
+          title: 'Config',
+          uri: 'resource://config',
+          mimeType: 'application/json',
+        }],
+        templates: [{
+          name: 'note',
+          title: 'Note Template',
+          uriTemplate: 'note://{topic}',
+          mimeType: 'text/plain',
+        }],
+        prompts: [{
+          name: 'review',
+          description: 'Request a review.',
+          arguments: [{
+            name: 'topic',
+            description: 'Topic to review.',
+            required: true,
+          }],
+        }],
+      });
+
+      assert.equal(out.server.info.name, 'composed');
+      assert.equal(out.server.info.version, '2.0.0');
+      assert.equal(out.server.instructions, 'Use the composed catalog.');
+
+      const tool = finditem(out.items, 'tool', 'sum');
+      const resource = finditem(out.items, 'resource', 'config');
+      const template = finditem(out.items, 'resource-template', 'note');
+      const prompt = finditem(out.items, 'prompt', 'review');
+
+      assert.equal(Boolean(tool), true);
+      assert.equal(tool.detail.input.json.type, 'object');
+      assert.equal(Boolean(resource), true);
+      assert.equal(resource.detail.uri, 'resource://config');
+      assert.equal(Boolean(template), true);
+      assert.equal(template.detail.uriTemplate, 'note://{topic}');
+      assert.equal(Boolean(prompt), true);
+      assert.equal(prompt.detail.input.json.required[0], 'topic');
     });
   });
 

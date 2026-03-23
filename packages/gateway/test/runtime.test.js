@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { attach } from '@mcp-layer/attach';
+import { extract } from '@mcp-layer/schema';
 import { build } from '@mcp-layer/test-server';
 import { createManager } from '@mcp-layer/manager';
 import { createRuntime } from '../src/runtime.js';
@@ -16,6 +17,22 @@ function request(headers = {}) {
     url: '/graphql',
     headers,
   });
+}
+
+/**
+ * Extract a bootstrap catalog from a real MCP session.
+ * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
+ */
+async function catalog() {
+  const server = build({ info: { name: 'catalog', version: '1.0.0' } });
+  const session = await attach(server, 'catalog');
+
+  try {
+    return await extract(session);
+  } finally {
+    await session.close();
+    await server.close();
+  }
 }
 
 /**
@@ -107,6 +124,44 @@ function runtimeSuite() {
       await runtime.close();
     } finally {
       await bootstrap.close();
+      await server.close();
+    }
+  });
+
+  it('creates runtime context from catalog plus manager without a bootstrap session', async function catalogManagerCase() {
+    const server = build();
+    const session = await attach(server, 'runtime-target');
+    const bootstrap = await catalog();
+    const manager = {
+      /**
+       * Return the lazily managed session for each request.
+       * @returns {Promise<import('@mcp-layer/session').Session>}
+       */
+      async get() {
+        return session;
+      },
+    };
+
+    try {
+      const runtime = await createRuntime({
+        catalog: bootstrap,
+        manager,
+      });
+      const context = runtime.contexts[0];
+
+      const valid = context.validator.validate('tool', 'echo', { text: 'ok', loud: false });
+      const success = await context.execute(request(), 'tools/call', {
+        name: 'echo',
+        arguments: { text: 'hello', loud: false },
+      });
+
+      assert.equal(context.prefix, '/v1');
+      assert.equal(valid.valid, true);
+      assert.equal(success.content[0].text, 'hello');
+
+      await runtime.close();
+    } finally {
+      await session.close();
       await server.close();
     }
   });

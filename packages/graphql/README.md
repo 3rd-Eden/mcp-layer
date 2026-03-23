@@ -88,8 +88,9 @@ Options:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `Session` or `Session[]` | required | Bootstrap session(s) used for catalog extraction and static mode. |
-| `manager` | `{ get(request), close?() }` | optional | Per-request session manager (requires bootstrap `session`). |
+| `session` | `Session` or `Session[]` | required unless using `manager` + `catalog` | Bootstrap session(s) used for catalog extraction and static mode. |
+| `catalog` | `{ server?, items? }` | optional | Precomputed bootstrap catalog used when the live session should only be resolved lazily. |
+| `manager` | `{ get(request), close?() }` | optional | Per-request session manager (requires bootstrap `session` or `catalog`). |
 | `prefix` | `string` or `(version, info, name) => string` | derived | Per-session route prefix. |
 | `endpoint` | `string` | `"/graphql"` | GraphQL POST endpoint path under prefix. |
 | `ide.enabled` | `boolean` | `false` | Enables GraphiQL route. |
@@ -599,7 +600,7 @@ Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 This happens when `manager` is provided while `session` is an array.
 
 Step-by-step resolution:
-1. In manager mode, pass one bootstrap `session`.
+1. In manager mode, pass one bootstrap `session` or one bootstrap `catalog`.
 2. For multi-session static mounts, remove `manager`.
 3. Register separate plugin instances per static session surface.
 4. Add startup tests for both architecture modes.
@@ -618,20 +619,20 @@ await fastify.register(mcpGraphql, {
 
 </details>
 
-<a id="error-126799"></a>
-### `session is required when manager is provided (used for catalog bootstrap).`
+<a id="error-aae9b3"></a>
+### `session or catalog is required when manager is provided (used for catalog bootstrap).`
 
 Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
-This happens when `manager` is configured without a bootstrap `session`.
+This happens when `manager` is configured without a bootstrap `session` or `catalog`.
 
 Step-by-step resolution:
-1. Always provide a bootstrap `session` with `manager`.
-2. Ensure bootstrap session is connected before registration.
+1. Always provide a bootstrap `session` or `catalog` with `manager`.
+2. Ensure the bootstrap session is connected before registration, or ensure the bootstrap catalog matches the managed session surface.
 3. Keep bootstrap and managed sessions aligned in capability surface.
-4. Add tests that fail fast without bootstrap session.
+4. Add tests that fail fast without bootstrap metadata.
 
-Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-c773d9).
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-b010d3).
 
 <details>
 <summary>Fix Example: include bootstrap session in manager mode</summary>
@@ -639,6 +640,50 @@ Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/RE
 ```js
 await fastify.register(mcpGraphql, {
   session: bootstrapSession,
+  manager
+});
+```
+
+</details>
+
+<details>
+<summary>Fix Example: include bootstrap catalog in manager mode</summary>
+
+```js
+await fastify.register(mcpGraphql, {
+  catalog,
+  manager
+});
+```
+
+</details>
+
+<a id="error-f184e1"></a>
+### `catalog must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `catalog` is passed as a primitive, array, or serialized payload instead of the composed catalog object the GraphQL plugin expects at bootstrap.
+
+Step-by-step resolution:
+1. Pass the bootstrap catalog as a plain object.
+2. Do not pass stringified JSON or only the `items` array.
+3. Ensure the object shape matches the extracted/composed catalog surface.
+4. Add registration tests that reject malformed catalog bootstrap values.
+
+Canonical gateway reference: [`@mcp-layer/gateway` runtime errors](../gateway/README.md#error-17712f).
+
+<details>
+<summary>Fix Example: provide bootstrap catalog as an object</summary>
+
+```js
+await fastify.register(mcpGraphql, {
+  catalog: {
+    server: {
+      info: { name: 'example-server', version: '1.0.0' }
+    },
+    items: []
+  },
   manager
 });
 ```
@@ -654,7 +699,7 @@ This happens when plugin options omit both `session` and `manager`.
 
 Step-by-step resolution:
 1. Pass a connected `session` for static mode.
-2. Or pass `manager` plus bootstrap `session` for dynamic mode.
+2. Or pass `manager` plus bootstrap `session` or `catalog` for dynamic mode.
 3. Assert required options before `register`.
 4. Add tests that validate registration failure on missing session source.
 
