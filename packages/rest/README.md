@@ -62,6 +62,7 @@ await app.listen({ port: 3000 });
 ```
 
 This registers REST routes on the Fastify instance using the MCP catalog returned by the session.
+You can also provide a precomputed `catalog` when the live session cannot be attached safely during plugin registration.
 
 ## Connect From Discovered Config
 
@@ -114,8 +115,9 @@ Top-level options:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `session` | `Session` or `Session[]` | required | MCP session(s) to expose over REST. |
-| `manager` | `{ get(request) }` | optional | Session manager used to resolve per-request MCP sessions (true proxy mode). Requires `session` for catalog bootstrap. |
+| `session` | `Session` or `Session[]` | required unless using `manager` + `catalog` | MCP session(s) to expose over REST. |
+| `catalog` | `{ server?, items? }` | optional | Precomputed bootstrap catalog for route and OpenAPI registration. Use this when the live session should only be attached lazily at request time. |
+| `manager` | `{ get(request) }` | optional | Session manager used to resolve per-request MCP sessions (true proxy mode). Requires `session` or `catalog` for bootstrap metadata. |
 | `prefix` | `string` or `(version, serverInfo, sessionName) => string` | derived | Route prefix. Use a function to create per-session routes. |
 | `validation` | `object` | see below | Validation and schema safety controls. |
 | `resilience` | `object` | see below | Circuit breaker configuration. |
@@ -229,8 +231,21 @@ await app.register(mcpRest, {
 ```
 
 Notes:
-- Today the REST plugin uses the provided `session` to build routes and OpenAPI. The manager is used for per-request execution.
-- The session manager must return sessions that match the same MCP server surface as the catalog session.
+- The REST plugin uses the provided `session` or `catalog` to build routes and OpenAPI. The manager is used for per-request execution.
+- The session manager must return sessions that match the same MCP server surface as the bootstrap `session` or `catalog`.
+
+When a live attach must happen after Fastify is ready, bootstrap from a catalog and keep the manager lazy:
+
+```js
+await app.register(mcpRest, {
+  catalog,
+  manager: {
+    async get() {
+      return attach(app, 'primary');
+    }
+  }
+});
+```
 
 ## Performance Tips
 
@@ -558,10 +573,10 @@ await fastify.register(restPlugin, {
 
 Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
-This happens when `manager` is provided together with `session` as an array. Manager mode resolves sessions per request and only supports a single bootstrap session.
+This happens when `manager` is provided together with `session` as an array. Manager mode resolves sessions per request and only supports a single bootstrap session or a single bootstrap catalog.
 
 Step-by-step resolution:
-1. If using `manager`, pass a single `session` object (not an array).
+1. If using `manager`, pass a single `session` object or a single `catalog` object.
 2. If you need multiple static sessions, remove `manager` and register multiple plugin instances.
 3. Keep manager-backed and multi-session modes separate in architecture.
 4. Add tests for both registration modes.
@@ -631,18 +646,18 @@ await fastify.register(restPlugin, {
 
 </details>
 
-<a id="error-a9f9ff"></a>
-### session is required when manager is provided (used for catalog bootstrap).
+<a id="error-cbb190"></a>
+### `session or catalog is required when manager is provided (used for catalog bootstrap).`
 
 Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
-This happens when `manager` mode is enabled but no bootstrap `session` is provided. The plugin still needs one session to build catalog/OpenAPI metadata at startup.
+This happens when `manager` mode is enabled but neither a bootstrap `session` nor a bootstrap `catalog` is provided. The plugin still needs metadata to build routes and OpenAPI at startup.
 
 Step-by-step resolution:
-1. Provide a bootstrap `session` alongside `manager`.
-2. Ensure the bootstrap session is connected before plugin registration.
+1. Provide a bootstrap `session` or `catalog` alongside `manager`.
+2. Ensure the bootstrap session is connected before plugin registration, or ensure the bootstrap catalog matches the manager-provided session surface.
 3. Keep manager responsible for per-request switching, not initial catalog extraction.
-4. Add startup tests for manager mode with and without bootstrap session.
+4. Add startup tests for manager mode with and without bootstrap metadata.
 
 <details>
 <summary>Fix Example: provide bootstrap session in manager mode</summary>
@@ -656,15 +671,57 @@ await fastify.register(restPlugin, {
 
 </details>
 
+<details>
+<summary>Fix Example: provide bootstrap catalog in manager mode</summary>
+
+```js
+await fastify.register(restPlugin, {
+  catalog,
+  manager
+});
+```
+
+</details>
+
+<a id="error-6d9f21"></a>
+### `catalog must be an object.`
+
+Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
+
+This happens when `catalog` is passed as a primitive, array, or serialized payload instead of the composed catalog object the REST plugin expects at bootstrap.
+
+Step-by-step resolution:
+1. Pass the catalog root as a plain object.
+2. Do not pass stringified JSON or an `items` array by itself.
+3. Ensure the catalog shape matches `server` plus `items` metadata produced by extraction/composition.
+4. Add registration tests that reject malformed catalog bootstrap values.
+
+<details>
+<summary>Fix Example: provide catalog as bootstrap object</summary>
+
+```js
+await fastify.register(restPlugin, {
+  catalog: {
+    server: {
+      info: { name: 'example-server', version: '1.0.0' }
+    },
+    items: []
+  },
+  manager
+});
+```
+
+</details>
+
 <a id="error-664760"></a>
-### session or manager option is required.
+### `session or manager option is required.`
 
 Thrown from: `validateRuntimeOptions` (via `@mcp-layer/gateway`)
 
 This happens when plugin options include neither `session` nor `manager`. REST cannot expose MCP endpoints without at least one session source.
 
 Step-by-step resolution:
-1. Supply a connected `session` for static mode, or `manager` + bootstrap `session` for dynamic mode.
+1. Supply a connected `session` for static mode, or `manager` plus bootstrap `session`/`catalog` for dynamic mode.
 2. Verify DI wiring does not drop these options before registration.
 3. Add startup assertions for required plugin options.
 4. Add tests that confirm registration fails fast without session sources.

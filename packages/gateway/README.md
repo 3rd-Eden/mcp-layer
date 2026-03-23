@@ -35,7 +35,7 @@ Use this package when you are building an interface layer on top of MCP that nee
 
 This example demonstrates how adapter packages bootstrap runtime state once and reuse it per request. This matters because repeated catalog extraction and ad-hoc breaker creation quickly cause drift between adapters.
 
-Expected behavior: one runtime context is created per bootstrap session, with a stable prefix/version and reusable resolver/validator/executor primitives.
+Expected behavior: one runtime context is created per bootstrap session or precomputed catalog, with a stable prefix/version and reusable resolver/validator/executor primitives.
 
 ```js
 import { createRuntime, createMap } from '@mcp-layer/gateway';
@@ -81,7 +81,8 @@ Signature:
 ```ts
 createRuntime(
   options: {
-    session: Session | Session[];
+    session?: Session | Session[];
+    catalog?: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> };
     manager?: { get(request): Promise<Session>; close?(): Promise<void> };
     prefix?: string | ((version, info, sessionName) => string);
     validation?: {
@@ -117,7 +118,7 @@ createRuntime(
 ): Promise<{
   config;
   contexts: Array<{
-    session;
+    session | undefined;
     catalog;
     info;
     version;
@@ -136,7 +137,9 @@ createRuntime(
 
 Behavior notes:
 
-- `manager` requires a bootstrap `session` (catalog extraction source).
+- `manager` requires either a bootstrap `session` or a precomputed `catalog`.
+- when a bootstrap `session` exists, runtime metadata is always extracted from that live session.
+- `catalog` bootstrap is only used when manager mode has no bootstrap session yet.
 - manager mode does not support `session` arrays.
 - `close()` shuts down breaker instances and calls `manager.close()` when available.
 - validation registration is preloaded from catalog tool/prompt input schemas.
@@ -278,12 +281,12 @@ Thrown from: `validateRuntimeOptions`
 This happens when `manager` is provided with `session` as an array.
 
 Step-by-step resolution:
-1. In manager mode, provide exactly one bootstrap session.
+1. In manager mode, provide exactly one bootstrap session or one precomputed catalog.
 2. If you need multiple static sessions, remove manager mode.
 3. Register separate adapter instances for each static session surface.
 4. Add explicit startup tests for manager mode vs multi-session mode.
 
-This example demonstrates valid manager-mode bootstrapping. This matters because manager mode resolves sessions per request and needs one catalog source at startup. Expected behavior: runtime initializes and delegates per-request resolution through manager.
+This example demonstrates valid manager-mode bootstrapping. This matters because manager mode resolves sessions per request and still needs one catalog source at startup. Expected behavior: runtime initializes and delegates per-request resolution through manager.
 
 <details>
 <summary>Fix Example: manager mode with one bootstrap session</summary>
@@ -297,20 +300,20 @@ await createRuntime({
 
 </details>
 
-<a id="error-c773d9"></a>
-### `session is required when manager is provided (used for catalog bootstrap).`
+<a id="error-b010d3"></a>
+### `session or catalog is required when manager is provided (used for catalog bootstrap).`
 
 Thrown from: `validateRuntimeOptions`
 
-This happens when `manager` is configured without a bootstrap `session`.
+This happens when `manager` is configured without a bootstrap `session` or a precomputed `catalog`.
 
 Step-by-step resolution:
-1. Provide a bootstrap session alongside manager.
-2. Ensure bootstrap session connects before runtime creation.
-3. Keep bootstrap session aligned with manager-provided session capabilities.
+1. Provide a bootstrap `session` or a precomputed `catalog` alongside manager.
+2. Ensure bootstrap session connects before runtime creation, or ensure the catalog matches the manager-provided session surface.
+3. Keep the catalog aligned with manager-provided session capabilities.
 4. Add a startup test that asserts this requirement.
 
-This example shows manager mode with explicit bootstrap catalog source. This matters because the runtime must extract catalog metadata at initialization time. Expected behavior: runtime can build validators and route metadata before serving requests.
+This example shows manager mode with explicit bootstrap catalog source. This matters because the runtime must know route and validator metadata before serving requests. Expected behavior: runtime can build validators and route metadata before request execution begins.
 
 <details>
 <summary>Fix Example: include bootstrap session when manager is enabled</summary>
@@ -318,6 +321,50 @@ This example shows manager mode with explicit bootstrap catalog source. This mat
 ```js
 await createRuntime({
   session: bootstrapSession,
+  manager
+});
+```
+
+</details>
+
+<details>
+<summary>Fix Example: include catalog when manager is enabled</summary>
+
+```js
+await createRuntime({
+  catalog,
+  manager
+});
+```
+
+</details>
+
+<a id="error-17712f"></a>
+### `catalog must be an object.`
+
+Thrown from: `validateRuntimeOptions`
+
+This happens when `catalog` is provided as a primitive, array, or other non-object value.
+
+Step-by-step resolution:
+1. Pass the extracted or composed catalog as a plain object.
+2. Do not pass serialized JSON strings or arrays in place of the catalog root.
+3. Ensure the object shape includes `server` and `items` only where needed.
+4. Add tests that reject malformed catalog bootstrap values.
+
+This example shows valid catalog bootstrap input. This matters because manager mode can depend on catalog metadata before any request-scoped session exists. Expected behavior: runtime accepts the catalog and registers validators and route metadata from it.
+
+<details>
+<summary>Fix Example: pass catalog as an object</summary>
+
+```js
+await createRuntime({
+  catalog: {
+    server: {
+      info: { name: 'example-server', version: '1.0.0' }
+    },
+    items: []
+  },
   manager
 });
 ```
@@ -333,7 +380,7 @@ This happens when runtime options include neither `session` nor `manager`.
 
 Step-by-step resolution:
 1. Pass a connected `session` for static mode.
-2. Or pass `manager` plus a bootstrap `session` for dynamic mode.
+2. Or pass `manager` plus a bootstrap `session` or `catalog` for dynamic mode.
 3. Add adapter-level assertions before calling `createRuntime`.
 4. Add tests that verify startup failure without session sources.
 
@@ -458,6 +505,40 @@ await createRuntime({
   normalizeError: function normalizeError(error, instance, requestId, options) {
     return { error, instance, requestId, options };
   }
+});
+```
+
+</details>
+
+<a id="error-a05713"></a>
+### `No session available for request resolution.`
+
+Thrown from: `resolveSession`
+
+This happens when request-time session resolution returns `undefined` and no bootstrap session was available to fall back to.
+
+Step-by-step resolution:
+1. Verify manager mode always returns a `Session` from `get(request)`.
+2. Ensure static mode passes a connected bootstrap `session`.
+3. Confirm request routing reaches the adapter instance backed by the expected manager or session.
+4. Add a request-path test that exercises the failing resolution path directly.
+
+This example demonstrates a manager that always resolves a concrete session. This matters because runtime execution cannot validate or execute MCP methods without a request-scoped target session. Expected behavior: each request resolves a session and proceeds to breaker-backed execution.
+
+<details>
+<summary>Fix Example: always return a session from manager.get</summary>
+
+```js
+const manager = {
+  async get(request) {
+    const session = await lookupSession(request);
+    if (!session) throw new Error('session lookup failed');
+    return session;
+  }
+};
+await createRuntime({
+  catalog,
+  manager
 });
 ```
 

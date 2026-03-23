@@ -1,0 +1,31 @@
+{
+  "server": {
+    "info": {
+      "name": "catalog",
+      "version": "1.0.0"
+    }
+  },
+  "items": [
+    {
+      "type": "tool",
+      "name": "unsafe",
+      "detail": {
+        "input": {
+          "json": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "pattern": "(a+)+$"
+              }
+            },
+            "required": [
+              "text"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  ]
+}

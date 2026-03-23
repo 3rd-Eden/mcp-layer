@@ -9,7 +9,7 @@ import { checkSchemaSafety } from './safety.js';
 export class SchemaValidator {
   /**
    * @param {{ trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }} config - Validation configuration.
-   * @param {import('@mcp-layer/session').Session} session - MCP session.
+   * @param {import('@mcp-layer/session').Session | undefined} session - Optional bootstrap session.
    */
   constructor(config, session) {
     this.#config = config;
@@ -139,7 +139,7 @@ export class SchemaValidator {
 /**
  * Create a schema validator instance.
  * @param {{ trustSchemas: 'auto' | true | false, maxSchemaDepth: number, maxSchemaSize: number, maxPatternLength: number, maxToolNameLength: number, maxTemplateParamLength: number }} config - Validation configuration.
- * @param {import('@mcp-layer/session').Session} session - MCP session.
+ * @param {import('@mcp-layer/session').Session | undefined} session - Optional bootstrap session.
  * @returns {SchemaValidator}
  */
 export function createValidator(config, session) {

@@ -101,6 +101,10 @@ function trustSuite() {
     }
   });
 
+  it('distrusts missing sessions with auto policy', async function trustMissingCase() {
+    assert.equal(shouldTrustSchemas(undefined, 'auto'), false);
+  });
+
   it('always trusts with true policy', async function trustAlwaysCase() {
     const data = await inmem();
     const session = data.session;

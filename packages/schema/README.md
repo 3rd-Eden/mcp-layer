@@ -30,7 +30,7 @@ yarn add @mcp-layer/schema
 ```js
 import { load } from '@mcp-layer/config';
 import { connect } from '@mcp-layer/connect';
-import { extract } from '@mcp-layer/schema';
+import { composeCatalog, extract } from '@mcp-layer/schema';
 
 const config = await load(undefined, process.cwd());
 const session = await connect(config, 'demo');
@@ -39,15 +39,37 @@ const output = await extract(session);
 console.log(output.server.info);
 console.log(output.items[0]);
 await session.close();
+
+const catalog = composeCatalog({
+  server: {
+    info: { name: 'demo', version: '1.0.0' },
+    capabilities: { tools: {} },
+    instructions: 'Use the local catalog.',
+  },
+  tools: [{
+    name: 'echo',
+    description: 'Echo text.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string' },
+      },
+      required: ['text'],
+    },
+  }],
+});
+
+console.log(catalog.items[0]);
 ```
 
 ## What this package does
 
-1) Reads the MCP server capabilities and metadata from the live client connection.
+1) Reads the MCP server capabilities and metadata from the live client connection with `extract(session)`.
 2) Calls MCP list endpoints (`tools/list`, `resources/list`, `resources/templates/list`, `prompts/list`) using pagination.
-3) Normalizes everything into a unified, type-discriminated schema so generators can consume a single list.
-4) Wraps tool input/output JSON Schemas into Zod validators backed by Ajv, while preserving the original JSON Schema.
-5) Converts prompt arguments into a lightweight JSON Schema so prompts and tools share the same `detail.input` shape.
+3) Composes the same normalized catalog shape from raw definitions with `composeCatalog(...)` when a live session is not available yet.
+4) Normalizes everything into a unified, type-discriminated schema so generators can consume a single list.
+5) Wraps tool input/output JSON Schemas into Zod validators backed by Ajv, while preserving the original JSON Schema.
+6) Converts prompt arguments into a lightweight JSON Schema so prompts and tools share the same `detail.input` shape.
 
 ## Output shape (authoritative)
 
@@ -143,8 +165,9 @@ Suggested uses for the unified schema:
 
 ## Responsibilities and lifecycle
 
-- This package does not open or close connections. It expects a live `Session` from `@mcp-layer/connect` or `@mcp-layer/attach`.
+- `extract(session)` does not open or close connections. It expects a live `Session` from `@mcp-layer/connect` or `@mcp-layer/attach`.
 - You are responsible for calling `session.close()` after extraction.
+- `composeCatalog(...)` is pure and does not require a connection.
 - If the server doesn't advertise a capability (tools/resources/prompts), extraction skips that surface.
 
 ## Error handling

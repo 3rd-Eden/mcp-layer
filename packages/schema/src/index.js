@@ -417,6 +417,45 @@ function normalize(data) {
 }
 
 /**
+ * Derive advertised capabilities from the provided raw MCP definition sets.
+ * @param {{ tools?: Array<Record<string, unknown>>, resources?: Array<Record<string, unknown>>, templates?: Array<Record<string, unknown>>, prompts?: Array<Record<string, unknown>> }} data - Raw MCP definition sets.
+ * @returns {Record<string, unknown> | undefined}
+ */
+function capabilities(data) {
+  const caps = {};
+
+  if (Array.isArray(data.tools)) caps.tools = {};
+  if (Array.isArray(data.resources) || Array.isArray(data.templates)) caps.resources = {};
+  if (Array.isArray(data.prompts)) caps.prompts = {};
+
+  return Object.keys(caps).length > 0 ? caps : undefined;
+}
+
+/**
+ * Compose a unified catalog from raw MCP definitions without a live session.
+ * This lets adapters bootstrap routes from already-known tool/resource shapes
+ * while keeping the output identical to `extract(session)`.
+ *
+ * @param {{ server?: { info?: Record<string, unknown>, capabilities?: Record<string, unknown>, instructions?: string }, tools?: Array<Record<string, unknown>>, resources?: Array<Record<string, unknown>>, templates?: Array<Record<string, unknown>>, prompts?: Array<Record<string, unknown>> }} input - Raw server metadata and MCP definitions.
+ * @returns {{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }}
+ */
+export function composeCatalog(input = {}) {
+  const server = isrecord(input.server) ? input.server : {};
+  const info = isrecord(server.info) ? server.info : undefined;
+  const caps = isrecord(server.capabilities) ? server.capabilities : capabilities(input);
+  const instructions = typeof server.instructions === 'string' ? server.instructions : undefined;
+
+  return {
+    server: {
+      info,
+      capabilities: caps,
+      instructions,
+    },
+    items: normalize(input),
+  };
+}
+
+/**
  * Extract MCP tool/resource/prompt schemas into a unified Zod-backed format.
  * @param {import('@mcp-layer/session').Session} link - Active session with a connected MCP server.
  * @returns {Promise<{ server: { info: Record<string, unknown> | undefined, capabilities: Record<string, unknown> | undefined, instructions: string | undefined }, items: Array<Record<string, unknown>> }>}
@@ -451,14 +490,12 @@ export async function extract(link) {
 
   if (caps && caps.prompts) data.prompts = await prompts(client);
 
-  const items = normalize(data);
-
-  return {
+  return composeCatalog({
     server: {
       info,
       capabilities: caps,
-      instructions
+      instructions,
     },
-    items
-  };
+    ...data,
+  });
 }
