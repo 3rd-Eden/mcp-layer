@@ -2,13 +2,14 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { attach } from '@mcp-layer/attach';
 import { extract } from '@mcp-layer/schema';
 import { build } from '@mcp-layer/test-server';
 import { createManager } from '@mcp-layer/manager';
 import { createRuntime } from '../src/runtime.js';
 
-const fixtures = join(import.meta.dirname, 'fixtures', 'catalog');
+const fixtures = join(fileURLToPath(new URL('./fixtures/', import.meta.url)), 'catalog');
 
 /**
  * Build a fake request object for runtime tests.

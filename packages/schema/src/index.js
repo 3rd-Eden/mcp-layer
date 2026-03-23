@@ -490,8 +490,6 @@ export async function extract(link) {
 
   if (caps && caps.prompts) data.prompts = await prompts(client);
 
-  const items = normalize(data);
-
   return composeCatalog({
     server: {
       info,

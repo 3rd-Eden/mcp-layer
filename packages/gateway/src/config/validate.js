@@ -80,6 +80,14 @@ export function validateRuntimeOptions(opts, meta = {}) {
     });
   }
 
+  if (catalog !== undefined && !isrecord(catalog)) {
+    throw new LayerError({
+      name: pack,
+      method: 'validateRuntimeOptions',
+      message: 'catalog must be an object.',
+    });
+  }
+
   if (manager !== undefined) {
     if (!isrecord(manager) || typeof manager.get !== 'function') {
       throw new LayerError({
@@ -102,14 +110,6 @@ export function validateRuntimeOptions(opts, meta = {}) {
         message: 'manager does not support multiple sessions. Register multiple plugins instead.',
       });
     }
-  }
-
-  if (catalog !== undefined && !isrecord(catalog)) {
-    throw new LayerError({
-      name: pack,
-      method: 'validateRuntimeOptions',
-      message: 'catalog must be an object.',
-    });
   }
 
   if (input.prefix !== undefined && typeof input.prefix !== 'string' && typeof input.prefix !== 'function') {

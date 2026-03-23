@@ -111,6 +111,18 @@ function optionsSuite() {
     assert.equal(Array.isArray(cfg.catalog.items), true);
   });
 
+  it('rejects invalid catalog values before manager bootstrap checks', async function invalidCatalogCase() {
+    await assert.rejects(
+      async function run() {
+        validateOptions({
+          catalog: null,
+          manager: { get: async function get() {} },
+        });
+      },
+      /catalog must be an object/i
+    );
+  });
+
   it('rejects manager with multiple sessions', async function managerMultiCase() {
     const mcp = createTestMcpServer({ name: 'opts', version: '1.0.0' });
     const session = await attach(mcp, 'opts');
