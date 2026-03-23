@@ -81,7 +81,7 @@ Signature:
 ```ts
 createRuntime(
   options: {
-    session: Session | Session[];
+    session?: Session | Session[];
     catalog?: { server?: { info?: Record<string, unknown> }, items?: Array<Record<string, unknown>> };
     manager?: { get(request): Promise<Session>; close?(): Promise<void> };
     prefix?: string | ((version, info, sessionName) => string);
@@ -138,6 +138,8 @@ createRuntime(
 Behavior notes:
 
 - `manager` requires either a bootstrap `session` or a precomputed `catalog`.
+- when a bootstrap `session` exists, runtime metadata is always extracted from that live session.
+- `catalog` bootstrap is only used when manager mode has no bootstrap session yet.
 - manager mode does not support `session` arrays.
 - `close()` shuts down breaker instances and calls `manager.close()` when available.
 - validation registration is preloaded from catalog tool/prompt input schemas.

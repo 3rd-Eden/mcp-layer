@@ -1,10 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { attach } from '@mcp-layer/attach';
 import { extract } from '@mcp-layer/schema';
 import { build } from '@mcp-layer/test-server';
 import { createManager } from '@mcp-layer/manager';
 import { createRuntime } from '../src/runtime.js';
+
+const fixtures = join(import.meta.dirname, 'fixtures', 'catalog');
 
 /**
  * Build a fake request object for runtime tests.
@@ -33,6 +37,19 @@ async function catalog() {
     await session.close();
     await server.close();
   }
+}
+
+/**
+ * Read a catalog fixture from disk.
+ * The fixtures document bootstrap catalogs that exercise runtime edge cases
+ * without constructing ad-hoc objects inline in each scenario.
+ *
+ * @param {string} name - Fixture file name.
+ * @returns {Promise<{ server?: { info?: Record<string, unknown>, capabilities?: Record<string, unknown>, instructions?: string }, items?: Array<Record<string, unknown>> }>}
+ */
+async function fixture(name) {
+  const file = join(fixtures, name);
+  return JSON.parse(await readFile(file, 'utf8'));
 }
 
 /**
@@ -158,6 +175,61 @@ function runtimeSuite() {
       assert.equal(context.prefix, '/v1');
       assert.equal(valid.valid, true);
       assert.equal(success.content[0].text, 'hello');
+
+      await runtime.close();
+    } finally {
+      await session.close();
+      await server.close();
+    }
+  });
+
+  it('distrusts catalog-only manager bootstrap schemas with auto trust', async function distrustCatalogCase() {
+    const server = build();
+    const session = await attach(server, 'runtime-target');
+    const manager = {
+      /**
+       * Return the lazily managed session for each request.
+       * @returns {Promise<import('@mcp-layer/session').Session>}
+       */
+      async get() {
+        return session;
+      },
+    };
+
+    try {
+      const runtime = await createRuntime({
+        catalog: await fixture('unsafe.json'),
+        manager,
+      });
+      const result = runtime.contexts[0].validator.validate('tool', 'unsafe', {
+        text: 'bbb',
+      });
+
+      // Untrusted bootstrap catalogs skip unsafe schemas instead of compiling
+      // them, so validation becomes a no-op for that registration.
+      assert.equal(result.valid, true);
+
+      await runtime.close();
+    } finally {
+      await session.close();
+      await server.close();
+    }
+  });
+
+  it('prefers the live bootstrap session catalog over a supplied catalog override', async function preferLiveCatalogCase() {
+    const server = build({ info: { name: 'live', version: '1.0.0' } });
+    const session = await attach(server, 'gateway');
+
+    try {
+      const runtime = await createRuntime({
+        session,
+        catalog: await fixture('stale.json'),
+      });
+      const context = runtime.contexts[0];
+
+      assert.equal(context.version, 'v1');
+      assert.equal(context.prefix, '/v1');
+      assert.equal(context.info?.name, 'live');
 
       await runtime.close();
     } finally {

@@ -214,7 +214,10 @@ export async function createRuntime(opts, meta = {}) {
     pushContext(undefined, config.catalog);
   } else {
     for (const session of sessions) {
-      const catalog = config.catalog ?? await extract(session);
+      // A live bootstrap session is the source of truth for route metadata.
+      // Explicit catalogs are only for manager mode when no bootstrap session
+      // exists yet.
+      const catalog = await extract(session);
       pushContext(session, catalog);
     }
   }
