@@ -59,7 +59,7 @@
     "uri-js": "^4.4.1"
   },
   "peerDependencies": {
-    "@mcp-layer/schema": "^1.0.3"
+    "@mcp-layer/schema": "^1.0.4"
   },
   "devDependencies": {
     "@mcp-layer/attach": "workspace:*",
