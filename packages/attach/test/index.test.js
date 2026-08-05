@@ -109,5 +109,11 @@ describe('attach', function attachSuite() {
         return 'application/json';
       })
     );
+    assert.ok(requests.every(function contentLength(request) {
+      return Number(request['content-length']) > Number(values.headers['content-length']);
+    }));
+    assert.ok(requests.every(function connection(request) {
+      return request.connection === undefined;
+    }));
   });
 });

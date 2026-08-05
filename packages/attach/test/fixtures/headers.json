@@ -1,6 +1,8 @@
 {
   "headers": {
     "authorization": "Bearer test-token",
-    "content-type": "text/plain"
+    "content-type": "text/plain",
+    "content-length": "1",
+    "connection": "keep-alive"
   }
 }

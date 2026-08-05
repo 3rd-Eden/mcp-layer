@@ -10,6 +10,32 @@ const base = {
   version: typeof pkg.version === 'string' ? pkg.version : '0.0.0'
 };
 
+const framing = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade'
+]);
+
+/**
+ * Copy caller context headers that do not describe the injected JSON payload.
+ * @param {Record<string, string>} input - Caller-supplied static request headers.
+ * @returns {Readonly<Record<string, string>>} Immutable context headers.
+ */
+function copyHeaders(input) {
+  return Object.freeze(Object.fromEntries(
+    Object.entries(input).filter(function context([name]) {
+      const key = name.toLowerCase();
+      // The transport serializes a different payload for every request, so inherited entity and hop-by-hop headers are invalid.
+      return !key.startsWith('content-') && !framing.has(key);
+    })
+  ));
+}
+
 /**
  * Determine whether the instance looks like a Platformatic MCP Fastify server.
  * @param {unknown} instance - Candidate server instance.
@@ -162,8 +188,7 @@ export async function attachPlatformatic(app, name, opts = {}) {
 
   const info = { ...base, ...(opts.info ?? {}) };
   const url = typeof opts.path === 'string' && opts.path.length > 0 ? opts.path : '/mcp';
-  // Copy once so a caller cannot change an attached session's credentials later.
-  const headers = Object.freeze({ ...(opts.headers ?? {}) });
+  const headers = copyHeaders(opts.headers ?? {});
   const transport = new FastifyInjectTransport(app, url, headers);
   const client = new Client(info);
 
