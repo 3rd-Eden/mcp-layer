@@ -16,7 +16,7 @@ export function matchProvider(instance) {
  * @param {'platformatic'} provider - Provider identifier.
  * @param {unknown} instance - Provider-specific instance.
  * @param {string} name - Session name.
- * @param {{ info?: { name: string, version: string }, source?: string, path?: string }} opts - Attach options.
+ * @param {{ info?: { name: string, version: string }, source?: string, path?: string, headers?: Record<string, string> }} opts - Attach options.
  * @returns {Promise<import('@mcp-layer/session').Session>}
  */
 export async function attachWithProvider(provider, instance, name, opts) {

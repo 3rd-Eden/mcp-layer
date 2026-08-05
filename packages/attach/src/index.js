@@ -42,7 +42,7 @@ function isConnected(server) {
  * Attach to an in-process MCP server instance and return a Session.
  * @param {import('@modelcontextprotocol/sdk/server/mcp.js').McpServer | import('@modelcontextprotocol/sdk/server/index.js').Server | import('fastify').FastifyInstance} instance - MCP server instance, wrapper, or Platformatic Fastify MCP instance.
  * @param {string} name - Human-readable session name used in the Session metadata.
- * @param {{ info?: { name: string, version: string }, source?: string, path?: string }} [opts] - Optional client metadata, source label, and Fastify endpoint override.
+ * @param {{ info?: { name: string, version: string }, source?: string, path?: string, headers?: Record<string, string> }} [opts] - Optional client metadata, source label, Fastify endpoint, and static request headers.
  * @returns {Promise<Session>}
  */
 export async function attach(instance, name, opts = {}) {

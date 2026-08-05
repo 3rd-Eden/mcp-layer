@@ -29,10 +29,12 @@ class FastifyInjectTransport {
    * Create a transport bound to a Fastify instance.
    * @param {import('fastify').FastifyInstance} app - Fastify instance with the MCP plugin registered.
    * @param {string} url - URL path for the MCP endpoint.
+   * @param {Record<string, string>} headers - Static request headers forwarded to every MCP request.
    */
-  constructor(app, url) {
+  constructor(app, url, headers) {
     this.app = app;
     this.url = url;
+    this.headers = headers;
     this.onmessage = null;
     this.onerror = null;
     this.onclose = null;
@@ -66,7 +68,7 @@ class FastifyInjectTransport {
         method: 'POST',
         url: this.url,
         payload: JSON.stringify(message),
-        headers: { 'content-type': 'application/json' }
+        headers: { ...this.headers, 'content-type': 'application/json' }
       });
       await this.handleResponse(response);
     } catch (error) {
@@ -152,7 +154,7 @@ class FastifyInjectTransport {
  * Attach to a Platformatic MCP Fastify server instance and return a Session.
  * @param {import('fastify').FastifyInstance} app - Fastify instance with MCP plugin registered.
  * @param {string} name - Human-readable session name used in the Session metadata.
- * @param {{ info?: { name: string, version: string }, source?: string, path?: string }} [opts] - Optional client metadata, source, and endpoint overrides.
+ * @param {{ info?: { name: string, version: string }, source?: string, path?: string, headers?: Record<string, string> }} [opts] - Optional client metadata, source, endpoint, and static request headers.
  * @returns {Promise<Session>}
  */
 export async function attachPlatformatic(app, name, opts = {}) {
@@ -160,7 +162,9 @@ export async function attachPlatformatic(app, name, opts = {}) {
 
   const info = { ...base, ...(opts.info ?? {}) };
   const url = typeof opts.path === 'string' && opts.path.length > 0 ? opts.path : '/mcp';
-  const transport = new FastifyInjectTransport(app, url);
+  // Copy once so a caller cannot change an attached session's credentials later.
+  const headers = Object.freeze({ ...(opts.headers ?? {}) });
+  const transport = new FastifyInjectTransport(app, url, headers);
   const client = new Client(info);
 
   await client.connect(transport);

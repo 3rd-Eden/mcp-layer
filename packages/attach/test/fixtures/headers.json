@@ -1,0 +1,6 @@
+{
+  "headers": {
+    "authorization": "Bearer test-token",
+    "content-type": "text/plain"
+  }
+}
