@@ -1,5 +1,11 @@
 # @mcp-layer/attach
 
+## 1.2.0
+
+### Minor Changes
+
+- 0d0d53b: Forward static request headers through the Platformatic MCP inject transport.
+
 ## 1.1.2
 
 ### Patch Changes
