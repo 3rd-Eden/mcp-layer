@@ -51,10 +51,16 @@ async function review(name, args) {
 
 /**
  * Build a Fastify instance with the Platformatic MCP plugin and fixture data.
+ * @param {{ requests?: Record<string, string | string[] | undefined>[] }} [opts] - Optional request-header capture for transport scenarios.
  * @returns {Promise<import('fastify').FastifyInstance>}
  */
-export async function build() {
+export async function build(opts = {}) {
   const app = fastify({ logger: false });
+  if (Array.isArray(opts.requests)) {
+    app.addHook('onRequest', async function capture(request) {
+      opts.requests.push(request.headers);
+    });
+  }
   await app.register(mcp, {
     serverInfo: { name: 'platformatic-fixture', version: '0.0.0' },
     capabilities: {

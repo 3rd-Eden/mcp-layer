@@ -10,6 +10,32 @@ const base = {
   version: typeof pkg.version === 'string' ? pkg.version : '0.0.0'
 };
 
+const framing = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade'
+]);
+
+/**
+ * Copy caller context headers that do not describe the injected JSON payload.
+ * @param {Record<string, string>} input - Caller-supplied static request headers.
+ * @returns {Readonly<Record<string, string>>} Immutable context headers.
+ */
+function copyHeaders(input) {
+  return Object.freeze(Object.fromEntries(
+    Object.entries(input).filter(function context([name]) {
+      const key = name.toLowerCase();
+      // The transport serializes a different payload for every request, so inherited entity and hop-by-hop headers are invalid.
+      return !key.startsWith('content-') && !framing.has(key);
+    })
+  ));
+}
+
 /**
  * Determine whether the instance looks like a Platformatic MCP Fastify server.
  * @param {unknown} instance - Candidate server instance.
@@ -29,10 +55,12 @@ class FastifyInjectTransport {
    * Create a transport bound to a Fastify instance.
    * @param {import('fastify').FastifyInstance} app - Fastify instance with the MCP plugin registered.
    * @param {string} url - URL path for the MCP endpoint.
+   * @param {Record<string, string>} headers - Static request headers forwarded to every MCP request.
    */
-  constructor(app, url) {
+  constructor(app, url, headers) {
     this.app = app;
     this.url = url;
+    this.headers = headers;
     this.onmessage = null;
     this.onerror = null;
     this.onclose = null;
@@ -66,7 +94,7 @@ class FastifyInjectTransport {
         method: 'POST',
         url: this.url,
         payload: JSON.stringify(message),
-        headers: { 'content-type': 'application/json' }
+        headers: { ...this.headers, 'content-type': 'application/json' }
       });
       await this.handleResponse(response);
     } catch (error) {
@@ -152,7 +180,7 @@ class FastifyInjectTransport {
  * Attach to a Platformatic MCP Fastify server instance and return a Session.
  * @param {import('fastify').FastifyInstance} app - Fastify instance with MCP plugin registered.
  * @param {string} name - Human-readable session name used in the Session metadata.
- * @param {{ info?: { name: string, version: string }, source?: string, path?: string }} [opts] - Optional client metadata, source, and endpoint overrides.
+ * @param {{ info?: { name: string, version: string }, source?: string, path?: string, headers?: Record<string, string> }} [opts] - Optional client metadata, source, endpoint, and static request headers.
  * @returns {Promise<Session>}
  */
 export async function attachPlatformatic(app, name, opts = {}) {
@@ -160,7 +188,8 @@ export async function attachPlatformatic(app, name, opts = {}) {
 
   const info = { ...base, ...(opts.info ?? {}) };
   const url = typeof opts.path === 'string' && opts.path.length > 0 ? opts.path : '/mcp';
-  const transport = new FastifyInjectTransport(app, url);
+  const headers = copyHeaders(opts.headers ?? {});
+  const transport = new FastifyInjectTransport(app, url, headers);
   const client = new Client(info);
 
   await client.connect(transport);

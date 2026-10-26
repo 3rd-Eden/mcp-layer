@@ -1,9 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { build } from '@mcp-layer/test-server';
 import { extract } from '@mcp-layer/schema';
-import { attach, Session } from '../src/index.js';
+import { attach, Session } from '@mcp-layer/attach';
 import { build as buildPlatformatic } from './fixtures/platformatic.js';
+
+const fixtures = new URL('./fixtures/', import.meta.url);
 
 /**
  * Create a test server instance.
@@ -71,5 +75,45 @@ describe('attach', function attachSuite() {
     assert.ok(resource);
     assert.ok(prompt);
     assert.equal(output.server.info?.name, 'platformatic-fixture');
+  });
+
+  it('forwards immutable headers on every Platformatic MCP request', async function headersCase(t) {
+    const values = JSON.parse(await readFile(fileURLToPath(new URL('headers.json', fixtures)), 'utf8'));
+    const requests = [];
+    const app = await buildPlatformatic({ requests });
+    const headers = { ...values.headers };
+    const session = await attach(app, 'platformatic', { headers });
+
+    t.after(async function afterPlatformatic() {
+      await session.close();
+      await app.close();
+    });
+
+    headers.authorization = 'Bearer changed-after-attach';
+    await extract(session);
+
+    assert.ok(requests.length >= 2);
+    assert.deepEqual(
+      requests.map(function authorization(request) {
+        return request.authorization;
+      }),
+      Array.from({ length: requests.length }, function original() {
+        return values.headers.authorization;
+      })
+    );
+    assert.deepEqual(
+      requests.map(function contentType(request) {
+        return request['content-type'];
+      }),
+      Array.from({ length: requests.length }, function json() {
+        return 'application/json';
+      })
+    );
+    assert.ok(requests.every(function contentLength(request) {
+      return Number(request['content-length']) > Number(values.headers['content-length']);
+    }));
+    assert.ok(requests.every(function connection(request) {
+      return request.connection === undefined;
+    }));
   });
 });

@@ -57,7 +57,10 @@ await app.register(mcp, {
 
 // Register tools/resources/prompts using app.mcpAddTool/app.mcpAddResource/app.mcpAddPrompt.
 
-const session = await attach(app, 'platformatic-demo', { path: '/mcp' });
+const session = await attach(app, 'platformatic-demo', {
+  path: '/mcp',
+  headers: { authorization: process.env.MCP_BEARER_TOKEN }
+});
 await session.client.ping();
 await session.close();
 await app.close();
@@ -66,6 +69,9 @@ await app.close();
 Notes:
 - This adapter uses Fastify `inject()` against the MCP HTTP endpoint (default `/mcp`).
 - Pass `path` when your MCP endpoint is mounted elsewhere.
+- Pass `headers` to forward static caller context, such as an `Authorization` header, to every injected MCP request. Attach copies the supplied record at connection time and does not log it itself.
+- Protocol headers remain transport-owned: entity and hop-by-hop headers are ignored, and `content-type` is always `application/json`.
+- This transport compatibility path is verified with [`@platformatic/mcp@2.2.0`](https://www.npmjs.com/package/@platformatic/mcp/v/2.2.0).
 
 ## When to use attach vs connect
 
@@ -80,7 +86,9 @@ Notes:
 - `name`: logical server name for the Session
 - `options`:
   - `info`: overrides for client identity (`name`, `version`)
-  - `source`: override the Session source string (defaults to `in-memory`)
+  - `source`: override the Session source string (defaults to `in-memory` for SDK instances and `fastify` for Platformatic instances)
+  - `path`: Platformatic MCP endpoint path (defaults to `/mcp`)
+  - `headers`: static `Record<string, string>` merged into every Platformatic injected request; values are copied during attach, entity and hop-by-hop headers are ignored, and attach does not log them itself
 
 Returns a `Session` (from `@mcp-layer/session`) with:
 - `client`, `transport`, `info`, `name`, `source`, `entry`
