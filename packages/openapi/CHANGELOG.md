@@ -1,5 +1,12 @@
 # @mcp-layer/openapi
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [d2e9171]
+  - @mcp-layer/schema@2.0.0
+
 ## 1.1.2
 
 ### Patch Changes

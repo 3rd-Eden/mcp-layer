@@ -1,5 +1,18 @@
 # mcp-layer
 
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [d2e9171]
+  - @mcp-layer/schema@2.0.0
+  - @mcp-layer/attach@1.2.0
+  - @mcp-layer/cli@1.3.3
+  - @mcp-layer/gateway@0.2.3
+  - @mcp-layer/openapi@2.0.0
+  - @mcp-layer/rest@2.0.0
+  - @mcp-layer/graphql@0.2.3
+
 ## 0.2.5
 
 ### Patch Changes

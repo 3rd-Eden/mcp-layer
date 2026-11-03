@@ -1,5 +1,12 @@
 # @mcp-layer/cli
 
+## 1.3.3
+
+### Patch Changes
+
+- Updated dependencies [d2e9171]
+  - @mcp-layer/schema@2.0.0
+
 ## 1.3.2
 
 ### Patch Changes
