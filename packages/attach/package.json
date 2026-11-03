@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/attach",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Attach to an in-process MCP server instance and return a Session.",
   "repository": {
     "type": "git",
