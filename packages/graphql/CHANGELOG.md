@@ -1,5 +1,11 @@
 # @mcp-layer/graphql
 
+## 0.2.3
+
+### Patch Changes
+
+- @mcp-layer/gateway@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

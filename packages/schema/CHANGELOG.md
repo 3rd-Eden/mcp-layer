@@ -1,5 +1,11 @@
 # @mcp-layer/schema
 
+## 2.0.0
+
+### Major Changes
+
+- d2e9171: The schema package now returns Zod 4 schemas.
+
 ## 1.0.4
 
 ### Patch Changes
