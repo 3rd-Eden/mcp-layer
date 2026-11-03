@@ -38,7 +38,7 @@ importers:
         version: link:../test-server
       '@platformatic/mcp':
         specifier: ^2.2.0
-        version: 2.2.0(@sinclair/typebox@0.34.48)(typebox@1.3.10)
+        version: 2.2.0(@sinclair/typebox@0.34.52)(typebox@1.4.3)
       fastify:
         specifier: ^5.7.4
         version: 5.7.4
@@ -125,11 +125,11 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0
       ajv:
-        specifier: ^8.17.0
-        version: 8.17.1
+        specifier: ^8.20.0
+        version: 8.20.0
       ajv-formats:
         specifier: ^3.0.0
-        version: 3.0.1(ajv@8.17.1)
+        version: 3.0.1(ajv@8.20.0)
       json-schema-traverse:
         specifier: ^1.0.0
         version: 1.0.0
@@ -340,8 +340,8 @@ importers:
         specifier: workspace:*
         version: link:../error
       ajv:
-        specifier: ^8.17.1
-        version: 8.17.1
+        specifier: ^8.20.0
+        version: 8.20.0
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -583,9 +583,9 @@ packages:
   /@fastify/ajv-compiler@4.0.5:
     resolution: {integrity: sha512-KoWKW+MhvfTRWL4qrhUwAAZoaChluo0m0vbiJlGMt2GXvL4LVPQEjt8kSpHI3IBq5Rez8fg+XeH3cneztq+C7A==}
     dependencies:
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      fast-uri: 3.1.0
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      fast-uri: 3.1.9
     dev: true
 
   /@fastify/cors@11.2.0:
@@ -665,12 +665,12 @@ packages:
       glob: 13.0.1
     dev: false
 
-  /@fastify/type-provider-typebox@6.1.0(typebox@1.3.10):
+  /@fastify/type-provider-typebox@6.1.0(typebox@1.4.3):
     resolution: {integrity: sha512-k29cOitDRcZhMXVjtRq0+caKxdWoArz7su+dQWGzGWnFG+fSKhevgiZ7nexHWuXOEEQzgJlh6cptIMu69beaTA==}
     peerDependencies:
       typebox: ^1.0.13
     dependencies:
-      typebox: 1.3.10
+      typebox: 1.4.3
     dev: true
 
   /@fastify/websocket@11.2.0:
@@ -1490,15 +1490,15 @@ packages:
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
     dev: true
 
-  /@platformatic/mcp@2.2.0(@sinclair/typebox@0.34.48)(typebox@1.3.10):
+  /@platformatic/mcp@2.2.0(@sinclair/typebox@0.34.52)(typebox@1.4.3):
     resolution: {integrity: sha512-Qgl0+jDgHFOzk7BoLIsjyZ57LdEJVZT3kbFAhjwHFjvIQ1G1XmaeJVVAWTX+VNXYGyj7CCY/rDpJzymaiBmtbA==}
     peerDependencies:
       '@sinclair/typebox': ^0.34.0
     dependencies:
       '@fastify/cors': 11.2.0
       '@fastify/jwt': 10.2.1
-      '@fastify/type-provider-typebox': 6.1.0(typebox@1.3.10)
-      '@sinclair/typebox': 0.34.48
+      '@fastify/type-provider-typebox': 6.1.0(typebox@1.4.3)
+      '@sinclair/typebox': 0.34.52
       ajv: 8.17.1
       fast-jwt: 6.1.0
       fastify-plugin: 6.0.0
@@ -1512,8 +1512,8 @@ packages:
       - typebox
     dev: true
 
-  /@sinclair/typebox@0.34.48:
-    resolution: {integrity: sha512-kKJTNuK3AQOrgjjotVxMrCn1sUJwM76wMszfq1kdU4uYVJjvEWuFQ6HgvLt4Xz3fSmZlTOxJ/Ie13KnIcWQXFA==}
+  /@sinclair/typebox@0.34.52:
+    resolution: {integrity: sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw==}
     dev: true
 
   /@sindresorhus/is@4.6.0:
@@ -1584,7 +1584,7 @@ packages:
       indent-string: 4.0.0
     dev: false
 
-  /ajv-formats@3.0.1(ajv@8.17.1):
+  /ajv-formats@3.0.1(ajv@8.20.0):
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
       ajv: ^8.0.0
@@ -1592,7 +1592,7 @@ packages:
       ajv:
         optional: true
     dependencies:
-      ajv: 8.17.1
+      ajv: 8.20.0
 
   /ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -1607,6 +1607,15 @@ packages:
     dependencies:
       fast-deep-equal: 3.1.3
       fast-uri: 3.1.0
+      json-schema-traverse: 1.0.0
+      require-from-string: 2.0.2
+    dev: true
+
+  /ajv@8.20.0:
+    resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
+    dependencies:
+      fast-deep-equal: 3.1.3
+      fast-uri: 3.1.9
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -2274,10 +2283,10 @@ packages:
     resolution: {integrity: sha512-KAdnLvy1yu/XrRtP+LJnxbBGrhN+xXu+gt3EUvZhYGKCr3lFHq/7UFJHHFgmJKoqlh6B40bZLEv7w46B0mqn1g==}
     dependencies:
       '@fastify/merge-json-schemas': 0.1.1
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
       fast-deep-equal: 3.1.3
-      fast-uri: 2.4.0
+      fast-uri: 2.4.8
       json-schema-ref-resolver: 1.0.1
       rfdc: 1.4.1
     dev: false
@@ -2286,9 +2295,9 @@ packages:
     resolution: {integrity: sha512-Eaf/KNIDwHkzfyeQFNfLXJnQ7cl1XQI3+zRqmPlvtkMigbXnAcasTrvJQmquBSxKfFGeRA6PFog8t+hFmpDoWw==}
     dependencies:
       '@fastify/merge-json-schemas': 0.2.1
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      fast-uri: 3.1.0
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      fast-uri: 3.1.9
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
     dev: true
@@ -2320,12 +2329,16 @@ packages:
       fast-decode-uri-component: 1.0.1
     dev: true
 
-  /fast-uri@2.4.0:
-    resolution: {integrity: sha512-ypuAmmMKInk5q7XcepxlnUWDLWv4GFtaJqAzWKqn62IpQ3pejtr5dTVbt3vwqVaMKmkNR55sTT+CqUKIaT21BA==}
+  /fast-uri@2.4.8:
+    resolution: {integrity: sha512-knw8ym69bDOF980l2z0tDKh7XB9zfsUmpMmoQUx9KskazmddvnhNntiTzen4VsiW7qVWiVZkrcd5Pj2bziC3gA==}
     dev: false
 
   /fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
+    dev: true
+
+  /fast-uri@3.1.9:
+    resolution: {integrity: sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ==}
 
   /fastfall@1.5.1:
     resolution: {integrity: sha512-KH6p+Z8AKPXnmA7+Iz2Lh8ARCMr+8WNPVludm1LGkZoD2MjY6LVnRMtTKhkdzI+jr0RzQWXKzKyBJm1zoHEL4Q==}
@@ -4140,8 +4153,8 @@ packages:
       media-typer: 1.1.0
       mime-types: 3.0.1
 
-  /typebox@1.3.10:
-    resolution: {integrity: sha512-L0MT00X96q0P30f1NrGULgaSbmu8hfTjWbLULeVoM+j5u0jR5wyefoDquX2NmRa39f0KiNIBo1wWSaVvHJTZlA==}
+  /typebox@1.4.3:
+    resolution: {integrity: sha512-u3nyf7ZciAv1GOijVpI0TDt9At5wmEi7lSHSlRrnjuThv1DcB7fgGBqqrz+fGZ54jAfTpOOX0JXwxSIg3pnxQA==}
     dev: true
 
   /typescript@5.9.3:
