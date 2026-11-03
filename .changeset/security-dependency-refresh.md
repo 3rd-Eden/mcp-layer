@@ -9,4 +9,4 @@
 "mcp-layer": patch
 ---
 
-Update runtime dependencies to patched releases and avoid vulnerable transitive versions.
+Update runtime dependencies to patched releases. Replace the test-only package that included an unpatched dependency. Use the MCP SDK Streamable HTTP transport for Fastify endpoints.
