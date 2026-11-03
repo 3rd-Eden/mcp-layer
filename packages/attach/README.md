@@ -71,7 +71,7 @@ Notes:
 - Pass `path` when your MCP endpoint is mounted elsewhere.
 - Pass `headers` to forward static caller context, such as an `Authorization` header, to every injected MCP request. Attach copies the supplied record at connection time and does not log it itself.
 - Protocol headers remain transport-owned: entity and hop-by-hop headers are ignored, and `content-type` is always `application/json`.
-- This transport compatibility path is verified with [`@platformatic/mcp@2.2.0`](https://www.npmjs.com/package/@platformatic/mcp/v/2.2.0).
+- This transport compatibility path is verified with [`@platformatic/mcp@2.6.0`](https://www.npmjs.com/package/@platformatic/mcp/v/2.6.0).
 
 ## When to use attach vs connect
 

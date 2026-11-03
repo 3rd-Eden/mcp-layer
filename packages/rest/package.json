@@ -60,7 +60,7 @@
     "@mcp-layer/error": "workspace:*",
     "@mcp-layer/gateway": "workspace:*",
     "@mcp-layer/openapi": "workspace:*",
-    "fastify-plugin": "^5.0.0",
+    "fastify-plugin": "^5.1.0",
     "uri-template": "^2.0.0"
   },
   "peerDependencies": {
@@ -74,18 +74,18 @@
     }
   },
   "devDependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@fastify/helmet": "^12.0.0",
+    "@fastify/cors": "^11.4.0",
+    "@fastify/helmet": "^12.0.1",
     "@mcp-layer/attach": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
     "@mcp-layer/session": "workspace:*",
     "@mcp-layer/manager": "workspace:*",
     "@mcp-layer/test-server": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.32.0",
-    "@opentelemetry/api": "^1.9.0",
-    "autocannon": "^7.13.0",
-    "fastify": "^5.12.6",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@opentelemetry/api": "^1.10.0",
+    "autocannon": "^7.15.0",
+    "fastify": "^5.12.8",
     "zod": "^4.6.7"
   }
 }
