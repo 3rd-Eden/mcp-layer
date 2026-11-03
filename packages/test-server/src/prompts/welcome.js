@@ -1,5 +1,5 @@
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 const greeters = ['Ada', 'Casey', 'Echo', 'Mira'];
 const tones = ['casual', 'formal', 'cheerful'];
