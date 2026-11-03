@@ -50,7 +50,7 @@
     "@mcp-layer/error": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.0",
     "argh": "^1.0.0",
-    "express": "^5.0.1",
+    "express": "^5.3.0",
     "zod": "^3.25.76"
   }
 }
