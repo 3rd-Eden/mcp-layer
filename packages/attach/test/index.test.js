@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { build } from '@mcp-layer/test-server';
 import { extract } from '@mcp-layer/schema';
 import { attach, Session } from '@mcp-layer/attach';
-import { build as buildPlatformatic } from './fixtures/platformatic.js';
+import { build as buildFastifyMcp } from './fixtures/fastify-mcp.js';
 
 const fixtures = new URL('./fixtures/', import.meta.url);
 
@@ -57,34 +57,34 @@ describe('attach', function attachSuite() {
     }
   });
 
-  it('attaches to a Platformatic MCP Fastify instance and extracts schema', async function platformaticCase(t) {
-    const app = await buildPlatformatic();
-    const session = await attach(app, 'platformatic');
+  it('attaches to a Fastify MCP endpoint and extracts schema', async function fastifyCase(t) {
+    const app = await buildFastifyMcp();
+    const session = await attach(app, 'fastify');
 
-    t.after(async function afterPlatformatic() {
+    t.after(async function afterFastify() {
       await session.close();
       await app.close();
     });
 
     const output = await extract(session);
-    const tool = findItem(output, 'tool', 'sum');
-    const resource = findItem(output, 'resource', 'config');
-    const prompt = findItem(output, 'prompt', 'review');
+    const tool = findItem(output, 'tool', 'echo');
+    const resource = findItem(output, 'resource', 'manual');
+    const prompt = findItem(output, 'prompt', 'welcome');
 
     assert.ok(tool);
     assert.ok(resource);
     assert.ok(prompt);
-    assert.equal(output.server.info?.name, 'platformatic-fixture');
+    assert.equal(output.server.info?.name, 'fastify-fixture');
   });
 
-  it('forwards immutable headers on every Platformatic MCP request', async function headersCase(t) {
+  it('forwards immutable headers on every Fastify MCP request', async function headersCase(t) {
     const values = JSON.parse(await readFile(fileURLToPath(new URL('headers.json', fixtures)), 'utf8'));
     const requests = [];
-    const app = await buildPlatformatic({ requests });
+    const app = await buildFastifyMcp({ requests });
     const headers = { ...values.headers };
-    const session = await attach(app, 'platformatic', { headers });
+    const session = await attach(app, 'fastify', { headers });
 
-    t.after(async function afterPlatformatic() {
+    t.after(async function afterFastify() {
       await session.close();
       await app.close();
     });
@@ -92,6 +92,9 @@ describe('attach', function attachSuite() {
     headers.authorization = 'Bearer changed-after-attach';
     await extract(session);
 
+    const posts = requests.filter(function post(request) {
+      return request.method === 'POST';
+    });
     assert.ok(requests.length >= 2);
     assert.deepEqual(
       requests.map(function authorization(request) {
@@ -102,18 +105,21 @@ describe('attach', function attachSuite() {
       })
     );
     assert.deepEqual(
-      requests.map(function contentType(request) {
+      posts.map(function contentType(request) {
         return request['content-type'];
       }),
-      Array.from({ length: requests.length }, function json() {
+      Array.from({ length: posts.length }, function json() {
         return 'application/json';
       })
     );
-    assert.ok(requests.every(function contentLength(request) {
+    assert.ok(posts.every(function contentLength(request) {
       return Number(request['content-length']) > Number(values.headers['content-length']);
     }));
     assert.ok(requests.every(function connection(request) {
       return request.connection === undefined;
+    }));
+    assert.ok(posts.every(function accept(request) {
+      return request.accept.includes('application/json') && request.accept.includes('text/event-stream');
     }));
   });
 });

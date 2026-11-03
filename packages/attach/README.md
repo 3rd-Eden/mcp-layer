@@ -6,7 +6,7 @@
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Platformatic MCP (Fastify)](#platformatic-mcp-fastify)
+- [Fastify MCP endpoint](#fastify-mcp-endpoint)
 - [When to use attach vs connect](#when-to-use-attach-vs-connect)
 - [API (authoritative)](#api-authoritative)
 - [Behavior and constraints](#behavior-and-constraints)
@@ -41,63 +41,81 @@ await session.client.ping();
 await session.close();
 ```
 
-## Platformatic MCP (Fastify)
+## Fastify MCP endpoint
 
-If you're using the Platformatic MCP Fastify plugin, you can pass the Fastify instance directly to `attach` and the adapter will talk to the MCP endpoint in-process.
+`attach` can connect to a Fastify app that serves an MCP Streamable HTTP endpoint. This example uses [`fastify-mcp`](https://www.npmjs.com/package/fastify-mcp/v/3.0.0), which runs the MCP SDK server at `/mcp`. `attach` sends requests through Fastify's `inject()` API, so it does not open a network socket. See the [MCP Streamable HTTP specification](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) for the transport contract.
+
+Install Fastify, the MCP TypeScript SDK, and an MCP Fastify plugin before using this integration. The example below registers a stateless endpoint, attaches to it, and expects the SDK ping call to complete.
 
 ```js
 import fastify from 'fastify';
-import mcp from '@platformatic/mcp';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { streamableHttp } from 'fastify-mcp';
 import { attach } from '@mcp-layer/attach';
 
+/**
+ * Create the SDK server used for each stateless HTTP request.
+ * @returns {import('@modelcontextprotocol/sdk/server/index.js').Server} MCP SDK server.
+ */
+function createServer() {
+  const server = new McpServer({ name: 'fastify-demo', version: '1.0.0' });
+  return server.server;
+}
+
 const app = fastify();
-await app.register(mcp, {
-  serverInfo: { name: 'platformatic-demo', version: '1.0.0' }
+await app.register(streamableHttp, {
+  stateful: false,
+  mcpEndpoint: '/mcp',
+  createServer
 });
 
-// Register tools/resources/prompts using app.mcpAddTool/app.mcpAddResource/app.mcpAddPrompt.
-
-const session = await attach(app, 'platformatic-demo', {
-  path: '/mcp',
-  headers: { authorization: process.env.MCP_BEARER_TOKEN }
-});
+const session = await attach(app, 'fastify-demo');
 await session.client.ping();
 await session.close();
 await app.close();
 ```
 
 Notes:
-- This adapter uses Fastify `inject()` against the MCP HTTP endpoint (default `/mcp`).
+- This adapter uses the SDK's Streamable HTTP client transport with Fastify `inject()` against the MCP endpoint (default `/mcp`).
 - Pass `path` when your MCP endpoint is mounted elsewhere.
-- Pass `headers` to forward static caller context, such as an `Authorization` header, to every injected MCP request. Attach copies the supplied record at connection time and does not log it itself.
-- Protocol headers remain transport-owned: entity and hop-by-hop headers are ignored, and `content-type` is always `application/json`.
-- This transport compatibility path is verified with [`@platformatic/mcp@2.2.0`](https://www.npmjs.com/package/@platformatic/mcp/v/2.2.0).
+- Pass `headers` to forward static caller context, such as an `Authorization` header, to every injected MCP request. Attach copies the supplied record at connection time and does not log it.
+- HTTP framing and MCP protocol headers remain transport-owned. Attach ignores caller-provided `content-*`, `mcp-*`, `accept`, and hop-by-hop headers.
+- The Fastify endpoint path is tested with [`fastify-mcp@3.0.0`](https://www.npmjs.com/package/fastify-mcp/v/3.0.0).
 
 ## When to use attach vs connect
 
 - Use `attach` when you already have an in-process `McpServer` instance and want to layer new behavior (REST/GraphQL/UI) without spawning another process.
-- Use `@mcp-layer/connect` when you only have a configuration entry and need to spawn a stdio process.
+- Use `@mcp-layer/connect` when you only have a configuration entry and need to spawn a process over the [MCP stdio transport](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#stdio).
 
 ## API (authoritative)
 
 ### `attach(server, name, options?)`
 
-- `server`: an `McpServer` or `Server` instance from the MCP SDK
+- `server`: an `McpServer` or `Server` instance from the MCP SDK, or a Fastify app with an MCP Streamable HTTP endpoint
 - `name`: logical server name for the Session
 - `options`:
   - `info`: overrides for client identity (`name`, `version`)
-  - `source`: override the Session source string (defaults to `in-memory` for SDK instances and `fastify` for Platformatic instances)
-  - `path`: Platformatic MCP endpoint path (defaults to `/mcp`)
-  - `headers`: static `Record<string, string>` merged into every Platformatic injected request; values are copied during attach, entity and hop-by-hop headers are ignored, and attach does not log them itself
+  - `source`: override the Session source string (defaults to `in-memory` for SDK instances and `fastify` for Fastify endpoints)
+  - `path`: Fastify MCP endpoint path (defaults to `/mcp`)
+  - `headers`: static `Record<string, string>` merged into Fastify requests; values are copied during attach, `content-*`, `mcp-*`, `accept`, and hop-by-hop headers are ignored, and attach does not log them
 
 Returns a `Session` (from `@mcp-layer/session`) with:
 - `client`, `transport`, `info`, `name`, `source`, `entry`
 
+### `Session`
+
+`Session` is re-exported from `@mcp-layer/session`. Its constructor accepts `data` with `name: string`, `source: string`, `entry: { name: string, source: string, config: Record<string, unknown> } | null`, `client` with `close(): Promise<void>`, optional `transport` with `close(): Promise<void>`, and `info: { name: string, version: string }`. The class exposes those values as properties.
+
+- `close(): Promise<void>` closes the client, then closes the transport when it provides `close()`.
+
+`attach` throws a `LayerError` when `name` is empty or the SDK server is already connected. Errors from a Fastify endpoint handshake are passed to the caller.
+
 ## Behavior and constraints
 
-- **In-memory transport**: attach uses the SDK’s in-memory transport to connect client and server inside one process.
-- **Single transport**: the target server must not already be connected. If it is, `attach` throws.
-- **Lifecycle**: `session.close()` closes the client and the in-memory transport. The server instance remains yours to manage.
+- **In-memory transport**: attach uses the MCP TypeScript SDK's [in-memory transport](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/packages/sdk/src/inMemory.ts) to connect an SDK client and server inside one process.
+- **Fastify transport**: attach uses the SDK’s Streamable HTTP client transport through Fastify `inject()` and leaves the Fastify app lifecycle to its owner.
+- **Single transport**: an SDK server must not already be connected. If it is, `attach` throws.
+- **Lifecycle**: `session.close()` closes the client and client transport. The server instance or Fastify app remains yours to manage.
 - **Errors**: if the server fails during handshake, the attach call will throw; you are still responsible for server cleanup.
 
 ## Testing
@@ -169,12 +187,12 @@ await Promise.all([sessionA.close(), sessionB.close()]);
 
 Thrown from: `attachWithProvider`
 
-This happens when provider resolution returns a name that `attachWithProvider` does not implement. Right now the package only supports the `platformatic` provider branch.
+This happens when provider resolution returns a name that `attachWithProvider` does not implement. The package supports MCP SDK server instances and Fastify apps with `ready()` and `inject()` methods.
 
 Step-by-step resolution:
-1. Confirm the incoming instance is actually a Platformatic Fastify MCP instance (`mcpAddTool` + `inject`).
+1. Confirm the incoming Fastify app has an MCP endpoint registered before calling `attach`.
 2. If the instance is wrapped, pass the underlying MCP server object (`wrapper.server`) to `attach`.
-3. If you are adding a new runtime integration, implement a provider branch before calling with that provider id.
+3. If the instance is a different server type, pass its MCP SDK `Server` object or add support for that provider.
 4. Add a test for provider detection and branch coverage.
 
 <details>
