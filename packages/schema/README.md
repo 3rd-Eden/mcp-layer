@@ -1,6 +1,6 @@
 # @mcp-layer/schema
 
-`@mcp-layer/schema` extracts MCP server definitions (tools, resources, prompts, templates, and MCP Apps metadata) and normalizes them into a unified Zod-backed schema. The output is designed for downstream generators that need a single contract to build CLIs, REST endpoints, UI renderers, or additional MCP layers without re-parsing the MCP protocol surface.
+`@mcp-layer/schema` extracts MCP server definitions (tools, resources, prompts, templates, and MCP Apps metadata) and normalizes them into a unified schema backed by Zod 4. The output is designed for downstream generators that need a single contract to build CLIs, REST endpoints, UI renderers, or additional MCP layers without re-parsing the MCP protocol surface.
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@
 - [MCP Apps support](#mcp-apps-support)
 - [Generator guidance](#generator-guidance)
 - [Responsibilities and lifecycle](#responsibilities-and-lifecycle)
+- [API Reference](#api-reference)
 - [Error handling](#error-handling)
 - [JSON Schema vs Zod](#json-schema-vs-zod)
 - [Runtime Error Reference](#runtime-error-reference)
@@ -104,7 +105,7 @@ Type discriminator:
 ```js
 detail: {
   input: {
-    schema, // Zod schema (Ajv-backed)
+    schema, // Zod 4 schema (Ajv-backed)
     json,   // original JSON Schema
     error   // optional Ajv compile error message
   },
@@ -170,6 +171,25 @@ Suggested uses for the unified schema:
 - `composeCatalog(...)` is pure and does not require a connection.
 - If the server doesn't advertise a capability (tools/resources/prompts), extraction skips that surface.
 
+## API Reference
+
+### `composeCatalog(input = {})`
+
+Build a catalog from MCP data that is already available. This function does not connect to a server.
+
+- **Input:** an optional `server` object with `info`, `capabilities`, and `instructions`, plus optional `tools`, `resources`, `templates`, and `prompts` arrays.
+- **Result:** `{ server, items }`. Missing values become `undefined` or add no items. Tool input and output schemas use Zod 4 and Ajv.
+- **Errors:** Ajv compile errors appear in the item's `error` field. This function does not make MCP calls.
+
+### `extract(session)`
+
+Read a catalog from an active `Session`.
+
+- **Input:** a connected `Session` from `@mcp-layer/connect` or `@mcp-layer/attach`.
+- **Result:** `Promise<{ server, items }>` with the same shape as `composeCatalog`.
+- **Errors:** if `session.client` is missing, this function throws `LayerError` with reference `error-49ae61`. It passes MCP call errors to the caller.
+- **Lifecycle:** this function does not close the session.
+
 ## Error handling
 
 - Schema compilation uses Ajv under the hood. If a tool exposes an invalid JSON Schema, extraction still succeeds but `detail.input.error` or `detail.output.error` will be populated for that item.
@@ -178,7 +198,7 @@ Suggested uses for the unified schema:
 
 ## JSON Schema vs Zod
 
-Zod validators are produced to allow direct runtime validation, but the original JSON Schema is preserved in `detail.input.json` and `detail.output.json` so generators can emit OpenAPI, JSON Schema, or other schema formats without losing fidelity.
+The `schema` field contains a Zod 4 validator backed by Ajv. Call `.parse()` or `.safeParse()` to validate data. The original JSON Schema stays in `detail.input.json` and `detail.output.json` for generators that need OpenAPI, JSON Schema, or another schema format.
 
 ## Runtime Error Reference
 

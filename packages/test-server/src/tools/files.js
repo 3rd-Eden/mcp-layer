@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 /**
  * Register the files tool that emits ResourceLinks referencing shared assets.

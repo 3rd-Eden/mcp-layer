@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 /**
  * Register the rebalance tool that toggles core tool registrations to exercise debounced notifications.
