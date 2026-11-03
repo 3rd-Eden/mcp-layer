@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/rest",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Fastify REST plugin that layers HTTP APIs on MCP servers with OpenAPI 3.1 docs, validation, and resilience.",
   "repository": {
     "type": "git",

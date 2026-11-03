@@ -1,5 +1,22 @@
 # mcp-layer
 
+## 0.2.7
+
+### Patch Changes
+
+- 8de95e8: Update runtime dependencies to patched releases. Replace the test-only package that included an unpatched dependency. Use the MCP SDK Streamable HTTP transport for Fastify endpoints.
+- Updated dependencies [8de95e8]
+  - @mcp-layer/attach@1.2.1
+  - @mcp-layer/cli@1.3.4
+  - @mcp-layer/connect@1.2.2
+  - @mcp-layer/gateway@0.2.4
+  - @mcp-layer/graphql@0.2.4
+  - @mcp-layer/rest@2.0.1
+  - @mcp-layer/test-server@1.0.5
+  - @mcp-layer/manager@0.2.1
+  - @mcp-layer/openapi@2.0.0
+  - @mcp-layer/schema@2.0.0
+
 ## 0.2.6
 
 ### Patch Changes
