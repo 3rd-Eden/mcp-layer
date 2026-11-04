@@ -140,8 +140,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       opossum:
-        specifier: ^8.5.0
-        version: 8.5.0
+        specifier: ^10.0.0
+        version: 10.0.0
       safe-regex2:
         specifier: ^2.0.0
         version: 2.0.0
@@ -2622,9 +2622,9 @@ packages:
       mimic-function: 5.0.1
     dev: false
 
-  /opossum@8.5.0:
-    resolution: {integrity: sha512-LZNvs+p9/ZbG4oN6unnjh4hTxkB0dyHKI2p7azVt8w+//GKDpfHss6WR7KebbpzGEssYwtSd8Mvwxqcmxg10NA==}
-    engines: {node: ^24 || ^22 || ^21 || ^20 || ^18 || ^16}
+  /opossum@10.0.0:
+    resolution: {integrity: sha512-sghtqL8Usj+et06Zui0nyn0R6FFsl7cyuoU+d7MctYU0nbS7Htzjleh+tWohFqk1Rp1srrFwbFa8Vxd0O64w6A==}
+    engines: {node: ^26 || ^24 || ^22}
     dev: false
 
   /outdent@0.5.0:
