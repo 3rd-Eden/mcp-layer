@@ -46,7 +46,7 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "json-schema-traverse": "^1.0.0",
-    "opossum": "^8.5.0",
+    "opossum": "^10.0.0",
     "safe-regex2": "^2.0.0"
   },
   "peerDependencies": {
