@@ -84,7 +84,7 @@
     "@mcp-layer/test-server": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@opentelemetry/api": "^1.10.0",
-    "autocannon": "^7.15.0",
+    "autocannon": "^8.0.0",
     "fastify": "^5.12.8",
     "zod": "^4.6.7"
   }
