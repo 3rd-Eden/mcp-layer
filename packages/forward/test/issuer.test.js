@@ -535,20 +535,20 @@ function forward() {
      * @returns {Promise<void>} Complete the public API assertions.
      */
     async function expiry(t) {
-      const short = await fixture(t, { codeTtl: 0.2, accessTtl: 0.04, refreshTtl: 0.04 });
+      const short = await fixture(t, { codeTtl: 2, accessTtl: 0.2, refreshTtl: 0.2 });
       const client = await register(short);
       const page = await consent(short, client);
-      await delay(250);
+      await delay(2050);
       const expired = await approve(short, page.body);
       assert.equal(expired.searchParams.get('error'), 'invalid_request');
       const code = await authorize(short, client);
-      await delay(250);
+      await delay(2050);
       const invalid = await redeem(short, client, code);
       assert.equal(invalid.body.error, 'invalid_grant');
       const fresh = await authorize(short, client);
       const tokens = await redeem(short, client, fresh);
       assert.equal(tokens.response.status, 200, JSON.stringify(tokens.body));
-      await delay(65);
+      await delay(300);
       const response = await fetch(`${short.url}/mcp`, { headers: { authorization: `Bearer ${tokens.body.access_token}` } });
       assert.equal(response.status, 401);
       const refresh = await exchange(short, client, { grant_type: 'refresh_token', refresh_token: tokens.body.refresh_token });
