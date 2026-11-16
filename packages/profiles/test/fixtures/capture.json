@@ -1,0 +1,47 @@
+{
+  "options": {
+    "id": "fixture-desktop-2.3.4",
+    "client": { "name": "fixture-desktop", "version": "2.3.4", "platform": "darwin" },
+    "capturedAt": "2026-11-15T12:00:00.000Z",
+    "allowHeaders": ["x-public-flavor"]
+  },
+  "observations": [
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "method": "POST",
+      "url": "https://mcp.example/mcp",
+      "headers": { "User-Agent": "fixture-desktop/2.3.4", "x-public-flavor": "desktop", "x-unknown": "unclassified-value", "mcp-protocol-version": "2025-11-25" },
+      "message": { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "protocolVersion": "2025-11-25", "clientInfo": { "name": "fixture-desktop", "version": "2.3.4" }, "capabilities": { "roots": { "listChanged": true } } } },
+      "provenance": { "source": "fixture", "role": "client" }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "url": "https://issuer.example/register",
+      "body": { "client_name": "Fixture Desktop", "software_id": "fixture-desktop", "software_version": "2.3.4", "client_uri": "https://client.example/", "token_endpoint_auth_method": "none", "redirect_uris": ["http://127.0.0.1:43121/callback"] },
+      "provenance": { "source": "fixture", "role": "client", "issuer": "https://issuer.example" }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "status": 201,
+      "body": { "client_id": "public-registration", "client_secret": "fixture-secret-registration" },
+      "provenance": { "source": "fixture", "role": "client", "issuer": "https://issuer.example" }
+    },
+    {
+      "phase": "authorization",
+      "perspective": "downstream",
+      "headers": { "user-agent": "Fixture Browser/9.0" },
+      "url": "https://issuer.example/authorize?client_id=public-registration&state=fixture-secret-state&code_challenge=fixture-secret-challenge",
+      "provenance": { "source": "fixture", "role": "browser" }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "upstream",
+      "headers": { "user-agent": "bridge-runtime/1.0" },
+      "message": { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "clientInfo": { "name": "fixture-bridge", "version": "1.0" }, "capabilities": {} } },
+      "provenance": { "source": "fixture", "role": "bridge" }
+    }
+  ]
+}

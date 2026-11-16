@@ -1,0 +1,1250 @@
+{
+  "schema": 1,
+  "id": "claude-code-2-1-325-7bd44ecf1368",
+  "client": {
+    "name": "claude-code",
+    "version": "2.1.325",
+    "platform": "darwin-arm64",
+    "title": "Claude Code",
+    "websiteUrl": "https://claude.com/claude-code",
+    "description": "Anthropic's agentic coding tool"
+  },
+  "capturedAt": "2026-11-16T10:16:45.726Z",
+  "evidence": [
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.application_type",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/register",
+      "method": "POST",
+      "body": {
+        "client_name": "Claude Code (mcp-layer-capture)",
+        "redirect_uris": [
+          "http://localhost:59296/callback"
+        ],
+        "grant_types": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "response_types": [
+          "code"
+        ],
+        "token_endpoint_auth_method": "none",
+        "application_type": "[redacted]",
+        "scope": "mcp"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "headers": {},
+      "redactions": [
+        {
+          "path": "body.client_id_issued_at",
+          "kind": "unclassified"
+        }
+      ],
+      "status": 201,
+      "body": {
+        "redirect_uris": [
+          "http://localhost:59296/callback"
+        ],
+        "token_endpoint_auth_method": "none",
+        "grant_types": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "response_types": [
+          "code"
+        ],
+        "client_name": "Claude Code (mcp-layer-capture)",
+        "scope": "mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9",
+        "client_id_issued_at": "[redacted]"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "authorization",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "accept-language": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "sec-fetch-mode": "[redacted]",
+        "user-agent": "node"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.accept-language",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.sec-fetch-mode",
+          "kind": "unclassified"
+        },
+        {
+          "path": "url.query.code_challenge",
+          "kind": "oauth"
+        },
+        {
+          "path": "url.query.state",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/authorize?response_type=code&client_id=86704d06-2a82-4156-b8a0-9d4b5bce73f9&code_challenge=%5Bredacted%5D&code_challenge_method=S256&redirect_uri=http%3A%2F%2Flocalhost%3A59296%2Fcallback&state=%5Bredacted%5D&scope=mcp&resource=http%3A%2F%2F127.0.0.1%3A61581%2Fmcp",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "browser",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "authorization",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "accept-language": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "host": "[redacted]",
+        "sec-fetch-mode": "[redacted]",
+        "user-agent": "node"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.accept-language",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.sec-fetch-mode",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.code_challenge",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.state",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.consent",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.decision",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/authorize",
+      "method": "POST",
+      "body": {
+        "response_type": "code",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9",
+        "redirect_uri": "http://localhost:59296/callback",
+        "code_challenge": "[redacted]",
+        "code_challenge_method": "S256",
+        "scope": "mcp",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "state": "[redacted]",
+        "consent": "[redacted]",
+        "decision": "[redacted]"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "browser",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "token",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.code",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.code_verifier",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "authorization_code",
+        "code": "[redacted]",
+        "code_verifier": "[redacted]",
+        "redirect_uri": "http://localhost:59296/callback",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/event-stream",
+        "accept-encoding": "[redacted]",
+        "authorization": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "mcp-method": "[redacted]",
+        "mcp-protocol-version": "2026-07-28",
+        "user-agent": "claude-code/2.1.325 (sdk-cli)"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-method",
+          "kind": "unclassified"
+        },
+        {
+          "path": "message.id",
+          "kind": "identifier"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/mcp",
+      "method": "POST",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": "[redacted]",
+        "method": "server/discover",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientInfo": {
+              "name": "claude-code",
+              "title": "Claude Code",
+              "version": "2.1.325",
+              "description": "Anthropic's agentic coding tool",
+              "websiteUrl": "https://claude.com/claude-code"
+            },
+            "io.modelcontextprotocol/clientCapabilities": {
+              "roots": {
+                "listChanged": true
+              },
+              "elicitation": {
+                "form": {},
+                "url": {}
+              }
+            }
+          }
+        }
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/event-stream",
+        "accept-encoding": "[redacted]",
+        "authorization": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "user-agent": "claude-code/2.1.325 (sdk-cli)"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "message.id",
+          "kind": "identifier"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/mcp",
+      "method": "POST",
+      "message": {
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2025-11-25",
+          "capabilities": {
+            "roots": {
+              "listChanged": true
+            },
+            "elicitation": {
+              "form": {},
+              "url": {}
+            }
+          },
+          "clientInfo": {
+            "name": "claude-code",
+            "title": "Claude Code",
+            "version": "2.1.325",
+            "description": "Anthropic's agentic coding tool",
+            "websiteUrl": "https://claude.com/claude-code"
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": "[redacted]"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/event-stream",
+        "accept-encoding": "[redacted]",
+        "authorization": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "mcp-session-id": "[redacted]",
+        "user-agent": "claude-code/2.1.325 (sdk-cli)"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/mcp",
+      "method": "POST",
+      "message": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "resource": "http://127.0.0.1:61581/mcp",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "text/event-stream",
+        "accept-encoding": "[redacted]",
+        "authorization": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "mcp-session-id": "[redacted]",
+        "user-agent": "claude-code/2.1.325 (sdk-cli)"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/mcp",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/event-stream",
+        "accept-encoding": "[redacted]",
+        "authorization": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "mcp-session-id": "[redacted]",
+        "user-agent": "claude-code/2.1.325 (sdk-cli)"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        },
+        {
+          "path": "message.id",
+          "kind": "identifier"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/mcp",
+      "method": "POST",
+      "message": {
+        "method": "tools/list",
+        "jsonrpc": "2.0",
+        "id": "[redacted]"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-protected-resource",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-11-25",
+        "user-agent": "Bun/1.4.4"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "revocation",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/plain, */*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "axios/1.15.2"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.token",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.token_type_hint",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/revoke",
+      "method": "POST",
+      "body": {
+        "token": "[redacted]",
+        "token_type_hint": "[redacted]",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    },
+    {
+      "phase": "revocation",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json, text/plain, */*",
+        "accept-encoding": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]",
+        "user-agent": "axios/1.15.2"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.token",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.token_type_hint",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:61581/revoke",
+      "method": "POST",
+      "body": {
+        "token": "[redacted]",
+        "token_type_hint": "[redacted]",
+        "client_id": "86704d06-2a82-4156-b8a0-9d4b5bce73f9"
+      },
+      "provenance": {
+        "source": "npm:@anthropic-ai/claude-code@2.1.325; isolated CLAUDE_CONFIG_DIR; claude --bare mcp add --transport http --scope user; claude --bare mcp list; claude --bare mcp login --no-browser; local explicit consent; claude --bare mcp list; claude --bare mcp logout; local authorization server configured with one-second access-token TTL; login completed through PTY headless consent flow",
+        "role": "client",
+        "issuer": "http://127.0.0.1:61581/"
+      }
+    }
+  ],
+  "coverage": {
+    "phases": [
+      "authorization",
+      "discovery",
+      "mcp",
+      "refresh",
+      "registration",
+      "revocation",
+      "token"
+    ],
+    "perspectives": [
+      "downstream"
+    ],
+    "identity": "observed",
+    "observations": 24
+  },
+  "http": {
+    "headers": {
+      "user-agent": "claude-code/2.1.325 (sdk-cli)"
+    },
+    "phases": {
+      "discovery": {
+        "user-agent": "Bun/1.4.4"
+      },
+      "refresh": {
+        "user-agent": "Bun/1.4.4"
+      },
+      "registration": {
+        "user-agent": "Bun/1.4.4"
+      },
+      "revocation": {
+        "user-agent": "axios/1.15.2"
+      },
+      "token": {
+        "user-agent": "Bun/1.4.4"
+      }
+    },
+    "allowHeaders": []
+  },
+  "mcp": {
+    "clientInfo": {
+      "name": "claude-code",
+      "title": "Claude Code",
+      "version": "2.1.325",
+      "websiteUrl": "https://claude.com/claude-code",
+      "description": "Anthropic's agentic coding tool"
+    },
+    "observed": {
+      "protocolVersions": [
+        "2025-11-25",
+        "2026-07-28"
+      ],
+      "capabilities": [
+        {
+          "roots": {
+            "listChanged": true
+          },
+          "elicitation": {
+            "form": {},
+            "url": {}
+          }
+        }
+      ]
+    }
+  },
+  "oauth": {
+    "metadata": {
+      "client_name": "Claude Code (mcp-layer-capture)",
+      "token_endpoint_auth_method": "none"
+    },
+    "clients": [
+      {
+        "issuer": "http://127.0.0.1:61581/",
+        "clientId": "86704d06-2a82-4156-b8a0-9d4b5bce73f9",
+        "redirectUris": [
+          "http://localhost:59296/callback"
+        ],
+        "authMethod": "none"
+      }
+    ]
+  }
+}

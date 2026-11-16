@@ -6,7 +6,8 @@ import { inputs } from './inputs.js';
 import { catalog, spinner as spin, spinnertext } from './mcp.js';
 import { render } from './template.js';
 import { outputresult, outputresource } from './format.js';
-import { connect } from '@mcp-layer/connect';
+import { connection } from './connection.js';
+import { commands } from './commands.js';
 import { extract } from '@mcp-layer/schema';
 import { LayerError } from '@mcp-layer/error';
 
@@ -20,6 +21,7 @@ import { LayerError } from '@mcp-layer/error';
  * @returns {{ name: string, version: string, description: string }}
  */
 function servermeta(base, info, serverName, banner, instructions) {
+  // An empty server label retains the established fallback to the CLI label.
   const name = typeof info?.name === 'string'
     ? info.name
     : serverName || base.name;
@@ -84,7 +86,7 @@ function resolvetimeout(baseTimeout, override) {
  * @returns {{ text: () => string, stop: () => void }}
  */
 function capturestderr(transport) {
-  const stream = transport && transport.stderr;
+  const stream = transport?.stderr;
   if (!stream || typeof stream.on !== 'function') {
     return { text: function text() { return ''; }, stop: function stop() {} };
   }
@@ -182,7 +184,9 @@ function statichelp(cliName, custom) {
     { name: 'resources list', description: 'List available resources.' },
     { name: 'resources <uri>', description: 'Read a resource.' },
     { name: 'templates list', description: 'List available resource templates.' },
-    { name: 'templates <name>', description: 'Render a resource template.' }
+    { name: 'templates <name>', description: 'Render a resource template.' },
+    { name: 'profiles list|show|build|capture', description: 'Inspect public profiles or capture real client identity.' },
+    { name: 'forward [url]', description: 'Host an HTTP or stdio forwarding gateway.' },
   ];
   const extra = customcommands(custom);
   return {
@@ -192,6 +196,18 @@ function statichelp(cliName, custom) {
       '--config <path>': 'Point at a config file or directory to search.',
       '--transport <mode>': 'Override transport (stdio, streamable-http, or sse) at runtime.',
       '--timeout <ms>': 'Fail if server initialization exceeds the timeout (ms).',
+      '--profile <id|file>': 'Apply a verified public client identity profile.',
+      '--profile-parts <parts>': 'Select http,mcp,oauth identity layers.',
+      '--oauth': 'Authorize with the upstream MCP OAuth issuer.',
+      '--client-id <id>': 'Use an explicit public OAuth client ID.',
+      '--issuer <url>': 'Override the upstream authorization server.',
+      '--scope <scopes>': 'Override requested OAuth scopes.',
+      '--resource <url>': 'Override the OAuth resource indicator.',
+      '--callback-port <port>': 'Choose the loopback OAuth callback port (default 0).',
+      '--callback-url <url>': 'Use the registered loopback callback host and path.',
+      '--auth-timeout <ms>': 'Set the browser authorization deadline (default 300000).',
+      '--storage-dir <path>': 'Override the private cli-storage directory.',
+      '--storage-backend <mode>': 'Choose auto, native or file storage.',
       '--format <json>': 'Switch list output to JSON.',
       '--json <string>': 'Provide JSON input for run/render.',
       '--input <path>': 'Provide JSON input from a file.',
@@ -242,7 +258,7 @@ function findcustom(custom, target) {
 
 /**
  * CLI builder interface.
- * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean, timeout?: number }} [opts] - CLI defaults override (timeout is opt-in).
+ * @param {{ name?: string, version?: string, description?: string, colors?: boolean, accent?: string, subtle?: string, spinner?: boolean, markdown?: boolean, ansi?: boolean, server?: string, config?: string, showServers?: boolean, timeout?: number, open?:(url:URL)=>Promise<void> }} [opts] - CLI defaults override and optional application-owned OAuth browser callback (timeout is opt-in).
  * @returns {{ command: (options: { name: string, description: string, details?: string, flags?: Record<string, string[]>, examples?: string[] }, handler: (argv: Record<string, unknown>, helpers: { spinner: (text: string) => () => void }) => Promise<void>) => any, render: (args?: string[]) => Promise<void> }}
  */
 export function cli(opts = {}) {
@@ -267,7 +283,7 @@ export function cli(opts = {}) {
      * @returns {Promise<void>}
      */
     render: async function render(args) {
-      const input = parse(args || process.argv.slice(2));
+      const input = parse(args ?? process.argv.slice(2));
       const global = globals(input.parsed);
       const inputArgs = Object.keys(input.restParsed).length ? input.restParsed : input.parsed;
       const colors = base.colors && global.colors;
@@ -276,7 +292,9 @@ export function cli(opts = {}) {
       const timeout = resolvetimeout(base.timeout, global.timeout);
       const theme = { accent: base.accent, subtle: base.subtle };
       const tty = Boolean(process.stdout.isTTY);
+      // Empty names and selection paths denote absence in the existing CLI contract.
       const cliName = base.name || 'mcp-layer';
+      const options = { ...global, open: base.open, server: global.server || base.server, config: global.config || base.config, timeout, spinner: base.spinner && global.spinner };
 
       if (global.version) {
         process.stdout.write(`${base.name} ${base.version}\n`);
@@ -306,12 +324,13 @@ export function cli(opts = {}) {
       }
 
       const cmd = route(input.positionals);
+      if (await commands(cmd, input.parsed, options, cliName)) return;
 
       if (global.help && cmd.target && (cmd.surface === 'tools' || cmd.surface === 'prompts' || cmd.surface === 'resources' || cmd.surface === 'templates')) {
-        const info = await select({ server: global.server || base.server, config: global.config || base.config });
+        const info = await select(options);
         const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
         gate.start();
-        const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport, timeout });
+        const session = await connection(info, { ...options, stderr: 'pipe' });
         const stderr = capturestderr(session.transport);
         try {
           const output = await extract(session);
@@ -340,7 +359,7 @@ export function cli(opts = {}) {
         const staticInfo = statichelp(cliName, custom);
         let cfg = null;
         try {
-          cfg = await configload(global.config || base.config);
+          cfg = await configload(options.config);
         } catch {
           cfg = null;
         }
@@ -350,10 +369,10 @@ export function cli(opts = {}) {
         const extras = [];
         if (cfg) {
           try {
-            const info = await select({ server: global.server || base.server, config: global.config || base.config });
+            const info = await select(options);
             const gate = spin(base.spinner && global.spinner, spinnertext(info.name));
             gate.start();
-            const session = await connect(info.config, info.name, { stderr: 'pipe', transport: global.transport, timeout });
+            const session = await connection(info, { ...options, stderr: 'pipe' }, { interactive: false });
             const stderr = capturestderr(session.transport);
             try {
               const output = await extract(session);
@@ -378,7 +397,7 @@ export function cli(opts = {}) {
       }
 
       if (cmd.surface === 'servers' && cmd.action === 'list') {
-        const cfg = await configload(global.config || base.config);
+        const cfg = await configload(options.config);
         const rows = [];
         for (const [name, entry] of cfg.map.entries()) {
           rows.push([name, entry.source]);
@@ -393,13 +412,7 @@ export function cli(opts = {}) {
         return;
       }
 
-      const data = await catalog({
-        server: global.server || base.server,
-        config: global.config || base.config,
-        spinner: base.spinner && global.spinner,
-        transport: global.transport,
-        timeout
-      });
+      const data = await catalog(options);
       const session = data.session;
       const items = data.output.items;
 

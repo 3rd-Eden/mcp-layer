@@ -27,6 +27,11 @@
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
+    "./capture": {
+      "types": "./types/capture.d.ts",
+      "import": "./src/capture.js",
+      "default": "./src/capture.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -45,12 +50,18 @@
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/forward": "workspace:*",
+    "@mcp-layer/profiles": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@socketregistry/yocto-spinner": "^1.0.25",
     "argh": "^1.0.0",
     "cli-table3": "^0.6.5",
+    "cli-storage": "link:../../../cli-storage",
+    "express": "^5.1.0",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.1",
+    "open": "^10.2.0",
     "terminal-image": "^4.3.0"
   },
   "devDependencies": {

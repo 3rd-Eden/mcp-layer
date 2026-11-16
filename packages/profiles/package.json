@@ -1,0 +1,32 @@
+{
+  "name": "@mcp-layer/profiles",
+  "version": "0.1.0",
+  "description": "Sanitized, evidence-based MCP client identity profiles for official SDK consumers.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "type": "module",
+  "keywords": ["mcp", "client", "profiles", "capture", "oauth"],
+  "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build:types",
+    "test": "node --test --experimental-test-coverage \"./test/**/*.test.js\""
+  },
+  "main": "src/index.js",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "types", "README.md", "CONTRIBUTING.md", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@mcp-layer/error": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  }
+}

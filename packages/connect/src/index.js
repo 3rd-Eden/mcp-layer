@@ -5,6 +5,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { createRequire } from 'node:module';
 import { LayerError } from '@mcp-layer/error';
 import { Session } from '@mcp-layer/session';
+import { apply } from '@mcp-layer/profiles';
 import path from 'node:path';
 
 const read = createRequire(import.meta.url);
@@ -29,7 +30,7 @@ const labels = {
  */
 export function select(src, name) {
   if (src instanceof Map) return src.get(name);
-  if (src && typeof src === 'object' && typeof src.get === 'function') return src.get(name);
+  if (typeof src === 'object' && typeof src?.get === 'function') return src.get(name);
   throw new LayerError({
     name: 'connect',
     method: 'select',
@@ -105,22 +106,7 @@ function timeoutms(value) {
 }
 
 /**
- * Build a standardized connection timeout error.
- * @param {string} name - Server name.
- * @param {number} timeout - Timeout in milliseconds.
- * @returns {LayerError}
- */
-function timeouterror(name, timeout) {
-  return new LayerError({
-    name: 'connect',
-    method: 'connect',
-    message: 'Timed out while connecting to server "{server}" after {timeout}ms.',
-    vars: { server: name, timeout }
-  });
-}
-
-/**
- * Close the client after a timeout without masking the original error.
+ * Close the client after a failed handshake without masking the original error.
  * @param {Client} client - MCP client instance.
  * @returns {Promise<void>}
  */
@@ -128,12 +114,12 @@ async function closeclient(client) {
   try {
     await client.close();
   } catch {
-    // Ignore cleanup failures after timing out.
+    // Preserve the original handshake failure when cleanup also fails.
   }
 }
 
 /**
- * Close the transport directly so timed-out stdio handshakes cannot leave child processes alive.
+ * Close the transport directly so failed stdio handshakes cannot leave child processes alive.
  * @param {unknown} link - Transport instance returned by the SDK transport constructors.
  * @returns {Promise<void>}
  */
@@ -143,7 +129,7 @@ async function closetransport(link) {
   try {
     await link.close();
   } catch {
-    // Ignore cleanup failures after timing out.
+    // Preserve the original handshake failure when cleanup also fails.
   }
 }
 
@@ -213,7 +199,7 @@ function mode(item, opts = {}) {
 /**
  * Create a streamable HTTP transport from a server entry.
  * @param {{ name: string, config: Record<string, unknown> }} item - Config entry.
- * @param {{ url?: string, requestInit?: RequestInit, fetch?: typeof fetch, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number } }} [opts] - Optional remote transport overrides.
+ * @param {{ url?: string, requestInit?: RequestInit, fetch?: typeof fetch, authProvider?: import('@modelcontextprotocol/sdk/client/auth.js').OAuthClientProvider, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number } }} [opts] - Optional remote transport overrides.
  * @returns {StreamableHTTPClientTransport}
  */
 function streamable(item, opts = {}) {
@@ -221,6 +207,7 @@ function streamable(item, opts = {}) {
   return new StreamableHTTPClientTransport(url, {
     requestInit: opts.requestInit,
     fetch: opts.fetch,
+    authProvider: opts.authProvider,
     sessionId: opts.sessionId,
     reconnectionOptions: opts.reconnectionOptions
   });
@@ -229,15 +216,16 @@ function streamable(item, opts = {}) {
 /**
  * Create an SSE transport from a server entry.
  * @param {{ name: string, config: Record<string, unknown> }} item - Config entry.
- * @param {{ url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch }} [opts] - Optional remote transport overrides.
+ * @param {{ url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch, authProvider?: import('@modelcontextprotocol/sdk/client/auth.js').OAuthClientProvider }} [opts] - Optional remote transport overrides.
  * @returns {SSEClientTransport}
  */
 function sse(item, opts = {}) {
   const url = remoteurl(item, opts);
   return new SSEClientTransport(url, {
     requestInit: opts.requestInit,
-    eventSourceInit: opts.eventSourceInit,
-    fetch: opts.fetch
+    eventSourceInit: { ...opts.eventSourceInit, fetch: opts.eventSourceInit?.fetch ?? opts.fetch },
+    fetch: opts.fetch,
+    authProvider: opts.authProvider,
   });
 }
 
@@ -247,7 +235,7 @@ export { Session };
  * Connect to a configured MCP server using the official SDK.
  * @param {Map<string, { name: string, source: string, config: Record<string, unknown> }> | { get: (name: string) => { name: string, source: string, config: Record<string, unknown> } | undefined }} src - Config source map or map-like wrapper.
  * @param {string} name - Server name to connect to.
- * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: { name: string, version: string }, transport?: 'stdio' | 'http' | 'streamable-http' | 'streamableHttp' | 'sse', url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number }, timeout?: number }} [opts] - Transport overrides and client metadata.
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, stderr?: 'pipe' | 'overlapped' | 'inherit', info?: Partial<import('@modelcontextprotocol/sdk/types.js').Implementation>, profile?: import('@mcp-layer/profiles').Profile | string, parts?: import('@mcp-layer/profiles').Part[], issuer?: string, authProvider?: import('@modelcontextprotocol/sdk/client/auth.js').OAuthClientProvider, transport?: 'stdio' | 'http' | 'streamable-http' | 'streamableHttp' | 'sse', url?: string, requestInit?: RequestInit, eventSourceInit?: import('eventsource').EventSourceInit, fetch?: typeof fetch, sessionId?: string, reconnectionOptions?: { maxReconnectionDelay: number, initialReconnectionDelay: number, reconnectionDelayGrowFactor: number, maxRetries: number }, timeout?: number }} [opts] - Transport overrides, runtime OAuth provider and optional public identity profile. Explicit runtime values override profile defaults.
  * @returns {Promise<Session>}
  */
 export async function connect(src, name, opts = {}) {
@@ -269,7 +257,20 @@ export async function connect(src, name, opts = {}) {
     });
   }
 
-  const info = { ...base, ...(opts.info ?? {}) };
+  if (opts.profile !== undefined) {
+    const applied = apply(opts.profile, { parts: opts.parts, info: opts.info, headers: opts.requestInit?.headers, fetch: opts.fetch, authProvider: opts.authProvider, issuer: opts.issuer });
+    const eventsource = opts.eventSourceInit?.fetch;
+    opts = {
+      ...opts,
+      ...applied,
+      requestInit: { ...opts.requestInit, headers: applied.headers },
+      eventSourceInit: {
+        ...opts.eventSourceInit,
+        fetch: eventsource ? apply(opts.profile, { parts: opts.parts, headers: opts.requestInit?.headers, fetch: eventsource }).fetch : applied.fetch,
+      },
+    };
+  }
+  const info = { ...base, ...opts.info };
   const kind = mode(item, opts);
   const client = new Client(info);
 
@@ -302,13 +303,27 @@ export async function connect(src, name, opts = {}) {
    * @returns {Promise<void>}
    */
   function timeoutpromise() {
-    return new Promise(function timeoutExecutor(resolve, reject) {
+    /**
+     * Bind the initialization deadline to a standardized timeout rejection.
+     * @param {()=>void} resolve Unused successful completion continuation.
+     * @param {(error:LayerError)=>void} reject Reject the timed-out handshake.
+     * @returns {void} Starts the timeout timer.
+     */
+    function timeoutExecutor(resolve, reject) {
+      /** @returns {void} Reject after the MCP handshake deadline has elapsed. */
       function onTimeout() {
         timedOut = true;
-        reject(timeouterror(name, limit));
+        reject(new LayerError({
+          name: 'connect',
+          method: 'connect',
+          code: 'ERR_CONNECT_TIMEOUT',
+          message: 'Timed out while connecting to server "{server}" after {timeout}ms.',
+          vars: { server: name, timeout: limit },
+        }));
       }
       timerId = setTimeout(onTimeout, limit);
-    });
+    }
+    return new Promise(timeoutExecutor);
   }
 
   const guarded = connectPromise.catch(onConnectError);
@@ -317,10 +332,8 @@ export async function connect(src, name, opts = {}) {
   try {
     await race;
   } catch (error) {
-    if (timedOut) {
-      await closetransport(link);
-      await closeclient(client);
-    }
+    await closetransport(link);
+    await closeclient(client);
     throw error;
   } finally {
     if (timerId) clearTimeout(timerId);
