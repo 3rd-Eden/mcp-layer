@@ -202,11 +202,35 @@ export function derive(input) {
     function order(a, b) { return canonical(a).localeCompare(canonical(b)); });
   const headers = byPhase.get('mcp') ?? {};
   const phases = Object.fromEntries([...byPhase.entries()]
-    .filter(([phase, values]) => phase !== 'mcp' && canonical(values) !== canonical(headers))
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([phase, values]) => [phase, Object.fromEntries(Object.entries(values).sort())]));
-  const fingerprintData = { client: descriptor, headers, metadata: publicMetadata, clients };
-  if (Object.keys(phases).length > 0) fingerprintData.phases = phases;
+    .filter(
+      /**
+       * Keep non-MCP phase headers only when they differ from the MCP defaults.
+       * @param {[import('./types.js').Phase, Record<string, string>]} entry - Phase and observed headers.
+       * @returns {boolean} Whether this phase needs an explicit header entry.
+       */
+      function distinct([phase, values]) { return phase !== 'mcp' && canonical(values) !== canonical(headers); })
+    .sort(
+      /**
+       * Order phase header entries by phase name.
+       * @param {[import('./types.js').Phase, Record<string, string>]} left - First phase entry.
+       * @param {[import('./types.js').Phase, Record<string, string>]} right - Second phase entry.
+       * @returns {number} Lexicographic phase ordering result.
+       */
+      function order([left], [right]) { return left.localeCompare(right); })
+    .map(
+      /**
+       * Sort header keys within one retained phase.
+       * @param {[import('./types.js').Phase, Record<string, string>]} entry - Phase and observed headers.
+       * @returns {[import('./types.js').Phase, Record<string, string>]} Phase with deterministically ordered headers.
+       */
+      function normalize([phase, values]) { return [phase, Object.fromEntries(Object.entries(values).sort())]; }));
+  const fingerprintData = {
+    schema: snapshot.schema,
+    client: snapshot.client,
+    capturedAt: snapshot.capturedAt,
+    allowHeaders: snapshot.allowHeaders,
+    observations: snapshot.observations,
+  };
   const fingerprint = createHash('sha256').update(canonical(fingerprintData)).digest('hex').slice(0, 12);
   const slug = `${descriptor.name}-${descriptor.version}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return {

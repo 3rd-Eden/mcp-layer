@@ -33,9 +33,10 @@ export async function browser(url, decision = 'allow') {
 /**
  * Start a real authenticated SDK MCP server and its OAuth issuer.
  * @param {import('node:test').TestContext} t - Test lifecycle.
- * @returns {Promise<{url:string,storage:Storage,tokens:string[],events:object[],provider:object}>} Isolated test service.
+ * @param {{resource?:string,scopes?:string[],delayTokenBodyMs?:number}} [options] - Optional PRM resource, scope values, or delayed SDK token body.
+ * @returns {Promise<{url:string,directory:string,storage:Storage,tokens:string[],events:object[],provider:object,tokenBodyStarted:Promise<void>}>} Isolated test service.
  */
-export async function service(t) {
+export async function service(t, options = {}) {
   const directory = await mkdtemp(path.join(tmpdir(), 'mcp-forward-gateway-'));
   const storage = new Storage({ namespace: 'gateway', directory, backend: 'file' });
   const app = express();
@@ -52,11 +53,47 @@ export async function service(t) {
   const base = new URL('/', url);
   const events = [];
   const tokens = [];
+  let startTokenBody;
+  const tokenBodyStarted = new Promise(/** @param {() => void} resolve Resolve when the real token response begins. @returns {void} */
+  function waiting(resolve) { startTokenBody = resolve; });
   /** @param {object} event - Real issuer operation. @returns {void} */
   function observe(event) { events.push(event); }
-  const provider = issuer({ url: base, resource: url, storage, observe });
-  app.use(mcpAuthRouter({ provider, issuerUrl: base, resourceServerUrl: new URL(url), scopesSupported: ['mcp'] }));
-  app.use('/mcp', requireBearerAuth({ verifier: provider, expectedResource: new URL(url), requiredScopes: ['mcp'], resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(new URL(url)) }));
+  const scopes = options.scopes ?? ['mcp'];
+  const resource = options.resource ?? url;
+  const provider = issuer({ url: base, resource, storage, observe, scopes });
+  if (options.delayTokenBodyMs !== undefined) {
+    app.use('/token', /** @param {import('express').Request} req Token request. @param {import('express').Response} res Token response. @param {import('express').NextFunction} next Continue to the SDK token handler. @returns {void} */
+    function delayToken(req, res, next) {
+      if (req.method !== 'POST') { next(); return; }
+      const end = res.end;
+      /** Send the real SDK token body after a controlled delay. @param {any[]} args Original response end arguments. @returns {void} */
+      function delayed(args) {
+        startTokenBody?.();
+        const timer = setTimeout(/** @returns {void} Complete the delayed SDK response. */
+        function finish() { Reflect.apply(end, res, args); }, options.delayTokenBodyMs);
+        res.once('close', /** @returns {void} Cancel an unused delayed token response. */
+        function disconnected() { clearTimeout(timer); });
+      }
+      res.end = /**
+       * Flush response headers before forwarding the real token body on schedule.
+       * @param {any[]} args - Original response end arguments.
+       * @returns {import('express').Response} The response after scheduling its end.
+       */
+      function endResponse(...args) {
+        res.flushHeaders();
+        delayed(args);
+        return res;
+      };
+      next();
+    });
+  }
+  if (options.resource !== undefined || options.scopes !== undefined) {
+    const metadataUrl = new URL(getOAuthProtectedResourceMetadataUrl(new URL(url)));
+    app.get(metadataUrl.pathname, /** @param {import('express').Request} req Metadata request. @param {import('express').Response} res Metadata response. @returns {void} */
+    function metadata(req, res) { res.json({ resource, authorization_servers: [base.href], scopes_supported: scopes }); });
+  }
+  app.use(mcpAuthRouter({ provider, issuerUrl: base, resourceServerUrl: new URL(url), scopesSupported: scopes }));
+  app.use('/mcp', requireBearerAuth({ verifier: provider, expectedResource: new URL(resource), requiredScopes: scopes, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(new URL(url)) }));
   const server = build();
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: randomUUID });
   await server.connect(transport);
@@ -87,5 +124,5 @@ export async function service(t) {
     function closed(resolve) { listener.close(resolve); });
     await rm(directory, { recursive: true, force: true });
   });
-  return { url, storage, tokens, events, provider };
+  return { url, directory, storage, tokens, events, provider, tokenBodyStarted };
 }

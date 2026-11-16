@@ -8,16 +8,16 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { derive } from '@mcp-layer/profiles';
+import { derive } from '../src/index.js';
 import { authorize } from '@mcp-layer/forward';
-import { connect } from '@mcp-layer/connect';
+import { connect } from '../../connect/src/index.js';
 import { Storage } from 'cli-storage';
-import { capture } from '../src/capture.js';
+import { listen as capture } from '../src/listen.js';
 import { browser } from './fixtures/browser.mjs';
 
-const bin = fileURLToPath(new URL('../bin/cli.js', import.meta.url));
+const bin = fileURLToPath(new URL('../bin/profiles.js', import.meta.url));
 
-describe('cli',
+describe('@mcp-layer/profiles',
   /**
    * Register cli integration coverage.
    * @returns {void} Completion of the real test operation.
@@ -115,12 +115,13 @@ describe('cli',
                */
               async function cleanup() { await rm(directory, { recursive: true, force: true }); });
             const output = path.join(directory, 'capture.json');
-            const transport = new StdioClientTransport({ command: process.execPath, args: [bin, 'profiles', 'capture', '--transport', 'stdio', '--output', output], stderr: 'pipe' });
+            const transport = new StdioClientTransport({ command: process.execPath, args: [bin, 'capture', '--transport', 'stdio', '--output', output, '--client-name', 'stdio-declared', '--client-version', '4.1.0'], stderr: 'pipe' });
             const client = new Client({ name: 'stdio-client', version: '4.0.0' });
             await client.connect(transport);
             await client.listTools();
             await client.close();
             const artifact = JSON.parse(await readFile(output, 'utf8'));
+            assert.deepEqual(artifact.client, { name: 'stdio-declared', version: '4.1.0' });
             assert.equal(artifact.observations.some(
               /**
                * Complete the real test lifecycle.
@@ -216,10 +217,11 @@ describe('cli',
            * @returns {Promise<void>} Completion of the real test operation.
            */
           async function invalid() {
-            await assert.rejects(capture({ transport: 'unsupported' }), { code: 'ERR_CLI_CAPTURE_TRANSPORT', package: '@mcp-layer/cli', method: 'capture' });
-            await assert.rejects(capture({ oauth: true }), { code: 'ERR_CLI_CAPTURE_STORAGE' });
+            await assert.rejects(capture({ transport: 'unsupported' }), { code: 'ERR_PROFILES_LISTEN_TRANSPORT', package: '@mcp-layer/profiles', method: 'listen' });
+            await assert.rejects(capture({ oauth: true }), { code: 'ERR_PROFILES_LISTEN_STORAGE', package: '@mcp-layer/profiles', method: 'listen' });
             await assert.rejects(capture({ oauth: true, storage: {} }), { code: 'EFORWARD_ISSUER_STORAGE' });
-            await assert.rejects(capture({ transport: 'stdio', oauth: true }), { code: 'ERR_CLI_CAPTURE_TRANSPORT' });
+            await assert.rejects(capture({ transport: 'stdio', oauth: true }), { code: 'ERR_PROFILES_LISTEN_TRANSPORT', package: '@mcp-layer/profiles', method: 'listen' });
+            await assert.rejects(capture({ transport: 'sse', upstream: 'http://127.0.0.1:1/mcp' }), { code: 'ERR_PROFILES_LISTEN_TRANSPORT', package: '@mcp-layer/profiles', method: 'listen' });
           });
         it('rejects both close and closed when the artifact cannot be written',
           /**
@@ -236,8 +238,8 @@ describe('cli',
                */
               async function cleanup() { await rm(directory, { recursive: true, force: true }); });
             const runtime = await capture({ output: directory });
-            await assert.rejects(runtime.close(), { code: 'ERR_CLI_ARTIFACT', method: 'write' });
-            await assert.rejects(runtime.closed, { code: 'ERR_CLI_ARTIFACT', method: 'write' });
+            await assert.rejects(runtime.close(), { code: 'ERR_PROFILES_ARTIFACT', package: '@mcp-layer/profiles', method: 'write' });
+            await assert.rejects(runtime.closed, { code: 'ERR_PROFILES_ARTIFACT', package: '@mcp-layer/profiles', method: 'write' });
             await assert.rejects(fetch(runtime.url));
           });
       });

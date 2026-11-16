@@ -1,9 +1,9 @@
 import { Storage } from 'cli-storage';
 import open from 'open';
 import { authorize } from '@mcp-layer/forward';
-import { apply } from '@mcp-layer/profiles';
+import { apply, load } from '@mcp-layer/profiles';
 import { connect } from '@mcp-layer/connect';
-import { profile as load } from './artifact.js';
+import { LayerError } from '@mcp-layer/error';
 
 /**
  * @typedef {import('./argv.js').GlobalOptions & {open?:(url:URL)=>Promise<void>,signal?:AbortSignal,info?:{name?:string,version?:string},requestInit?:RequestInit,fetch?:typeof fetch,stderr?:'pipe'|'inherit'|'overlapped'}} ConnectionOptions
@@ -26,6 +26,28 @@ export function storage(options) {
 async function launch(url) { await open(url.href); }
 
 /**
+ * Probe a resource for an implicit OAuth challenge within the authorization deadline.
+ * @param {typeof fetch} fetcher Fetch implementation composed with the selected profile.
+ * @param {string} target MCP resource URL.
+ * @param {AbortSignal | undefined} caller Caller cancellation signal.
+ * @param {number | undefined} timeout Authorization deadline in milliseconds.
+ * @returns {Promise<Response>} Resource probe response.
+ * @throws {LayerError} When the probe exceeds its deadline.
+ */
+async function probe(fetcher, target, caller, timeout) {
+  const deadline = AbortSignal.timeout(timeout ?? 300000);
+  const signal = caller ? AbortSignal.any([caller, deadline]) : deadline;
+  try {
+    return await fetcher(target, { method: 'GET', signal });
+  } catch (cause) {
+    if (!caller?.aborted && deadline.aborted) {
+      throw new LayerError({ name: 'cli', method: 'settings', code: 'ERR_CLI_OAUTH_PROBE_TIMEOUT', message: 'The implicit OAuth resource probe exceeded --auth-timeout. Check the resource response or increase --auth-timeout.' });
+    }
+    throw cause;
+  }
+}
+
+/**
  * Compose public profile defaults and an optional persistent SDK OAuth provider.
  * @param {ConnectionOptions} options Runtime identity, OAuth and storage settings.
  * @param {string | undefined} target Upstream MCP URL, absent for stdio servers.
@@ -44,7 +66,7 @@ export async function settings(options, target, mode = {}) {
   let enabled = mode.oauth ?? options.oauth ?? (requested || observed);
   const implicit = mode.oauth === undefined && options.oauth === undefined && !requested && observed;
   if (enabled && implicit && target && mode.interactive !== false) {
-    const response = await defaults.fetch(target, { method: 'GET', signal: options.signal });
+    const response = await probe(defaults.fetch, target, options.signal, options.authTimeout);
     enabled = response.status === 401;
     await response.body?.cancel();
   }
@@ -84,8 +106,11 @@ export async function settings(options, target, mode = {}) {
         function registered(value) { return new URL(value.issuer).href === new URL(issuer).href; }
         const clients = identity.clients.filter(registered);
         if (clients.length === 1) {
-          await provider.close();
           const registration = clients[0];
+          if (registration.authMethod !== undefined && registration.authMethod !== 'none') {
+            throw new LayerError({ name: 'cli', method: 'settings', code: 'ERR_CLI_PROFILE_OAUTH_CLIENT_AUTH', message: 'Captured OAuth client requires caller-owned credentials for {method}. Use --client-id for a public registration or capture a client that uses token_endpoint_auth_method=none.', vars: { method: registration.authMethod } });
+          }
+          await provider.close();
           authorization = {
             ...oauth,
             issuer,

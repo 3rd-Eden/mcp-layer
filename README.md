@@ -190,11 +190,11 @@ For package-specific runtime error references and remediation steps:
 
 Use [`profiles`](packages/profiles/README.md) to record the HTTP headers, MCP `clientInfo`, and public OAuth metadata actually observed from a client. The recorder sanitizes credentials before returning observations or exporting artifacts. Derivation keeps original client observations separate from browser and forwarding identities. Matching is advisory and does not establish authorization or credential ownership.
 
-This workflow starts a loopback capture endpoint, then builds a reusable profile after the client has connected and the capture is stopped. A profile can be used by Node Fetch, official SDK clients, `connect`, or an SDK server's outbound connections. Selecting one applies all three identity sections by default; `--profile-parts` selects a subset.
+The profiles package owns its capture runner, portable artifacts, and capture/build/inspection tooling. Its `mcp-layer-profiles` command starts a loopback endpoint, then builds a reusable profile after the client has connected and capture is stopped. A profile can be used by Node Fetch, official SDK clients, `connect`, or an SDK server's outbound connections. Selecting one applies all three identity sections by default; `--profile-parts` selects a subset.
 
 ```sh
-mcp-layer profiles capture --output ./capture.json
-mcp-layer profiles build ./capture.json --output ./profile.json
+mcp-layer-profiles capture --output ./capture.json
+mcp-layer-profiles build ./capture.json --output ./profile.json
 mcp-layer --profile ./profile.json --server example tools list
 ```
 
@@ -202,7 +202,7 @@ Only independently verifiable captures belong in the bundled catalog. The initia
 
 [`forward`](packages/forward/README.md) provides a Streamable HTTP gateway and stdio bridge, with a full local OAuth issuer and a separate upstream SDK OAuth client. OAuth IDs retain issuer/redirect constraints; credentials and protocol/session values always come from the active flow. All runtime storage, encryption, files, native credentials, and process locks are implemented by the independent [`cli-storage`](https://github.com/3rd-Eden/cli-storage) package. `forward` owns only the OAuth record identities and read/write/refresh lifecycle.
 
-Use the [CLI API and command documentation](packages/cli/README.md) for capture transports, OAuth flags, and forwarding. These are runtime options and separate artifact formats; no profile keys are written into shared MCP configuration. Protocol behavior follows [MCP transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) and [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+Use the [profiles API and tooling documentation](packages/profiles/README.md) for capture transports and contribution artifacts. The [main CLI](packages/cli/README.md) consumes profiles through runtime options and provides forwarding. No profile keys are written into shared MCP configuration. Protocol behavior follows [MCP transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) and [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
 ## Standards and portability
 

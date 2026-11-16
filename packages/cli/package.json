@@ -27,11 +27,6 @@
       "import": "./src/index.js",
       "default": "./src/index.js"
     },
-    "./capture": {
-      "types": "./types/capture.d.ts",
-      "import": "./src/capture.js",
-      "default": "./src/capture.js"
-    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -57,8 +52,7 @@
     "@socketregistry/yocto-spinner": "^1.0.25",
     "argh": "^1.0.0",
     "cli-table3": "^0.6.5",
-    "cli-storage": "link:../../../cli-storage",
-    "express": "^5.1.0",
+    "cli-storage": "^1.0.0",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.1",
     "open": "^10.2.0",

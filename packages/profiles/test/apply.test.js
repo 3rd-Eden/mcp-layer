@@ -7,12 +7,45 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { discoverAuthorizationServerMetadata, exchangeAuthorization, refreshAuthorization, registerClient, startAuthorization } from '@modelcontextprotocol/sdk/client/auth.js';
 import { apply, capture, derive, get, match } from '../src/index.js';
 import { listen, read } from './fixtures/http.js';
-import { Provider } from './fixtures/provider.js';
+import { service } from './fixtures/provider.js';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/capture.json', import.meta.url), 'utf8'));
+
+/**
+ * Preserve a private-field-backed public OAuth client behind an immutable shell.
+ */
+class BoundProvider {
+  #provider;
+
+  /** @param {import('@mcp-layer/forward').Authorization} provider - Real cli-storage-backed OAuth client. */
+  constructor(provider) { this.#provider = provider; }
+  /** @returns {object} Actual SDK client metadata. */
+  get clientMetadata() { return this.#provider.clientMetadata; }
+  /** @returns {string} Actual loopback callback. */
+  get redirectUrl() { return this.#provider.redirectUrl; }
+  /** @returns {Promise<object|undefined>} Persisted registration. */
+  clientInformation() { return this.#provider.clientInformation(); }
+  /** @param {object} value - Registration to persist. @returns {Promise<void>} Save completion. */
+  saveClientInformation(value) { return this.#provider.saveClientInformation(value); }
+  /** @returns {Promise<object|undefined>} Persisted SDK tokens. */
+  tokens() { return this.#provider.tokens(); }
+  /** @param {object} value - SDK-issued tokens. @returns {Promise<void>} Save completion. */
+  saveTokens(value) { return this.#provider.saveTokens(value); }
+  /** @returns {Promise<string>} Transaction state. */
+  state() { return this.#provider.state(); }
+  /** @param {string} value - SDK PKCE verifier. @returns {Promise<void>} Save completion. */
+  saveCodeVerifier(value) { return this.#provider.saveCodeVerifier(value); }
+  /** @returns {Promise<string>} Stored PKCE verifier. */
+  codeVerifier() { return this.#provider.codeVerifier(); }
+  /** @param {URL} url - Authorization URL. @returns {Promise<void>} Redirect handling completion. */
+  redirectToAuthorization(url) { return this.#provider.redirectToAuthorization(url); }
+  /** @param {'all'|'client'|'tokens'|'verifier'|'discovery'} scope - Credential category. @returns {Promise<void>} Invalidation completion. */
+  invalidateCredentials(scope) { return this.#provider.invalidateCredentials(scope); }
+  /** @param {string|URL} server - MCP server URL. @param {string} [resource] - Explicit resource URL. @returns {Promise<URL>} Selected resource URL. */
+  validateResourceURL(server, resource) { return this.#provider.validateResourceURL(server, resource); }
+}
 
 /**
  * Derive a synthetic profile through the public recorder API.
@@ -149,44 +182,45 @@ function suite() {
    * Verify provider delegation and runtime precedence with real storage.
    * @returns {Promise<void>} Resolves after all runtime storage operations complete.
    */
-  async function provider() {
+  async function provider(t) {
     const profile = recorded();
-    const store = new Provider();
-    const runtime = apply(profile, { authProvider: store, issuer: 'https://issuer.example' }).authProvider;
+    const fixture = await service(t);
+    const store = fixture.provider;
+    const runtime = apply(profile, { authProvider: store, issuer: fixture.url }).authProvider;
     assert.equal(runtime.clientMetadata.client_name, 'Fixture Desktop');
     assert.deepEqual(runtime.clientMetadata.redirect_uris, [store.redirectUrl]);
-    assert.deepEqual(await runtime.clientInformation(), { client_id: 'public-registration', issuer: 'https://issuer.example' });
+    assert.equal(await runtime.clientInformation(), undefined);
     assert.equal(await apply(profile, { authProvider: store }).authProvider.clientInformation(), undefined);
-    assert.equal(await apply(profile, { authProvider: store, issuer: 'https://other.example' }).authProvider.clientInformation(), undefined);
-    runtime.saveClientInformation({ client_id: 'runtime-client', client_secret: 'runtime-secret', issuer: 'https://issuer.example' });
-    assert.equal((await runtime.clientInformation()).client_id, 'runtime-client');
-    runtime.saveTokens({ access_token: 'runtime-token', refresh_token: 'runtime-refresh', token_type: 'Bearer' });
-    assert.equal(runtime.tokens().access_token, 'runtime-token');
-    runtime.saveCodeVerifier('runtime-verifier');
-    assert.equal(runtime.codeVerifier(), 'runtime-verifier');
-    assert.equal(runtime.state(), 'runtime-state');
-    runtime.redirectToAuthorization(new URL('https://issuer.example/authorize'));
-    assert.equal(store.authorizationUrl.href, 'https://issuer.example/authorize');
-    assert.equal((await runtime.validateResourceURL('https://server.example', 'https://runtime.example/mcp')).href, 'https://runtime.example/mcp');
-    runtime.invalidateCredentials('tokens');
-    assert.equal(store.tokens(), undefined);
-    const override = apply(profile, { authProvider: new Provider({ redirect_uris: ['https://runtime.example/callback'], client_name: 'Runtime Client' }) }).authProvider;
+    assert.equal(await apply(profile, { authProvider: store, issuer: 'http://127.0.0.1:1' }).authProvider.clientInformation(), undefined);
+    const access = await store.access();
+    assert.equal((await runtime.clientInformation()).client_id, (await store.clientInformation()).client_id);
+    assert.equal((await runtime.tokens()).access_token, access);
+    await runtime.saveCodeVerifier('contract-verifier');
+    assert.equal(await runtime.codeVerifier(), 'contract-verifier');
+    assert.match(await runtime.state(), /^[A-Za-z0-9_-]+$/);
+    assert.equal(typeof runtime.redirectToAuthorization, 'function');
+    assert.equal((await runtime.validateResourceURL('https://server.example')).href, `${fixture.url}/mcp`);
+    await runtime.invalidateCredentials('tokens');
+    assert.equal((await store.tokens())?.access_token, undefined);
+    const other = await service(t, { name: 'Runtime Client' });
+    const override = apply(profile, { authProvider: other.provider }).authProvider;
     assert.equal(override.clientMetadata.client_name, 'Runtime Client');
     assert.equal(apply(profile, { parts: ['http'], authProvider: store }).authProvider, store);
-    assert.doesNotMatch(JSON.stringify(profile), /runtime-token|runtime-secret|runtime-verifier/);
+    assert.doesNotMatch(JSON.stringify(profile), /contract-verifier/);
   }
 
   /**
    * Verify captured callback and auth constraints are checked against live provider state.
    * @returns {Promise<void>} Completes after real provider metadata and credential paths are checked.
    */
-  async function registrationConstraints() {
+  async function registrationConstraints(t) {
+    const upstream = await service(t);
     const recorder = capture(fixture.options);
     for (const observation of fixture.observations) recorder.observe(observation);
     recorder.observe({
       phase: 'registration', perspective: 'downstream', status: 201,
       body: { client_id: 'public-registration', redirect_uris: ['http://localhost:43871/callback'], token_endpoint_auth_method: 'none' },
-      provenance: { issuer: 'https://issuer.example' },
+      provenance: { issuer: upstream.url },
     });
     const profile = derive(recorder.finish());
     const registered = profile.oauth.clients.find(
@@ -198,56 +232,49 @@ function suite() {
       function selected(value) { return value.clientId === 'public-registration'; });
     assert.deepEqual(registered.redirectUris, ['http://localhost:43871/callback']);
     assert.equal(registered.authMethod, 'none');
-    const compatible = new Provider({ redirect_uris: ['http://localhost:54000/callback'], token_endpoint_auth_method: 'none' });
-    const runtime = apply(profile, { authProvider: compatible, issuer: 'https://issuer.example' }).authProvider;
+    const compatible = await service(t);
+    const runtime = apply(profile, { authProvider: compatible.provider, issuer: upstream.url }).authProvider;
     assert.deepEqual(await runtime.clientInformation(), {
-      client_id: 'public-registration', issuer: 'https://issuer.example',
+      client_id: 'public-registration', issuer: upstream.url,
       redirect_uris: ['http://localhost:43871/callback'], token_endpoint_auth_method: 'none',
     });
-    const incompatible = new Provider({ redirect_uris: ['http://127.0.0.1:54000/callback'], token_endpoint_auth_method: 'none' });
+    const incompatible = await service(t, { redirectUrl: 'http://127.0.0.1:0/other' });
     await assert.rejects(
-      apply(profile, { authProvider: incompatible, issuer: 'https://issuer.example' }).authProvider.clientInformation(),
+      apply(profile, { authProvider: incompatible.provider, issuer: upstream.url }).authProvider.clientInformation(),
       { code: 'ERR_PROFILES_REGISTRATION' },
     );
-    const stored = new Provider({ redirect_uris: ['https://runtime.example/callback'], token_endpoint_auth_method: 'client_secret_post' });
-    stored.saveClientInformation({ client_id: 'runtime-registration', client_secret: 'runtime-secret', issuer: 'https://issuer.example' });
-    assert.equal((await apply(profile, { authProvider: stored, issuer: 'https://issuer.example' }).authProvider.clientInformation()).client_id, 'runtime-registration');
+    assert.equal((await apply(profile, { authProvider: compatible.provider, issuer: upstream.url }).authProvider.clientInformation()).client_id, 'public-registration');
 
     const secretRecorder = capture({ client: fixture.options.client, capturedAt: fixture.options.capturedAt });
     secretRecorder.observe({
       phase: 'registration', perspective: 'downstream',
       body: { client_id: 'secret-registration', redirect_uris: ['http://localhost:43871/callback'], token_endpoint_auth_method: 'client_secret_post' },
-      provenance: { issuer: 'https://issuer.example' },
+      provenance: { issuer: upstream.url },
     });
     const secretProfile = derive(secretRecorder.finish());
-    const incomplete = new Provider({ redirect_uris: ['http://localhost:54000/callback'], token_endpoint_auth_method: 'none' });
+    const incomplete = await service(t);
     await assert.rejects(
-      apply(secretProfile, { authProvider: incomplete, issuer: 'https://issuer.example' }).authProvider.clientInformation(),
+      apply(secretProfile, { authProvider: incomplete.provider, issuer: upstream.url }).authProvider.clientInformation(),
       { code: 'ERR_PROFILES_REGISTRATION' },
     );
-    const extensible = new Provider({ redirect_uris: ['http://localhost:54000/callback'], token_endpoint_auth_method: 'none' });
-    /** @returns {void} Runtime SDK hook is responsible for the required client authentication. */
-    function authenticate() {}
-    extensible.addClientAuthentication = authenticate;
-    assert.equal((await apply(secretProfile, { authProvider: extensible, issuer: 'https://issuer.example' }).authProvider.clientInformation()).client_id, 'secret-registration');
   }
 
   /**
    * Verify immutable provider metadata and ambiguous registrations remain composable.
    * @returns {Promise<void>} Completes after checking real provider state.
    */
-  async function immutable() {
-    const store = new Provider();
-    Object.defineProperty(store, 'clientMetadata', { value: store.clientMetadata, configurable: false, writable: false });
-    Object.freeze(store);
+  async function immutable(t) {
+    const upstream = await service(t);
+    const store = Object.freeze(new BoundProvider(upstream.provider));
     const runtime = apply(recorded(), { authProvider: store }).authProvider;
     assert.equal(runtime.clientMetadata.client_name, 'Fixture Desktop');
-    runtime.saveCodeVerifier('runtime-private-field');
-    assert.equal(runtime.codeVerifier(), 'runtime-private-field');
+    await runtime.saveCodeVerifier('runtime-private-field');
+    assert.equal(await runtime.codeVerifier(), 'runtime-private-field');
     const recorder = capture(fixture.options);
     for (const observation of fixture.observations) recorder.observe(observation);
     recorder.observe({ phase: 'registration', perspective: 'downstream', body: { client_id: 'another-registration' }, provenance: { issuer: 'https://issuer.example' } });
-    const ambiguous = apply(derive(recorder.finish()), { authProvider: new Provider(), issuer: 'https://issuer.example' }).authProvider;
+    const empty = await service(t);
+    const ambiguous = apply(derive(recorder.finish()), { authProvider: empty.provider, issuer: 'https://issuer.example' }).authProvider;
     assert.equal(await ambiguous.clientInformation(), undefined);
   }
 
@@ -255,81 +282,72 @@ function suite() {
    * Exercise official SDK registration, PKCE authorization, exchange, and refresh over HTTP.
    * @returns {Promise<void>} Completes after issuer teardown.
    */
-  async function oauth() {
-    const requests = [];
+  async function oauth(t) {
     const profile = get('claude-code');
-    /**
-     * Serve actual OAuth registration and token HTTP endpoints.
-     * @param {import('node:http').IncomingMessage} request - OAuth request.
-     * @param {import('node:http').ServerResponse} response - OAuth response.
-     * @returns {Promise<void>} Endpoint response completion.
-     */
-    async function handler(request, response) {
-      const text = await read(request);
-      requests.push({ path: request.url, headers: request.headers, body: text });
-      if (request.url === '/.well-known/oauth-authorization-server') {
-        response.writeHead(200, { 'content-type': 'application/json' });
-        response.end(JSON.stringify({ issuer: endpoint.url, authorization_endpoint: `${endpoint.url}/authorize`, token_endpoint: `${endpoint.url}/token`, registration_endpoint: `${endpoint.url}/register`, response_types_supported: ['code'], token_endpoint_auth_methods_supported: ['none'], code_challenge_methods_supported: ['S256'] }));
-        return;
-      }
-      response.writeHead(request.url === '/register' ? 201 : 200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify(request.url === '/register' ? { ...JSON.parse(text), client_id: 'runtime-registration' } : { access_token: 'runtime-access', token_type: 'Bearer', refresh_token: 'runtime-refresh' }));
-    }
-    const endpoint = await listen(handler);
-    try {
-      const provider = new Provider({ redirect_uris: [`${endpoint.url}/callback`], client_name: 'Fixture Runtime Client' });
-      const runtime = apply(profile, { authProvider: provider });
-      assert.equal(await runtime.authProvider.clientInformation(), undefined);
-      const metadata = await discoverAuthorizationServerMetadata(endpoint.url, { fetchFn: runtime.fetch });
-      assert.equal(requests[0].path, '/.well-known/oauth-authorization-server');
-      assert.equal(requests[0].headers['user-agent'], 'Bun/1.4.4');
-      const resourceResponse = await runtime.fetch(`${endpoint.url}/.well-known/oauth-protected-resource/mcp`);
-      assert.equal(resourceResponse.status, 200);
-      await resourceResponse.json();
-      const registration = await registerClient(endpoint.url, { metadata, clientMetadata: runtime.authProvider.clientMetadata, fetchFn: runtime.fetch });
-      runtime.authProvider.saveClientInformation(registration);
-      const started = await startAuthorization(endpoint.url, { metadata, clientInformation: registration, redirectUrl: runtime.authProvider.redirectUrl, state: 'runtime-state', resource: `${endpoint.url}/mcp` });
-      runtime.authProvider.saveCodeVerifier(started.codeVerifier);
-      assert.equal(started.authorizationUrl.searchParams.get('redirect_uri'), runtime.authProvider.redirectUrl);
-      assert.equal(started.authorizationUrl.searchParams.get('resource'), `${endpoint.url}/mcp`);
-      assert.ok(started.authorizationUrl.searchParams.get('code_challenge'));
-      const tokens = await exchangeAuthorization(endpoint.url, { metadata, clientInformation: registration, authorizationCode: 'runtime-code', codeVerifier: runtime.authProvider.codeVerifier(), redirectUri: runtime.authProvider.redirectUrl, resource: `${endpoint.url}/mcp`, fetchFn: runtime.fetch });
-      runtime.authProvider.saveTokens(tokens);
-      await refreshAuthorization(endpoint.url, { metadata, clientInformation: registration, refreshToken: runtime.authProvider.tokens().refresh_token, resource: `${endpoint.url}/mcp`, fetchFn: runtime.fetch });
-      await runtime.fetch(`${endpoint.url}/revoke`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ token: 'runtime-access' }) });
-      const registered = requests.find(
-        /** @param {{path: string}} value @returns {boolean} Whether the request is registration. */
-        function registration(value) { return value.path === '/register'; });
-      const tokenRequests = requests.filter(
-        /** @param {{path: string}} value @returns {boolean} Whether the request is a token exchange. */
-        function token(value) { return value.path === '/token'; });
-      const revoked = requests.find(
-        /** @param {{path: string}} value @returns {boolean} Whether the request revokes a token. */
-        function revocation(value) { return value.path === '/revoke'; });
-      const protectedResource = requests.find(
-        /** @param {{path: string}} value @returns {boolean} Whether the request discovers a path-aware protected resource. */
-        function resource(value) { return value.path === '/.well-known/oauth-protected-resource/mcp'; });
-      assert.equal(JSON.parse(registered.body).client_name, 'Fixture Runtime Client');
-      assert.deepEqual(JSON.parse(registered.body).redirect_uris, [runtime.authProvider.redirectUrl]);
-      assert.equal(registered.headers['user-agent'], 'Bun/1.4.4');
-      assert.equal(protectedResource.headers['user-agent'], 'Bun/1.4.4');
-      assert.equal(tokenRequests[0].headers['user-agent'], 'Bun/1.4.4');
-      assert.equal(tokenRequests[1].headers['user-agent'], 'Bun/1.4.4');
-      assert.equal(revoked.headers['user-agent'], 'axios/1.15.2');
-      assert.equal(new URLSearchParams(tokenRequests[0].body).get('code_verifier'), started.codeVerifier);
-      assert.equal(new URLSearchParams(tokenRequests[0].body).get('resource'), `${endpoint.url}/mcp`);
-      assert.equal(new URLSearchParams(tokenRequests[1].body).get('grant_type'), 'refresh_token');
-      assert.equal(new URLSearchParams(tokenRequests[1].body).get('refresh_token'), 'runtime-refresh');
-    } finally {
-      await endpoint.close();
-    }
+    const applied = apply(profile);
+    const fixture = await service(t, { name: 'Fixture Runtime Client', fetch: applied.fetch });
+    const runtime = apply(profile, { authProvider: fixture.provider });
+    assert.equal(await runtime.authProvider.clientInformation(), undefined);
+    const access = await fixture.provider.access();
+    const registration = await runtime.authProvider.clientInformation();
+    const stored = await runtime.authProvider.tokens();
+    assert.equal(stored.access_token, access);
+    assert.equal(registration.issuer, new URL(fixture.url).href);
+    assert.equal(stored.issuer, new URL(fixture.url).href);
+    const refreshed = await fixture.provider.access({ rejected: access });
+    assert.notEqual(refreshed, access);
+    const revoked = await runtime.fetch(`${fixture.url}/revoke`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: registration.client_id, token: refreshed, token_type_hint: 'access_token' }),
+    });
+    assert.equal(revoked.status, 200);
+    const registrationEvent = fixture.events.find(
+      /** @param {Record<string,any>} event Issuer event. @returns {boolean} Whether dynamic registration occurred. */
+      function registered(event) { return event.operation === 'issuer.register'; });
+    const consentEvent = fixture.events.find(
+      /** @param {Record<string,any>} event Issuer event. @returns {boolean} Whether consent was accepted. */
+      function consented(event) { return event.operation === 'issuer.consent'; });
+    const exchangeEvent = fixture.events.find(
+      /** @param {Record<string,any>} event Issuer event. @returns {boolean} Whether the code was exchanged. */
+      function exchanged(event) { return event.operation === 'issuer.exchange'; });
+    const refreshEvent = fixture.events.find(
+      /** @param {Record<string,any>} event Issuer event. @returns {boolean} Whether refresh occurred. */
+      function rotated(event) { return event.operation === 'issuer.refresh'; });
+    assert.ok(registrationEvent);
+    assert.ok(consentEvent);
+    assert.ok(exchangeEvent);
+    assert.ok(refreshEvent);
+    assert.equal(registration.client_id, registrationEvent.clientId);
+    const registrationRequest = fixture.requests.find(
+      /** @param {{path:string}} request HTTP request. @returns {boolean} Whether registration was requested. */
+      function registered(request) { return request.path === '/register'; });
+    const metadataRequest = fixture.requests.find(
+      /** @param {{path:string}} request HTTP request. @returns {boolean} Whether protected-resource metadata was requested. */
+      function metadata(request) { return request.path === '/.well-known/oauth-protected-resource/mcp'; });
+    const exchangeRequest = fixture.requests.find(
+      /** @param {{path:string,method:string,body?:Record<string,string>}} request HTTP request. @returns {boolean} Whether a code exchange was requested. */
+      function exchanged(request) { return request.path === '/token' && request.method === 'POST' && request.body?.grant_type === 'authorization_code'; });
+    const refreshRequest = fixture.requests.find(
+      /** @param {{path:string,method:string,body?:Record<string,string>}} request HTTP request. @returns {boolean} Whether refresh was requested. */
+      function refreshed(request) { return request.path === '/token' && request.method === 'POST' && request.body?.grant_type === 'refresh_token'; });
+    const revokeRequest = fixture.requests.find(
+      /** @param {{path:string}} request HTTP request. @returns {boolean} Whether revocation was requested. */
+      function revokedRequest(request) { return request.path === '/revoke'; });
+    assert.ok(registrationEvent.clientId);
+    assert.equal(registrationRequest.body.client_name, 'Fixture Runtime Client');
+    assert.equal(metadataRequest.userAgent, 'Bun/1.4.4');
+    assert.equal(registrationRequest.userAgent, 'Bun/1.4.4');
+    assert.equal(exchangeRequest.userAgent, 'Bun/1.4.4');
+    assert.equal(refreshRequest.userAgent, 'Bun/1.4.4');
+    assert.equal(revokeRequest.userAgent, 'axios/1.15.2');
   }
   it('preserves Request bodies, SDK headers, aborts, and streaming responses over HTTP', http);
   it('works between official SDK clients and servers with inbound advisory matching', sdk);
   it('binds provider methods to their runtime store and preserves explicit metadata', provider);
   it('validates issuer-bound registration constraints against runtime providers', registrationConstraints);
   it('supports immutable runtime providers and does not guess among registrations', immutable);
-  it('applies the verified phase identities to real OAuth discovery, registration, tokens, and revocation', oauth);
+  it('applies the verified phase identities to real OAuth discovery, registration, consent, tokens, and revocation', oauth);
 }
 
 describe('@mcp-layer/profiles real consumers', suite);

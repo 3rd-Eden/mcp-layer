@@ -1,15 +1,15 @@
 # @mcp-layer/cli
 
-`@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects with the transport defined for that server (`stdio`, Streamable HTTP, or SSE), extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. It also records real client identity, builds public profiles, and hosts OAuth-aware HTTP or stdio forwarding gateways. You can extend it with custom commands.
+`@mcp-layer/cli` is a CLI framework that turns MCP server schemas into a usable command line. It discovers a server from configuration, connects with the transport defined for that server (`stdio`, Streamable HTTP, or SSE), extracts the unified schema from `@mcp-layer/schema`, and renders commands for tools, prompts, resources, and templates. It applies public client profiles at runtime and hosts OAuth-aware HTTP or stdio forwarding gateways. You can extend it with custom commands.
 
-The package owns command-line composition and process lifecycle. The official MCP SDK owns transports and OAuth protocol handling; `@mcp-layer/profiles` owns sanitized identity evidence; `@mcp-layer/forward` owns authorization and forwarding; `cli-storage` owns persistence. Browser launching uses the existing `open` package.
+The package owns command-line composition and process lifecycle. The official MCP SDK owns transports and OAuth protocol handling; [`@mcp-layer/profiles`](../profiles/README.md) owns profile capture, building, inspection, and runtime profile loading; `@mcp-layer/forward` owns authorization and forwarding; `cli-storage` owns persistence. Browser launching uses the existing `open` package.
 
 ## Table of Contents
 
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Command surface](#command-surface)
-- [Client profiles and capture](#client-profiles-and-capture)
+- [Runtime client profiles](#runtime-client-profiles)
 - [OAuth and private storage](#oauth-and-private-storage)
 - [Forwarding](#forwarding)
 - [Input handling](#input-handling)
@@ -76,38 +76,22 @@ mcp-layer prompts:kickoff --json '{"topic":"launch"}'
 ```
 </details>
 
-## Client profiles and capture
+## Runtime client profiles
 
-Profiles are public identity defaults backed by observed evidence. They can supply HTTP headers, MCP `clientInfo`, and OAuth registration metadata. They contain no reusable access tokens, refresh tokens, cookies, PKCE verifiers, authorization codes, state or session IDs. The initial catalog contains a verified Claude Code 2.1.325 capture on macOS arm64 covering discovery, registration, headless consent, token exchange, refresh, revocation, and an authenticated MCP connection. Use its exact ID to pin that capture, or `--profile claude-code` to select the newest verified capture in that family.
+The CLI applies public identity defaults from a bundled profile or a validated JSON profile file. Profiles may supply HTTP headers, MCP `clientInfo`, and public OAuth registration metadata. Runtime selection does not add keys to MCP configuration files.
 
-OAuth identity defaults become active when the target requires authorization. For an implicit profile selection, the CLI checks the resource's HTTP authentication response and completes required consent before starting the MCP handshake timeout. An open endpoint connects without OAuth registration. Explicit `--oauth` or OAuth runtime overrides request authorization up front.
-
-Start a controlled capture endpoint to observe an actual client. The endpoint printed to stderr is on loopback with an automatically allocated port. Configure your MCP client to use it, list or call its harmless `probe` tool, then press Ctrl-C. Shutdown writes sanitized capture JSON. Building derives a deterministic profile; showing it reports its evidence and coverage without loading an MCP config or starting login:
-
-```sh
-mcp-layer profiles capture --output ./capture.json
-mcp-layer profiles build ./capture.json --output ./profile.json
-mcp-layer profiles show ./profile.json --format json
-mcp-layer profiles list --format json
-```
-
-`profiles capture` exposes Streamable HTTP at `/mcp` and legacy SSE at `/sse`, with a distinct official SDK transport and server for every client session. `--transport sse` prints the legacy endpoint. `--transport stdio` reads and writes protocol messages only on stdin/stdout; diagnostic output goes to stderr. HTTP captures default to unauthenticated operation. Add `--oauth` to observe SDK discovery, dynamic registration, explicit consent, PKCE and token exchange with the controlled issuer. Controlled stdio capture has no OAuth issuer; upstream OAuth remains available when forwarding stdio.
-
-Use the resulting artifact as runtime identity defaults. This matters when reproducing a real client's public headers or handshake metadata; the selected server sees those values while SDK-owned negotiation, capabilities, protocol headers and credentials remain under SDK control:
+Use a profile when you need the CLI to present a known client's public identity to a server. OAuth identity defaults are used when the target requires authorization; an open endpoint connects without registration. Explicit OAuth flags and runtime overrides continue to control authorization:
 
 ```sh
 mcp-layer tools list --server remote --profile ./profile.json
-mcp-layer tools probe --help --server remote --profile ./profile.json
 mcp-layer tools list --server remote --profile ./profile.json --profile-parts http,mcp
 ```
 
-`--profile` accepts a bundled ID or a JSON path containing `/`, `\` or a `.json` suffix. Files are validated against their own sanitized evidence before use. `--profile-parts` selects comma-separated `http`, `mcp`, and `oauth`; all three are selected by default. Runtime OAuth flags override profile defaults. Profile settings are shared by catalog loading, detailed target help and general help; general help never initiates login. A profile with only HTTP/MCP evidence does not enable OAuth simply because all parts are selected.
+`--profile` accepts a bundled profile ID or a JSON path containing `/`, `\` or a `.json` suffix. `--profile-parts` selects comma-separated `http`, `mcp`, and `oauth`; all three are selected by default. Files are validated against their sanitized evidence before use. Profile settings apply to catalog loading, detailed target help, and general help; general help never initiates login.
 
-Capture observes original incoming headers and JSON-RPC messages before transformations. Browser authorization requests, downstream client requests, and upstream bridge requests carry separate provenance; a browser user agent or bridge identity does not become the downstream client's reusable identity. Unknown headers are redacted unless they are on the built-in public allowlist or explicitly permitted by `--allow-headers name,other`. Credential and session fields remain redacted even when requested in an allowlist. A capture containing contradictory downstream identities cannot be built into one profile; capture each client/version separately.
+To capture a client, build a profile, inspect the catalog, or use the profiles API, see [`@mcp-layer/profiles` tooling and API reference](../profiles/README.md). Profile artifacts contain public identity evidence only; credential and session values are sanitized by that package.
 
-For a remote client, expose the local listener through your chosen HTTPS endpoint and set `--base-url` to that public origin. The public origin is advertised for MCP/OAuth discovery; `--host` and `--port` still select the actual bind address. The CLI does not create a tunnel. Optional `--client-name` and `--client-version` declare identity when no initialize evidence is available; supply both, and ensure they agree with any observed initialize message.
-
-These behaviors compose the [official MCP transports](https://modelcontextprotocol.io/specification/latest/basic/transports), [authorization specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), and [official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk). Profile flags are application runtime options, with no new persisted MCP configuration keys.
+Profile selection composes the [official MCP transports](https://modelcontextprotocol.io/specification/latest/basic/transports), [authorization specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), and [official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk). The CLI keeps profile flags as runtime options and does not persist additional MCP configuration keys.
 
 ## OAuth and private storage
 
@@ -124,13 +108,13 @@ Public metadata is passed into the authorization provider before registration. A
 
 The CLI constructs `cli-storage` with the `mcp-layer` namespace. Forward owns every OAuth business record; the CLI stores no tokens or state itself. The default `auto` backend uses the storage package's platform selection and persists that choice. `--storage-backend native|file|auto` selects the initial preference; `--storage-dir` isolates the storage root. The `file` backend stores plaintext private records, and storage diagnostics report that limitation. See [`cli-storage`](https://www.npmjs.com/package/cli-storage) for platform behavior and encryption/native requirements.
 
-Inspect authorization state when debugging storage or registration. This command performs discovery and passive storage reads, prints credential-free diagnostics, and never opens a browser, registers a client, initializes storage, or starts a gateway:
+Inspect authorization state when debugging storage or registration. This command performs discovery and passive storage reads, prints credential-free diagnostics, and never opens a browser, registers a client, initializes storage, or starts a gateway. Target and issuer output contains only URL origins; paths, credentials, query parameters, and fragments are omitted:
 
 ```sh
 mcp-layer forward https://example.com/mcp --status --format json
 ```
 
-`profiles list`, `profiles show`, and general help never initiate login. Normal command teardown and failed connection attempts close every owned OAuth callback listener. Tokens remain bound to upstream resource, issuer, scope, registration and identity settings; changing those settings can require a separate grant.
+General help never initiates login. Normal command teardown and failed connection attempts close every owned OAuth callback listener. Tokens remain bound to upstream resource, issuer, scope, registration and identity settings; changing those settings can require a separate grant.
 
 Authorization follows the [MCP OAuth contract](https://modelcontextprotocol.io/specification/latest/basic/authorization) and the [SDK client provider interface](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/client/auth.ts). None of these CLI options is written into [host-managed MCP config](https://code.visualstudio.com/docs/copilot/customization/mcp-servers).
 
@@ -151,13 +135,7 @@ mcp-layer forward https://example.com/mcp --transport stdio
 mcp-layer forward http://127.0.0.1:4000/mcp --no-oauth
 ```
 
-For capture against a real upstream, the same forwarding implementation observes both original downstream identity and bridge identity. This records actual client behavior while continuing to serve the upstream's real tools; shutdown writes sanitized evidence:
-
-```sh
-mcp-layer profiles capture --upstream https://example.com/mcp --oauth --output ./capture.json
-```
-
-Forwarded capture defaults to unauthenticated forwarding unless `--oauth` is supplied. With `--oauth`, HTTP uses the complete downstream/upstream broker; stdio authorizes upstream only. `--host`, `--port`, `--base-url`, profile flags and OAuth/storage overrides are runtime settings. The gateway uses [SDK transports](https://modelcontextprotocol.io/specification/latest/basic/transports) and [SDK OAuth middleware](https://github.com/modelcontextprotocol/typescript-sdk/tree/main/src/server/auth); its bind and identity options are not shared MCP configuration keys.
+For guidance on recording original and bridged client identity while forwarding, see [`@mcp-layer/profiles`](../profiles/README.md). The gateway uses [SDK transports](https://modelcontextprotocol.io/specification/latest/basic/transports) and [SDK OAuth middleware](https://github.com/modelcontextprotocol/typescript-sdk/tree/main/src/server/auth); its bind and identity options are runtime settings, not shared MCP configuration keys.
 
 ## Input handling
 
@@ -386,54 +364,7 @@ Registers a custom command.
 
 ### `cli().render([argv])`
 
-Signature: `render(argv?: string[]): Promise<void>`. Executes one invocation; omitted `argv` uses `process.argv.slice(2)`. Hosted capture/forward commands remain pending until shutdown. Errors reject the promise; the executable prints the message to stderr and exits nonzero. MCP, OAuth, profile and storage failures retain their originating package error fields.
-
-### `capture(options?)` from `@mcp-layer/cli/capture`
-
-Signature: `capture(options?: CaptureOptions): Promise<{ url?: string, close(): Promise<void>, closed: Promise<void>, finish(): Capture }>`.
-
-This exported host runner creates the same controlled server or forwarded capture as the CLI command. It does not install process signal handlers or construct storage. Its `CaptureOptions` type is exported from the capture subpath.
-
-| Option | Type / default | Behavior |
-| --- | --- | --- |
-| `client` | `{ name, version, platform? }` | Optional declared public client identity. |
-| `capturedAt` | ISO timestamp / current time | Reproducible capture timestamp. |
-| `allowHeaders` | `string[]` / `[]` | Additional explicitly public HTTP headers. |
-| `transport` | `'http' \| 'sse' \| 'stdio'` / `'http'` | Controlled transport; HTTP exposes both `/mcp` and `/sse`. Forwarding uses HTTP unless stdio is selected. |
-| `host`, `port` | `string`, `number` / `127.0.0.1`, `0` | Actual HTTP listener address. |
-| `baseUrl` | public HTTP(S) origin | Advertised endpoint/issuer origin behind an existing public endpoint. |
-| `oauth` | `boolean` or issuer settings / `false` | Enable the controlled HTTP issuer, or the full forwarding broker. Controlled captures also accept `scopes`, `clients`, `accessTtl`, `refreshTtl`, `codeTtl`, and `grant` from `issuer()`; endpoint URLs and storage remain bound to the capture runner. |
-| `storage` | `Storage` | Required application-owned `cli-storage` instance when OAuth is enabled. |
-| `upstream` | HTTP(S) MCP URL | Forward to a real upstream instead of the probe server. |
-| `authorization` | forward authorization options | Upstream OAuth settings, excluding `target`/`storage`, when forwarding. |
-| `authProvider` | forward `authorize` provider | Existing upstream provider with `access`, `fetch`, `status`, and `close` when forwarding. |
-| `headers`, `info`, `fetch` | `HeadersInit`, SDK `Implementation`, `typeof fetch` | Public upstream identity and request implementation when forwarding. |
-| `output` | output file path | Write sanitized canonical capture JSON on close. Parent directory must exist. |
-| `signal` | `AbortSignal` | Close and export when aborted. |
-
-`url` is the advertised HTTP endpoint, or `undefined` for stdio. `close()` is idempotent and closes owned sessions/listeners before writing `output`. `closed` resolves after shutdown and export, or rejects if export fails. `finish()` finalizes recording and returns an independent sanitized capture; it is idempotent. Close the runtime before calling it if clients may still send requests. A runtime with `output` finalizes automatically on close. Invalid capture/transport/storage settings throw `LayerError`; SDK, forwarding and storage failures retain their originating error types.
-
-Embed a capture runner to exercise a real SDK client without launching a separate CLI. This example completes a harmless tool listing, closes both lifecycles, and returns sanitized initialize/request evidence; stdout is safe here because the runner uses HTTP:
-
-```js
-import { capture } from '@mcp-layer/cli/capture';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-
-const runtime = await capture({ output: './capture.json' });
-const client = new Client({ name: 'example-client', version: '1.0.0' });
-try {
-  await client.connect(new StreamableHTTPClientTransport(new URL(runtime.url)));
-  await client.listTools();
-} finally {
-  await client.close();
-  await runtime.close();
-}
-const artifact = runtime.finish();
-console.log(artifact.observations.length);
-```
-
-For embedded OAuth capture, install `cli-storage` alongside this package and inject `new Storage({ namespace: 'your-application' })` as `storage` with `oauth: true`. The host controls signals and shutdown; pass an `AbortSignal` or call `close()`.
+Signature: `render(argv?: string[]): Promise<void>`. Executes one invocation; omitted `argv` uses `process.argv.slice(2)`. Hosted forwarding commands remain pending until shutdown. Errors reject the promise; the executable prints the message to stderr and exits nonzero. MCP, OAuth, profile and storage failures retain their originating package error fields.
 
 ## Global flags
 
@@ -446,14 +377,14 @@ For embedded OAuth capture, install `cli-storage` alongside this package and inj
 - `--oauth` / `--no-oauth`: enable/disable upstream OAuth; forwarding defaults to enabled.
 - `--client-id <id>`: explicitly select public OAuth client registration.
 - `--issuer <url>`: explicitly select the authorization server.
-- `--scope <scopes>`: override the space-separated OAuth scope string; controlled capture advertises and accepts these issuer scopes.
+- `--scope <scopes>`: override the space-separated OAuth scope string.
 - `--resource <url>`: override the OAuth resource indicator.
 - `--callback-port <port>`: choose a loopback callback port (default `0`).
 - `--callback-url <url>`: choose the registered HTTP loopback host and path (default `http://127.0.0.1:0/callback`). The SDK accepts port changes for the same loopback host, path, and query; `--callback-port` overrides the URL's port.
 - `--auth-timeout <ms>`: browser interaction deadline (default `300000`).
 - `--storage-dir <path>`: isolate private credentials in a storage directory.
 - `--storage-backend <auto|native|file>`: initial cli-storage backend preference.
-- `--format <json>`: use JSON for list, show and status output.
+- `--format <json>`: use JSON for list and status output.
 - `--json <string>`: supply inline JSON input.
 - `--input <path>`: supply JSON input from a file.
 - `--raw`: emit raw JSON (or binary bytes for a single binary payload).
@@ -476,28 +407,22 @@ pnpm --filter @mcp-layer/cli test
 
 ## Runtime Error Reference
 
-Every library `LayerError` includes its package, method, stable reference and generated documentation URL; machine-readable codes are preserved. Capture and profile command errors are listed first.
+Every library `LayerError` includes its package, method, stable reference and generated documentation URL; machine-readable codes are preserved. Runtime profile selection and forwarding errors are listed below.
 
 <a id="error-53a24b"></a>
 ### `ERR_CLI_PROFILE_PARTS`
 
 `globals` accepts only comma-separated `http,mcp,oauth` parts. Correct the flag before retrying; validation happens before any connection.
 
-<a id="error-c16eaa"></a>
-<a id="error-750234"></a>
-### `ERR_CLI_ARTIFACT`
+<a id="error-5f7140"></a>
+### `ERR_CLI_PROFILE_OAUTH_CLIENT_AUTH`
 
-`read` cannot read or parse the named JSON artifact, or `write` cannot write the output file. Check the path, JSON syntax, existing parent directory and file permissions. The error keeps the filesystem/parser cause.
+`settings` will not select a captured OAuth registration that requires a client secret or another confidential authentication method. Profiles contain public identity data and never credentials. Use `--client-id` to perform a public registration, or capture a client registered with `token_endpoint_auth_method=none`.
 
-<a id="error-b7fff0"></a>
-### `ERR_CLI_CAPTURE_TRANSPORT`
+<a id="error-5e0fba"></a>
+### `ERR_CLI_OAUTH_PROBE_TIMEOUT`
 
-`capture` accepts `http`, `sse`, or `stdio`. Controlled OAuth requires an HTTP endpoint; use HTTP/SSE, or use `upstream` for OAuth-enabled stdio forwarding.
-
-<a id="error-a6af2a"></a>
-### `ERR_CLI_CAPTURE_STORAGE`
-
-Embedded OAuth capture requires an injected `cli-storage` instance. CLI commands construct this adapter automatically.
+`settings` exceeded `--auth-timeout` while checking whether a profile-enabled resource requires OAuth. Check that the resource responds to HTTP requests or increase `--auth-timeout`. Caller cancellation remains an abort and is not reported as a timeout.
 
 <a id="error-2b6339"></a>
 ### `ERR_CLI_REMOTE`
@@ -506,18 +431,6 @@ Embedded OAuth capture requires an injected `cli-storage` instance. CLI commands
 
 <a id="error-c65a4c"></a>
 <a id="error-7b7bdc"></a>
-<a id="error-684efe"></a>
-### `ERR_CLI_PROFILE_INPUT`
-
-`commands` requires an ID/path for `profiles show`, an input capture and `--output` for `profiles build`, and `--output` for `profiles capture`. Supply the missing argument; hosted capture output is written on shutdown.
-
-<a id="error-32cd61"></a>
-### `ERR_CLI_PROFILE_COMMAND`
-
-`commands` accepts `profiles list`, `show`, `build`, and `capture`. Use `profiles --help` for their syntax. Unknown or contradictory profile evidence is reported by [`@mcp-layer/profiles`](../profiles/README.md#runtime-error-reference); OAuth and forwarding failures are reported by [`@mcp-layer/forward`](../forward/README.md#runtime-error-reference).
-
-
-
 <a id="error-876b63"></a>
 ### Unknown "{targetType}" target "{targetName}".
 

@@ -170,6 +170,36 @@ function suite() {
       assert.doesNotMatch(JSON.stringify(result), /fixture-secret-|unclassified-value/);
       assert.deepEqual(derive(recorded()), result);
     }
+    /** @returns {void} Verify generated IDs distinguish captures with changed protocol evidence. */
+    function fingerprints() {
+      const recorder = capture({ client: fixture.options.client, capturedAt: fixture.options.capturedAt, allowHeaders: fixture.options.allowHeaders });
+      for (const observation of fixture.observations) recorder.observe(observation);
+      const actual = recorder.finish();
+      const profile = derive(actual);
+      const protocol = structuredClone(actual);
+      const initialize = protocol.observations.find(
+        /** @param {import('../src/index.js').Evidence} value Sanitized observation. @returns {boolean} Whether this is the MCP initialize exchange. */
+        function initializing(value) { return value.message?.method === 'initialize'; });
+      initialize.message.params.protocolVersion = '2080-01-01';
+      const revisedProtocol = derive(protocol);
+      assert.notEqual(revisedProtocol.id, profile.id);
+      assert.deepEqual(revisedProtocol.client, profile.client);
+      assert.deepEqual(revisedProtocol.http, profile.http);
+      assert.deepEqual(revisedProtocol.oauth, profile.oauth);
+      assert.deepEqual(derive(protocol), revisedProtocol);
+
+      const capabilities = structuredClone(actual);
+      const exchange = capabilities.observations.find(
+        /** @param {import('../src/index.js').Evidence} value Sanitized observation. @returns {boolean} Whether this is the MCP initialize exchange. */
+        function initializing(value) { return value.message?.method === 'initialize'; });
+      exchange.message.params.capabilities.experimental = { prompts: true };
+      const revisedCapabilities = derive(capabilities);
+      assert.notEqual(revisedCapabilities.id, profile.id);
+      assert.deepEqual(revisedCapabilities.client, profile.client);
+      assert.deepEqual(revisedCapabilities.http, profile.http);
+      assert.deepEqual(revisedCapabilities.oauth, profile.oauth);
+      assert.deepEqual(derive(capabilities), revisedCapabilities);
+    }
     /** @returns {void} Verify only complete, unredacted DCR response metadata becomes a reusable constraint. */
     function registrations() {
       const recorder = capture(fixture.options);
@@ -274,6 +304,7 @@ function suite() {
       assert.equal(derive(recorder.finish()).coverage.identity, 'observed');
     }
     it('derives only public client identity and issuer-bound IDs', selects);
+    it('pins generated IDs to protocol and capability evidence', fingerprints);
     it('retains only unmodified DCR constraints and rejects conflicting registrations', registrations);
     it('keeps reusable HTTP identities phase-specific and rejects same-phase conflicts', phases);
     it('infers initialize identity and generates a deterministic ID', infers);
@@ -288,7 +319,7 @@ function suite() {
     async function verified() {
       const actual = JSON.parse(await readFile(new URL('./fixtures/claude-code.capture.json', import.meta.url), 'utf8'));
       const profile = derive(actual);
-      const bundled = get('claude-code-2-1-325-7bd44ecf1368');
+      const bundled = get('claude-code-2-1-325-49a14191cdf6');
       assert.deepEqual(get('claude-code'), bundled);
       assert.deepEqual(profile, bundled);
       assert.deepEqual(list(), [bundled]);

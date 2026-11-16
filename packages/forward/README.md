@@ -42,6 +42,8 @@ await runtime.closed;
 
 In this explicit transparent mode, the relay does not act as an OAuth resource server or validate upstream bearer tokens. OAuth gateway mode is the default and requires storage.
 
+Configured target query parameters are sent upstream with each relayed request. A downstream request replaces configured values for the same parameter name while retaining other defaults. Runtime and provider status include only the target and issuer origins; URL paths, userinfo, query strings, and fragments are omitted, while full URLs remain bound internally for routing and authorization.
+
 ## Authenticate an SDK client
 
 This example uses SDK discovery, browser consent, and a loopback callback to obtain upstream credentials. Later runs reuse stored registrations and tokens. The provider's Fetch wrapper supplies fresh tokens and retries one rejected request; the SDK still performs the MCP handshake.
@@ -109,8 +111,8 @@ Returns an SDK-compatible `OAuthClientProvider` with these additional methods:
 | `access({ rejected?: string }?): Promise<string>` | Return a valid upstream token. A rejected token triggers one serialized refresh or reauthorization; a newer token written by another process is reused. |
 | `fetch(input: RequestInfo \| URL, init?: RequestInit): Promise<Response>` | Authenticated Fetch for the configured upstream origin. Preserves Request bodies and signals and the response stream; retries at most once after HTTP 401. Bound to the provider and safe to pass as a callback. |
 | `discover(): Promise<{ key: string, state: object }>` | SDK discovery metadata and the hashed business-record identity. Performs network discovery but does not create credentials or open a browser. |
-| `status(): Promise<object>` | Safe target/issuer, registration presence, expiry, refresh availability, and storage diagnostics. No token values or login, refresh, or record creation. |
-| `close(): Promise<void>` | Cancel pending interaction and close the callback listener. |
+| `status(): Promise<object>` | Target/issuer origins, registration presence, expiry, refresh availability, and storage diagnostics. URL paths, credentials, query strings, fragments, and token values are omitted; status does not log in, refresh, or create records. |
+| `close(): Promise<void>` | Cancel pending interaction and OAuth network/response-body reads, then close the callback listener. |
 
 SDK methods are `clientInformation`, `saveClientInformation`, `tokens`, `saveTokens`, `state`, `saveCodeVerifier`, `codeVerifier`, `discoveryState`, `saveDiscoveryState`, `invalidateCredentials`, and `redirectToAuthorization`. `clientMetadata`, `clientMetadataUrl`, and `redirectUrl` expose SDK registration settings. Use `provider.fetch` for the complete automatic browser/callback flow; consumers using only the SDK provider interface must own their transport's `finishAuth`/redirect lifecycle as described in the SDK documentation.
 
@@ -125,13 +127,15 @@ Options:
 | `clientMetadataUrl` | Optional HTTPS client ID metadata document used by SDK discovery. |
 | `issuer`, `resource`, `scope` | Optional explicit authorization-server, audience, and scope overrides; otherwise use SDK discovery. Scope sets are normalized for credential identity. |
 | `redirectUrl`, `callbackPort` | HTTP loopback callback. Default `http://127.0.0.1:0/callback` chooses an available port. |
-| `authTimeout` | Browser-interaction and lock-acquisition timeout in milliseconds; default `300000`. |
+| `authTimeout` | Positive finite deadline in milliseconds for browser interaction, lock acquisition, and each OAuth discovery, registration, token, and refresh network request; default `300000`. Caller cancellation and `close()` abort outstanding OAuth requests. The deadline does not limit MCP response or event streams. |
 | `open` | Named `(url: URL) => Promise<void>` browser/URL-display callback. Required when interactive login is necessary. |
 | `fetch` | Native Fetch-compatible implementation for upstream OAuth/MCP requests. |
 | `observe` | Optional request-identity callback. Treat request observations as sensitive until sanitized by the profiles recorder. |
-| `signal` | AbortSignal for authorization and lock acquisition. |
+| `signal` | AbortSignal for authorization, lock acquisition, and OAuth network requests. |
 
 Missing tokens or near-expiry tokens enter the SDK authorization flow under the storage lease. Successful exchange records the SDK's issuer binding and expiry, retains an unrotated refresh token, and clears completed state/PKCE fields. Diagnostics never call `access()`.
+
+When `issuer` is explicit, the SDK still discovers protected-resource metadata from `target` and uses its canonical resource identifier and supported scopes. If the target returns no protected-resource metadata, the configured resource or target URL supplies the resource indicator. A preregistered `client_secret_basic` or `client_secret_post` client must include its runtime `client_secret`; captured public client IDs do not contain issuer-owned credentials.
 
 ### `issuer(options): OAuthServerProvider`
 
@@ -183,7 +187,7 @@ These errors originate in `authorize` before or during provider setup.
 | `ERR_OAUTH_OPTIONS` | Set `authTimeout` to a positive finite number of milliseconds. The default is 300000. |
 | `ERR_OAUTH_ISSUER` | The supplied registration belongs to another issuer. Select a registration issued by the discovered authorization server, or remove it and permit supported SDK registration. |
 | `ERR_OAUTH_INTERACTION` | Supply `open(url)` so the resource owner can complete authorization. Cached credentials do not require interaction until renewal fails. |
-| `ERR_OAUTH_REGISTRATION` | The current callback conflicts with known registered redirects. Use the registered host and path or obtain a new registration. The SDK permits loopback port changes while preserving host, path, and query constraints. |
+| `ERR_OAUTH_REGISTRATION` | The current callback conflicts with known registered redirects, or a confidential registration lacks its runtime client secret. Use an allowed callback or supply issuer-owned client credentials before consent. The SDK permits loopback port changes while preserving host, path, and query constraints. |
 
 Step-by-step resolution:
 
@@ -201,12 +205,14 @@ import { Storage } from 'cli-storage';
 import open from 'open';
 import { authorize } from '@mcp-layer/forward';
 
+/** Launch the URL emitted by the SDK authorization flow. @param {URL} url Authorization URL. @returns {Promise<void>} Resolves after the browser is opened. */
+async function browser(url) { await open(url.href); }
 const provider = authorize({
   target: 'https://mcp.example.com/mcp',
   storage: new Storage({ namespace: 'example-mcp' }),
   callbackPort: 0,
   authTimeout: 300000,
-  open,
+  open: browser,
 });
 try {
   await provider.access();
@@ -224,13 +230,14 @@ try {
 <a id="error-42e38a"></a>
 <a id="error-0e4089"></a>
 <a id="error-0fddb1"></a>
+<a id="error-353dd0"></a>
 
 These errors originate in `authorize` while interacting with an issuer or fetching an upstream resource.
 
 | Code | Cause and remedy |
 | --- | --- |
 | `ERR_OAUTH_DENIED` | The issuer returned a valid state-bound OAuth error. Inspect `oauthCode`, correct the issuer policy or requested scope, then begin a fresh interaction if the owner wants to retry. |
-| `ERR_OAUTH_TIMEOUT` | Consent or lock acquisition exceeded the interaction deadline. Check browser/callback connectivity and retry, increasing `authTimeout` when the interaction needs longer. |
+| `ERR_OAUTH_TIMEOUT` | Consent, lock acquisition, or an OAuth response body exceeded `authTimeout`. Check browser/callback or issuer connectivity, then retry with a larger positive finite `authTimeout` when the issuer needs more time. Caller abort and provider shutdown cancel pending OAuth response reads. MCP response and event streams are not subject to this timeout. |
 | `ERR_OAUTH_TOKENS` | SDK authorization completed without a usable access token. Inspect the issuer's token response and registration compatibility; restart authorization after correcting them. |
 | `ERR_OAUTH_ORIGIN` | `provider.fetch()` was called for a different origin. Use an independently configured provider for that resource so credentials remain bound to their upstream. |
 | `ERR_OAUTH_CLOSED` | Shutdown interrupted a pending interaction. Create a provider for a new operation rather than continuing the cancelled callback. |

@@ -5,10 +5,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
+import { createServer } from 'node:http';
 import { promisify } from 'node:util';
 import { Storage } from 'cli-storage';
 import { capture as recorder, derive } from '@mcp-layer/profiles';
-import { capture } from '../src/capture.js';
+import { listen as capture } from '@mcp-layer/profiles';
 
 const exec = promisify(execFile);
 const bin = fileURLToPath(new URL('../bin/cli.js', import.meta.url));
@@ -81,47 +82,12 @@ describe('cli',
    * @returns {void} Completion of the real test operation.
    */
   function suite() {
-    describe('profiles commands',
+    describe('profile runtime',
       /**
-       * Register profiles commands integration coverage.
+       * Register profile runtime integration coverage.
        * @returns {void} Completion of the real test operation.
        */
-      function commands() {
-        it('lists the evidence-only bundled catalog without loading MCP config',
-          /**
-           * Verify lists the evidence-only bundled catalog without loading MCP config.
-           * @returns {Promise<void>} Completion of the real test operation.
-           */
-          async function listing() {
-            const result = await run(['profiles', 'list', '--format', 'json']);
-            const profiles = JSON.parse(result.stdout);
-            assert.ok(profiles.some(
-              /**
-               * Find the independently verified native client in the catalog.
-               * @param {import('@mcp-layer/profiles').Profile} profile Bundled capture-derived profile.
-               * @returns {boolean} Whether this is the observed Claude Code release.
-               */
-              function verified(profile) {
-                return profile.client.name === 'claude-code' && profile.client.version === '2.1.325' &&
-                  profile.http.headers['user-agent'] === 'claude-code/2.1.325 (sdk-cli)';
-              }));
-          });
-        it('builds deterministic artifacts and shows profile evidence offline',
-          /**
-           * Verify builds deterministic artifacts and shows profile evidence offline.
-           * @param {import('node:test').TestContext} t Test lifecycle and cleanup hooks.
-           * @returns {Promise<void>} Completion of the real test operation.
-           */
-          async function building(t) {
-            const state = await setup(t);
-            const output = path.join(state.directory, 'built.json');
-            await run(['profiles', 'build', state.capture, '--output', output]);
-            const first = await readFile(output, 'utf8');
-            await run(['profiles', 'build', state.capture, '--output', output]);
-            assert.equal(await readFile(output, 'utf8'), first);
-            const shown = await run(['profiles', 'show', output, '--format', 'json', '--oauth']);
-            assert.equal(JSON.parse(shown.stdout).client.name, 'captured-desktop');
-          });
+      function runtime() {
         it('applies one profile across catalog and both help connection paths',
           /**
            * Verify applies one profile across catalog and both help connection paths.
@@ -232,6 +198,33 @@ describe('cli',
             const result = await run(['tools', 'list', '--config', file, '--transport', 'sse', '--oauth', '--storage-dir', path.join(state.directory, 'credentials'), '--storage-backend', 'file', '--format', 'json'], oauthbin);
             assert.equal(JSON.parse(result.stdout)[0].name, 'probe');
           });
+        it('rejects captured confidential OAuth registrations before consent',
+          /**
+           * Verify confidential public identity metadata is not selected without its secret.
+           * @param {import('node:test').TestContext} t Test lifecycle and cleanup hooks.
+           * @returns {Promise<void>} The CLI returns an actionable error without opening consent.
+           */
+          async function confidential(t) {
+            const state = await setup(t);
+            const runtime = await capture({ oauth: true, storage: state.storage });
+            t.after(runtime.close);
+            const issuer = new URL('/', runtime.url).href;
+            await registration(state, issuer, { client_name: 'Captured confidential client', token_endpoint_auth_method: 'client_secret_basic' }, {
+              client_id: 'captured-confidential-client',
+              client_secret: 'captured-secret-must-not-be-reused',
+              token_endpoint_auth_method: 'client_secret_basic',
+            });
+            const file = await config(state.directory, runtime.url);
+            await assert.rejects(run(['tools', 'list', '--config', file, '--profile', state.profile, '--storage-dir', path.join(state.directory, 'credentials'), '--storage-backend', 'file']),
+              /** @param {Error & {stderr?:string}} error CLI subprocess failure. @returns {boolean} Whether refusal explains missing caller-owned credentials. */
+              function actionable(error) { return error.stderr?.includes('Captured OAuth client requires caller-owned credentials') ?? false; });
+            const artifact = runtime.finish();
+            assert.equal((await readFile(state.profile, 'utf8')).includes('captured-secret-must-not-be-reused'), false);
+            assert.equal(JSON.stringify(artifact).includes('captured-secret-must-not-be-reused'), false);
+            assert.equal(artifact.observations.some(
+              /** @param {import('@mcp-layer/profiles').Evidence} value Captured issuer evidence. @returns {boolean} Whether the CLI reached user consent. */
+              function consent(value) { return value.phase === 'authorization'; }), false);
+          });
         it('uses profile OAuth metadata before constructing the authorization provider',
           /**
            * Verify uses profile OAuth metadata before constructing the authorization provider.
@@ -297,6 +290,46 @@ describe('cli',
                * @returns {string} Observed public identity value.
                */
               function identifier(value) { return new URL(value.url).searchParams.get('client_id'); }), [observed.client_id, override.client_id]);
+          });
+        it('bounds the implicit OAuth resource probe by the authorization deadline',
+          /**
+           * Verify a resource that accepts but never completes the implicit auth probe is bounded.
+           * @param {import('node:test').TestContext} t Test lifecycle and cleanup hooks.
+           * @returns {Promise<void>} The CLI exits with an actionable timeout instead of hanging.
+           */
+          async function probeDeadline(t) {
+            const state = await setup(t);
+            await registration(state, 'https://issuer.example/', { client_name: 'Observed OAuth client' });
+            const server = createServer(
+              /** @param {import('node:http').IncomingMessage} request Hanging probe request. @param {import('node:http').ServerResponse} response Unfinished response. @returns {void} Keep the real socket open until the CLI deadline aborts it. */
+              function stalled(request, response) { void request; void response; });
+            await new Promise(
+              /** @param {(value: import('node:net').AddressInfo) => void} resolve Resolve with the bound endpoint. @param {(reason: Error) => void} reject Reject if the server cannot bind. @returns {void} Starts the local HTTP server. */
+              function listening(resolve, reject) {
+                server.once('error', reject);
+                server.listen(0, '127.0.0.1', /** @returns {void} Resolve with the available local probe address. */
+                function bound() {
+                  server.off('error', reject);
+                  resolve(server.address());
+                });
+              });
+            t.after(
+              /** @returns {Promise<void>} Close the local probe server and open sockets. */
+              async function closeServer() {
+                server.closeAllConnections();
+                await new Promise(
+                  /** @param {() => void} resolve Resolve after server shutdown. @returns {void} Starts shutdown. */
+                  function closing(resolve) { server.close(resolve); });
+              });
+            const address = server.address();
+            const endpoint = `http://127.0.0.1:${address.port}/mcp`;
+            const file = await config(state.directory, endpoint);
+            await assert.rejects(exec(process.execPath, [bin, 'tools', 'list', '--config', file, '--profile', state.profile, '--auth-timeout', '100', '--storage-dir', path.join(state.directory, 'credentials'), '--storage-backend', 'file'], {
+              env: { ...process.env, NO_COLOR: '1' },
+              timeout: 2000,
+            }),
+            /** @param {Error & {stderr?:string}} error CLI subprocess failure. @returns {boolean} Whether timeout message gives the relevant flag. */
+            function actionable(error) { return error.stderr?.includes('--auth-timeout') ?? false; });
           });
         it('keeps general help and status from starting login or initializing storage',
           /**

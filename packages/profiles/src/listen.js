@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { capture as record } from '@mcp-layer/profiles';
+import { capture as record } from './capture.js';
 import { forward, issuer } from '@mcp-layer/forward';
 import { LayerError } from '@mcp-layer/error';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -14,8 +14,8 @@ import express from 'express';
 import { write } from './artifact.js';
 
 /**
- * @typedef {object} CaptureOptions
- * @property {import('@mcp-layer/profiles').Identity} [client] Optional declared client name, version and platform.
+ * @typedef {object} ListenOptions
+ * @property {import('./types.js').Identity} [client] Optional declared client name, version and platform.
  * @property {string} [capturedAt] Capture timestamp for reproducible artifacts.
  * @property {string[]} [allowHeaders] Explicit public custom header allowlist.
  * @property {'http'|'sse'|'stdio'} [transport] Downstream transport, default HTTP with `/mcp` and legacy `/sse` endpoints.
@@ -62,17 +62,18 @@ function classify(request) {
 
 /**
  * Run a controlled SDK MCP server or observe a forwarding gateway.
- * @param {CaptureOptions} [options={}] Endpoint, recorder, output and optional OAuth settings.
+ * @param {ListenOptions} [options={}] Endpoint, output and optional OAuth settings.
  * @returns {Promise<{url:string|undefined, close:()=>Promise<void>, closed:Promise<void>, finish:()=>import('@mcp-layer/profiles').Capture}>} Composable capture lifecycle and sanitized snapshot function.
  * @throws {LayerError} For unsupported transports, missing OAuth storage, invalid capture options or artifact writes. SDK startup failures propagate.
  */
-export async function capture(options = {}) {
+export async function listen(options = {}) {
   const mode = options.transport ?? 'http';
-  if (!['http', 'sse', 'stdio'].includes(mode) || (options.oauth && mode === 'stdio' && !options.upstream)) {
-    throw new LayerError({ name: 'cli', method: 'capture', code: 'ERR_CLI_CAPTURE_TRANSPORT', message: 'Capture supports http, sse or stdio; controlled OAuth capture requires HTTP.' });
+  if (!['http', 'sse', 'stdio'].includes(mode) || (options.oauth && mode === 'stdio' && !options.upstream)
+    || (options.upstream && mode === 'sse')) {
+    throw new LayerError({ name: 'profiles', method: 'listen', code: 'ERR_PROFILES_LISTEN_TRANSPORT', message: 'Capture supports HTTP, SSE, or stdio; forwarding supports HTTP or stdio, and controlled OAuth requires HTTP.' });
   }
   if (options.oauth && !options.storage) {
-    throw new LayerError({ name: 'cli', method: 'capture', code: 'ERR_CLI_CAPTURE_STORAGE', message: 'Supply cli-storage for OAuth capture.' });
+    throw new LayerError({ name: 'profiles', method: 'listen', code: 'ERR_PROFILES_LISTEN_STORAGE', message: 'Supply cli-storage for OAuth capture.' });
   }
   const recorder = record({ client: options.client, capturedAt: options.capturedAt, allowHeaders: options.allowHeaders });
   let runtime;
@@ -131,7 +132,7 @@ export async function capture(options = {}) {
 
 /**
  * Host controlled transports, with a new SDK server for every client session.
- * @param {CaptureOptions} options Endpoint and optional OAuth settings.
+ * @param {ListenOptions} options Endpoint and optional OAuth settings.
  * @param {import('@mcp-layer/profiles').Recorder} recorder Sanitizing boundary recorder.
  * @returns {Promise<{url:string|undefined, close:()=>Promise<void>, closed:Promise<void>}>} Controlled transport lifecycle.
  */

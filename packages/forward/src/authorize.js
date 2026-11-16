@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
-import { auth, discoverAuthorizationServerMetadata, discoverOAuthServerInfo } from '@modelcontextprotocol/sdk/client/auth.js';
+import { auth, discoverAuthorizationServerMetadata, discoverOAuthProtectedResourceMetadata, discoverOAuthServerInfo } from '@modelcontextprotocol/sdk/client/auth.js';
 import { redirectUriMatches } from '@modelcontextprotocol/sdk/server/auth/handlers/authorize.js';
 import { LayerError } from '@mcp-layer/error';
 
@@ -31,11 +31,11 @@ import { LayerError } from '@mcp-layer/error';
  * @property {string} [clientMetadataUrl] - HTTPS client ID metadata document.
  * @property {string} [redirectUrl] - Loopback callback URL; port zero chooses an available port.
  * @property {number} [callbackPort] - Loopback callback port override.
- * @property {number} [authTimeout] - Interaction and lock timeout in milliseconds, default 300000.
+ * @property {number} [authTimeout] - Positive finite deadline in milliseconds for interaction, locks, and OAuth network fetches; default 300000.
  * @property {(url:URL)=>Promise<void>} [open] - Open the browser or perform an application-owned redirect.
  * @property {typeof fetch} [fetch] - Fetch implementation for upstream OAuth and MCP traffic.
  * @property {(event:object)=>void} [observe] - Observe request identity metadata.
- * @property {AbortSignal} [signal] - Cancel outstanding authorization.
+ * @property {AbortSignal} [signal] - Cancel outstanding authorization and OAuth network requests.
  */
 
 /**
@@ -82,8 +82,11 @@ class Authorization {
     this.clientMetadataUrl = options.clientMetadataUrl;
     this.timeout = options.authTimeout ?? 300000;
     this.transport = undefined;
+    this.preparing = undefined;
     this.pending = undefined;
     this.discovered = undefined;
+    this.closed = new AbortController();
+    this.operations = new Set();
     this.fetch = this.fetch.bind(this);
     if (options.resource !== undefined) {
       /** @returns {Promise<URL>} Explicit caller-owned OAuth resource indicator. */
@@ -119,10 +122,17 @@ class Authorization {
       const source = provider.request.bind(provider);
       let info;
       if (provider.options.issuer) {
+        let resourceMetadata;
+        try {
+          resourceMetadata = await discoverOAuthProtectedResourceMetadata(provider.target, {}, source);
+        } catch (cause) {
+          if (cause?.message !== 'Resource server does not implement OAuth 2.0 Protected Resource Metadata.') throw cause;
+          resourceMetadata = { resource: provider.options.resource ?? provider.target, authorization_servers: [provider.options.issuer] };
+        }
         info = {
           authorizationServerUrl: provider.options.issuer,
           authorizationServerMetadata: await discoverAuthorizationServerMetadata(provider.options.issuer, { fetchFn: source }),
-          resourceMetadata: { resource: provider.options.resource ?? provider.target, authorization_servers: [provider.options.issuer] },
+          resourceMetadata: { ...resourceMetadata, authorization_servers: [provider.options.issuer] },
         };
       } else {
         info = await discoverOAuthServerInfo(provider.target, { fetchFn: source });
@@ -183,6 +193,13 @@ class Authorization {
     await this.prepare();
     const record = await this.read();
     const client = record.client ?? (this.options.clientInformation ? { ...this.options.clientInformation, issuer: String((await this.discover()).state.authorizationServerUrl) } : undefined);
+    const method = client?.token_endpoint_auth_method;
+    if (['client_secret_basic', 'client_secret_post'].includes(method) && !client?.client_secret) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_REGISTRATION', message: `The preregistered OAuth client requires ${method} but has no runtime client_secret. Supply issuer-owned client credentials before authorization.` });
+    }
+    if (method !== undefined && !['client_secret_basic', 'client_secret_post', 'none'].includes(method)) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_REGISTRATION', message: `The preregistered OAuth client uses unsupported authentication method ${method}. Supply a supported public or confidential client registration.` });
+    }
     if (Array.isArray(client?.redirect_uris) && !client.redirect_uris.some(
       /**
        * Compare the live callback with an issuer-registered redirect URI.
@@ -225,53 +242,75 @@ class Authorization {
    * @returns {Promise<void>} Listening callback server.
    */
   async prepare() {
-    if (this.transport) return;
-    const provider = this;
-    /** @param {import('node:http').IncomingMessage} req - Browser callback. @param {import('node:http').ServerResponse} res - Browser response. @returns {Promise<void>} */
-    async function callback(req, res) {
-      const url = new URL(req.url ?? '/', provider.redirect);
-      if (url.pathname !== provider.redirect.pathname) { res.writeHead(404).end(); return; }
-      const expected = (await provider.read()).state;
-      const actual = url.searchParams.get('state');
-      const valid = typeof expected === 'string' && actual !== null && Buffer.byteLength(expected) === Buffer.byteLength(actual) && timingSafeEqual(Buffer.from(expected), Buffer.from(actual));
-      if (provider.pending && valid && url.searchParams.has('error')) {
-        provider.pending.reject(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_DENIED', message: 'The authorization server did not approve this OAuth request.', oauthCode: url.searchParams.get('error') }));
-        res.writeHead(400).end('OAuth authorization was not approved.');
-        return;
-      }
-      if (!provider.pending || !valid || !url.searchParams.get('code')) {
-        res.writeHead(400).end('OAuth authorization was not accepted.');
-        return;
-      }
-      res.setHeader('Cache-Control', 'no-store');
-      res.end('Authorization received. You can close this tab.');
-      provider.pending.resolve(url.searchParams.get('code'));
+    if (this.closed.signal.aborted) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
     }
-    const listener = createServer(/**
-     * Dispatch the loopback callback and contain handler failures.
-     * @param {import('node:http').IncomingMessage} req Browser callback request.
-     * @param {import('node:http').ServerResponse} res Browser callback response.
-     * @returns {void} Starts asynchronous callback processing.
+    if (this.transport) return;
+    if (this.preparing) return this.preparing;
+    const provider = this;
+    /** Bind one callback listener unless shutdown wins the bind race.
+     * @returns {Promise<void>} Bound callback listener.
      */
-    function request(req, res) {
-      void callback(req, res).catch(/**
-       * Report an internal callback handler failure to the browser.
-       * @returns {void} Ends the callback response.
+    async function bind() {
+      /** @param {import('node:http').IncomingMessage} req - Browser callback. @param {import('node:http').ServerResponse} res - Browser response. @returns {Promise<void>} */
+      async function callback(req, res) {
+        const url = new URL(req.url ?? '/', provider.redirect);
+        if (url.pathname !== provider.redirect.pathname) { res.writeHead(404).end(); return; }
+        const expected = (await provider.read()).state;
+        const actual = url.searchParams.get('state');
+        const valid = typeof expected === 'string' && actual !== null && Buffer.byteLength(expected) === Buffer.byteLength(actual) && timingSafeEqual(Buffer.from(expected), Buffer.from(actual));
+        if (provider.pending && valid && url.searchParams.has('error')) {
+          provider.pending.reject(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_DENIED', message: 'The authorization server did not approve this OAuth request.', oauthCode: url.searchParams.get('error') }));
+          res.writeHead(400).end('OAuth authorization was not approved.');
+          return;
+        }
+        if (!provider.pending || !valid || !url.searchParams.get('code')) {
+          res.writeHead(400).end('OAuth authorization was not accepted.');
+          return;
+        }
+        res.setHeader('Cache-Control', 'no-store');
+        res.end('Authorization received. You can close this tab.');
+        provider.pending.resolve(url.searchParams.get('code'));
+      }
+      const listener = createServer(/**
+       * Dispatch the loopback callback and contain handler failures.
+       * @param {import('node:http').IncomingMessage} req Browser callback request.
+       * @param {import('node:http').ServerResponse} res Browser callback response.
+       * @returns {void} Starts asynchronous callback processing.
        */
-      function failed() { res.writeHead(500).end('OAuth callback failed.'); });
-    });
-    await new Promise(/**
-     * Bind the loopback callback before registering its live redirect URI.
-     * @param {() => void} resolve Resolve after the listener binds.
-     * @param {(error: Error) => void} reject Reject a listener startup failure.
-     * @returns {void} Registers startup event handlers.
-     */
-    function listen(resolve, reject) {
-      listener.once('error', reject);
-      listener.listen(Number(provider.redirect.port), provider.redirect.hostname === '[::1]' ? '::1' : provider.redirect.hostname, resolve);
-    });
-    this.transport = listener;
-    this.redirect.port = String(listener.address().port);
+      function request(req, res) {
+        void callback(req, res).catch(/**
+         * Report an internal callback handler failure to the browser.
+         * @returns {void} Ends the callback response.
+         */
+        function failed() { res.writeHead(500).end('OAuth callback failed.'); });
+      });
+      await new Promise(/**
+       * Bind the loopback callback before registering its live redirect URI.
+       * @param {() => void} resolve Resolve after the listener binds.
+       * @param {(error: Error) => void} reject Reject a listener startup failure.
+       * @returns {void} Registers startup event handlers.
+       */
+      function listen(resolve, reject) {
+        listener.once('error', reject);
+        listener.listen(Number(provider.redirect.port), provider.redirect.hostname === '[::1]' ? '::1' : provider.redirect.hostname, resolve);
+      });
+      if (provider.closed.signal.aborted) {
+        listener.closeAllConnections();
+        await new Promise(/** @param {() => void} resolve Resolve after the late listener closes. @returns {void} */
+        function closed(resolve) { listener.close(resolve); });
+        throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+      }
+      provider.transport = listener;
+      provider.redirect.port = String(listener.address().port);
+    }
+    const preparing = bind();
+    this.preparing = preparing;
+    try {
+      await preparing;
+    } finally {
+      if (this.preparing === preparing) this.preparing = undefined;
+    }
   }
 
   /**
@@ -280,8 +319,15 @@ class Authorization {
    * @returns {Promise<void>} Callback received; access() exchanges its code through the SDK.
    */
   async redirectToAuthorization(url) {
+    if (this.closed.signal.aborted) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+    }
     if (!this.options.open) {
       throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_INTERACTION', message: 'Supply an open callback to complete interactive OAuth authorization.' });
+    }
+    await this.prepare();
+    if (this.closed.signal.aborted) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
     }
     const provider = this;
     const promise = new Promise(/**
@@ -324,12 +370,24 @@ class Authorization {
    */
   async access(options = {}) {
     const provider = this;
+    if (provider.closed.signal.aborted) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+    }
     const discovery = await this.discover();
+    if (provider.closed.signal.aborted) {
+      throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+    }
     /** @param {Lease} lease - Exclusive credential lease. @returns {Promise<string>} */
     async function exclusive(lease) {
+      if (provider.closed.signal.aborted) {
+        throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+      }
       /** @returns {Promise<string>} SDK authorization result. */
       async function obtain() {
         const record = await provider.read();
+        if (provider.closed.signal.aborted) {
+          throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' });
+        }
         const valid = record.tokens?.access_token && (record.expires === null || record.expires > Date.now() + 60000);
         if (valid && (options.rejected === undefined || options.rejected !== record.tokens.access_token)) return record.tokens.access_token;
         try {
@@ -349,7 +407,15 @@ class Authorization {
       }
       return provider.context.run(lease, obtain);
     }
-    return this.storage.lock(discovery.key, exclusive, { signal: this.options.signal, timeout: this.timeout });
+    const signal = AbortSignal.any([this.options.signal, this.closed.signal].filter(Boolean));
+    try {
+      return await this.storage.lock(discovery.key, exclusive, { signal, timeout: this.timeout });
+    } catch (cause) {
+      if (this.closed.signal.aborted) {
+        throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.', cause });
+      }
+      throw cause;
+    }
   }
 
   /**
@@ -390,7 +456,79 @@ class Authorization {
       else if (request.headers.get('content-type')?.includes('application/json')) body = JSON.parse(init.body);
     }
     const phase = body?.grant_type === 'refresh_token' ? 'refresh' : body?.grant_type ? 'token' : request.method === 'POST' && body?.redirect_uris ? 'registration' : new URL(request.url).pathname === new URL(this.target).pathname ? 'mcp' : 'discovery';
-    const response = await (this.options.fetch ?? globalThis.fetch)(request);
+    const oauth = phase !== 'mcp';
+    const controller = new AbortController();
+    let timer;
+    let signal = request.signal;
+    if (oauth) {
+      this.operations.add(controller);
+      const signals = [request.signal, this.options.signal, this.closed.signal].filter(Boolean);
+      signal = AbortSignal.any([...signals, controller.signal]);
+      timer = setTimeout(/** @returns {void} Abort a stalled OAuth network request. */
+      function timeout() { controller.abort(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_TIMEOUT', message: 'An OAuth network request exceeded authTimeout.' })); }, this.timeout);
+      timer.unref?.();
+    }
+    let finished = false;
+    /** Release deadline and operation ownership after the OAuth response body settles. @returns {void} */
+    function finish() {
+      if (finished) return;
+      finished = true;
+      if (!oauth) return;
+      clearTimeout(timer);
+      provider.operations.delete(controller);
+    }
+    const provider = this;
+    let response;
+    try {
+      const { body: originalBody, ...options } = init ?? {};
+      const forwarded = {
+        ...options,
+        headers: request.headers,
+        signal,
+        ...(typeof originalBody === 'string' || originalBody instanceof URLSearchParams ? { body: originalBody } : {}),
+      };
+      response = await (this.options.fetch ?? globalThis.fetch)(request, forwarded);
+    } catch (cause) {
+      finish();
+      if (oauth && controller.signal.aborted) throw controller.signal.reason;
+      if (oauth && this.closed.signal.aborted) throw new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.', cause });
+      throw cause;
+    }
+    if (oauth && response.body) {
+      const original = response;
+      const reader = original.body.getReader();
+      const body = new ReadableStream({
+        /** Forward the next original response chunk without buffering the OAuth body.
+         * @param {ReadableStreamDefaultController<Uint8Array>} stream Downstream response stream.
+         * @returns {Promise<void>} Enqueue or terminate the response stream.
+         */
+        async pull(stream) {
+          try {
+            const chunk = await reader.read();
+            if (chunk.done) { finish(); stream.close(); return; }
+            stream.enqueue(chunk.value);
+          } catch (cause) {
+            finish();
+            if (controller.signal.aborted) stream.error(controller.signal.reason);
+            else if (provider.closed.signal.aborted) stream.error(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.', cause }));
+            else if (provider.options.signal?.aborted) stream.error(provider.options.signal.reason);
+            else if (request.signal.aborted) stream.error(request.signal.reason);
+            else stream.error(cause);
+          }
+        },
+        /** Cancel the source response and release the request deadline.
+         * @param {unknown} cause Consumer cancellation reason.
+         * @returns {Promise<void>} Source stream cancellation.
+         */
+        async cancel(cause) { finish(); await reader.cancel(cause); },
+      });
+      response = new Response(body, { status: original.status, statusText: original.statusText, headers: original.headers });
+      Object.defineProperties(response, {
+        url: { value: original.url },
+        redirected: { value: original.redirected },
+        type: { value: original.type },
+      });
+    } else finish();
     this.options.observe?.({ phase, perspective: 'upstream', url: request.url, method: request.method, headers: request.headers, body, status: response.status, provenance: { role: 'bridge' } });
     return response;
   }
@@ -399,7 +537,7 @@ class Authorization {
   async status() {
     const discovery = await this.discover();
     const record = await this.storage.get(discovery.key);
-    return { target: this.target, issuer: discovery.state.authorizationServerUrl, registered: Boolean(record?.client), expiresAt: record?.expires ?? null, refreshable: Boolean(record?.tokens?.refresh_token), storage: await this.storage.status(discovery.key) };
+    return { target: safeTarget(this.target), issuer: safeTarget(discovery.state.authorizationServerUrl), registered: Boolean(record?.client), expiresAt: record?.expires ?? null, refreshable: Boolean(record?.tokens?.refresh_token), storage: await this.storage.status(discovery.key) };
   }
 
   /** @returns {Promise<void>} Close the current callback listener. */
@@ -419,7 +557,17 @@ class Authorization {
 
   /** @returns {Promise<void>} Cancel interaction and close callback connections. */
   async close() {
+    this.closed.abort();
+    for (const operation of this.operations) operation.abort(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' }));
     this.pending?.reject(new LayerError({ name: 'forward', method: 'authorize', code: 'ERR_OAUTH_CLOSED', message: 'OAuth authorization was closed.' }));
+    await this.preparing?.catch(/** @returns {void} Contain a bind rejection observed by the active access call. */
+    function failed() {});
     await this.stop();
   }
+}
+
+/** Remove URL credentials and request-specific components from diagnostics. @param {string|URL} value URL to redact. @returns {string} Safe origin. */
+function safeTarget(value) {
+  const target = new URL(value);
+  return target.origin;
 }

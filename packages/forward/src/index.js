@@ -137,7 +137,7 @@ async function bridge(options, provider) {
     throw new LayerError({ name: 'forward', method: 'forward', code: 'ERR_CONNECTION', message: 'The forwarding transports could not be started.', cause });
   }
   /** @returns {Promise<object>} Safe OAuth diagnostics. */
-  async function status() { return provider ? provider.status() : { target: String(options.target), auth: false }; }
+  async function status() { return provider ? provider.status() : { target: safeTarget(options.target), auth: false }; }
   return { url: undefined, close, closed, status };
 }
 
@@ -248,7 +248,14 @@ async function relay(options, provider) {
     agent,
     selfHandleResponse: true,
     /** @param {string} path - Incoming proxy path. @param {any} req - Request. @returns {string} Exact upstream resource path. */
-    pathRewrite: function rewrite(path, req) { return `${target.pathname}${new URL(req.originalUrl, base).search}`; },
+    pathRewrite: function rewrite(path, req) {
+      const search = new URLSearchParams(target.searchParams);
+      const incoming = new URL(req.originalUrl, base);
+      for (const key of incoming.searchParams.keys()) search.delete(key);
+      for (const [key, value] of incoming.searchParams) search.append(key, value);
+      const query = search.size ? `?${search}` : '';
+      return `${target.pathname}${query}`;
+    },
     on: {
       /** @param {any} upstream - Outgoing native HTTP request. @param {any} req - Original request. @param {any} res - Response. @returns {void} */
       proxyReq: function request(upstream, req, res) {
@@ -260,7 +267,7 @@ async function relay(options, provider) {
           upstream.removeHeader('proxy-authorization');
           upstream.setHeader('authorization', `Bearer ${req.upstreamToken}`);
         }
-        options.observe?.({ phase: 'mcp', perspective: 'upstream', url: target.href, method: req.method, headers: upstream.getHeaders(), message: structuredClone(req.body), provenance: { role: 'bridge' } });
+        options.observe?.({ phase: 'mcp', perspective: 'upstream', url: new URL(upstream.path, target.origin).href, method: req.method, headers: upstream.getHeaders(), message: structuredClone(req.body), provenance: { role: 'bridge' } });
         fixRequestBody(upstream, req, res);
       },
       /** @param {any} upstream - Upstream response. @param {any} req - Request. @param {any} res - Response. @returns {void} */
@@ -301,7 +308,7 @@ async function relay(options, provider) {
   options.signal?.addEventListener('abort', aborted, { once: true });
   if (options.signal?.aborted) await close();
   /** @returns {Promise<object>} Safe diagnostics. */
-  async function status() { return provider ? provider.status() : { target: target.href, auth: false }; }
+  async function status() { return provider ? provider.status() : { target: safeTarget(target), auth: false }; }
   return { url, close, closed, status };
   } catch (cause) {
     listener.closeAllConnections();
@@ -315,4 +322,9 @@ async function relay(options, provider) {
     function stopped(resolve) { listener.close(resolve); });
     throw cause;
   }
+}
+
+/** Remove URL credentials and request-specific components from diagnostics. @param {string|URL} value URL to redact. @returns {string} Safe origin. */
+function safeTarget(value) {
+  return new URL(value).origin;
 }

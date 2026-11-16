@@ -23,3 +23,7 @@ export { apply } from './apply.js';
 /** @typedef {import('./types.js').Part} Part */
 /** @typedef {import('./types.js').ApplyOptions} ApplyOptions */
 /** @typedef {import('./types.js').Applied} Applied */
+
+export { listen } from './listen.js';
+export { load } from './artifact.js';
+/** @typedef {import('./listen.js').ListenOptions} ListenOptions */

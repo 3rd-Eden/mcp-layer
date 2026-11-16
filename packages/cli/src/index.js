@@ -185,7 +185,6 @@ function statichelp(cliName, custom) {
     { name: 'resources <uri>', description: 'Read a resource.' },
     { name: 'templates list', description: 'List available resource templates.' },
     { name: 'templates <name>', description: 'Render a resource template.' },
-    { name: 'profiles list|show|build|capture', description: 'Inspect public profiles or capture real client identity.' },
     { name: 'forward [url]', description: 'Host an HTTP or stdio forwarding gateway.' },
   ];
   const extra = customcommands(custom);

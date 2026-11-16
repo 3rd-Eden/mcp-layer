@@ -12,7 +12,7 @@ The issuer-bound client ID, redirect URI, token endpoint authentication method, 
 
 The package owns sanitization, evidence selection, profile validation, identity composition, and advisory matching. It uses native `Headers`, `URL`, `URLSearchParams`, and `fetch`, and validates public client fields with the [official SDK schemas](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x/src). Existing analytics and authentication-profile libraries serve different purposes: collecting usage or storing credentials. Neither provides this evidence-backed public identity contract.
 
-Transport framing, protocol negotiation, session handling, OAuth discovery, PKCE, token exchange, refresh, and credential storage remain with the [official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x). This package has no dependency on the CLI, forwarding, or connection packages and writes no MCP configuration files.
+Transport framing, protocol negotiation, session handling, OAuth discovery, PKCE, token exchange, refresh, and credential storage remain with the [official TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x) and `@mcp-layer/forward`. This package also provides a standalone capture utility that composes those official SDK transports and forwarding APIs; it writes portable sanitized capture/profile JSON and never writes MCP configuration files or OAuth credentials into those artifacts.
 
 The integration suite exercises SDK 1.32.2 and its [2025-11-25 lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), [Streamable HTTP transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports), and [authorization contract](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization). Captures also recognize request metadata under `io.modelcontextprotocol/clientInfo`; observing a field does not add transport support for a newer protocol revision. Your SDK chooses its supported protocol version and capabilities.
 
@@ -23,6 +23,37 @@ Use Node.js 22 or newer with native Fetch APIs. Install the package and, when cr
 ```sh
 pnpm add @mcp-layer/profiles @modelcontextprotocol/sdk
 ```
+
+## Capture utility and artifacts
+
+The standalone `mcp-layer-profiles` command captures a real SDK client, builds deterministic profiles from sanitized capture JSON, and inspects bundled or local profiles. This is useful when you need a reproducible local endpoint for collecting the identity a client actually sends; the command prints its endpoint to stderr, serves the harmless `probe` tool, and writes the capture only after shutdown.
+
+Install the package with its SDK and run `mcp-layer-profiles --help` to see all commands. The examples below expect `capture.json` to contain only the recorder's sanitized output and `profile.json` to contain a validated profile.
+
+```sh
+mcp-layer-profiles capture --output ./capture.json --transport http
+mcp-layer-profiles build ./capture.json --output ./profile.json
+mcp-layer-profiles show ./profile.json --format json
+mcp-layer-profiles list --format json
+```
+
+`list` and `show` print compact tables by default and emit JSON with `--format json`; `build` writes the derived profile file and `capture` prints its URL to stderr until shutdown. `capture` supports `--transport http|sse|stdio`, `--host`, `--port`, `--base-url`, paired `--client-name` and `--client-version`, `--allow-headers`, and `--upstream`. A controlled server supports HTTP, SSE, and stdio; forwarding supports HTTP and stdio, while controlled OAuth requires HTTP. With `--oauth`, the local issuer is backed by `cli-storage`; use `--storage-dir` and `--storage-backend auto|native|file` to select its persistence behavior. For upstream capture, `--profile` and `--profile-parts http,mcp,oauth` apply selected identity parts to upstream SDK traffic. OAuth runtime options include `--client-id`, `--issuer`, `--scope`, `--resource`, `--callback-url`, `--callback-port`, and `--auth-timeout`.
+
+Transport combinations follow the [official MCP transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports); OAuth discovery and authorization follow the [official MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+
+`--client-name` and `--client-version` declare the local capture client identity; they do not set OAuth registration metadata. `--client-id` selects a caller-supplied OAuth registration and is never treated as `software_id`. Captured OAuth metadata is applied only when the `oauth` profile part is selected; issuer-bound registration constraints additionally require the matching registration and a `--issuer` URL whose normalized full `href` matches the captured issuer. This accepts root trailing-slash equivalents while preserving issuer paths. The programmatic `apply()` issuer fallback continues to compare exact strings, including trailing slashes. Explicit runtime OAuth options take precedence. Captured redirect URIs are passed only as SDK validation constraints for that matching registration; they do not replace or initiate the runtime callback.
+
+OAuth records belong to `cli-storage` through the official `@mcp-layer/forward` provider. `--output` stores only sanitized capture JSON; `build` writes a public profile JSON artifact. Those files are portable evidence artifacts, not credential storage. HTTP capture defaults to an unauthenticated probe. Forwarded SSE is unsupported; use HTTP or stdio forwarding.
+
+`listen(options)` is the library lifecycle for this capture server/gateway. It uses the official SDK server transports, preserves separate downstream/upstream observations when forwarding, and returns `{url, close, closed, finish}`. Controlled captures support HTTP, SSE, and stdio; forwarded captures support HTTP and stdio, and controlled OAuth requires HTTP. Call `close()` during teardown and await `closed`; `finish()` returns an independent sanitized snapshot. The command runner is also embeddable:
+
+```js
+import { run } from '@mcp-layer/profiles/cli';
+
+await run(['build', './capture.json', '--output', './profile.json']);
+```
+
+This example runs the same offline build command inside a test harness or another application. `run(argv, {open})` accepts arguments without the Node/script prefix and an optional async browser opener used for OAuth; it resolves only after the command completes or a hosted listener closes. The public `load(selector?)` function accepts a bundled profile ID/family, an explicit JSON path, or a `Profile` value and returns a sanitized, revalidated profile.
 
 ## Record and derive
 
@@ -65,7 +96,7 @@ await writeFile('my-client.capture.json', JSON.stringify(recorded, null, 2));
 await writeFile('my-client.profile.json', JSON.stringify(profile, null, 2));
 ```
 
-Treat `client`, `id`, `provenance.source`, public identity headers, and explicit allowlist values as public labels. Supply software metadata there, never credentials or private user data. Raw observations should be passed directly to `observe()` before logging or persisting anything. The package does not read request streams, intercept traffic, launch clients, open browsers, or log data on your behalf.
+Treat `client`, `id`, `provenance.source`, public identity headers, and explicit allowlist values as public labels. Supply software metadata there, never credentials or private user data. Raw observations should be passed directly to `observe()` before logging or persisting anything. The recorder API does not read request streams, launch clients, or log raw data. The optional `listen()` API owns a local SDK server or forwarding gateway, observes protocol boundaries, and can open the browser through the official forwarding provider when OAuth is enabled.
 
 ## Use native fetch
 
@@ -125,66 +156,47 @@ Pass your existing SDK `OAuthClientProvider` as `authProvider`. The returned dec
 
 An observed public `client_id` is stored only with `provenance.issuer`. Issuers compare as exact strings, including trailing slashes and issuer paths. It is never inferred from the origin of a registration or token URL. To use such a public registration fallback, pass `issuer` explicitly. `clientInformation()` first returns the runtime provider's registration; only when that is `undefined` may the selected issuer's captured public ID be returned. The fallback contains `{client_id, issuer}` and no secret. Without an issuer, or with a different issuer, no captured ID is returned. A secret-bearing registration must come from the runtime provider.
 
-Captured redirect URIs and resources stay in sanitized evidence. They are never copied into reusable metadata or substituted for the current callback and MCP server. Browser authorization requests keep their own provenance and cannot supply reusable HTTP identity. The SDK handles authorization redirects, resource validation, PKCE generation, token exchange, and refresh under the [authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+Captured redirect URIs stay only in issuer-bound public registration constraints used by SDK validation; they are never replayed as runtime callbacks. Captured resources remain evidence and are not substituted for the current MCP server. Browser authorization requests keep their own provenance and cannot supply reusable HTTP identity. The SDK handles authorization redirects, resource validation, PKCE generation, token exchange, and refresh under the [authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
 <details>
-<summary>A complete in-memory provider for an SDK integration</summary>
+<summary>Compose profile identity with the forwarding OAuth provider</summary>
 
-This provider stores real runtime session state and illustrates the minimum SDK interface. It deliberately keeps credentials in memory so a fresh process starts a new session. Your application presents `authorizationUrl` through its own browser flow and passes the eventual callback code to the SDK's `finishAuth(code)`. Its metadata is sufficient for dynamic registration; applying a profile fills missing public software labels. It does not log the redirect or verifier.
+This example applies the bundled profile's public defaults while keeping registration, tokens, refresh and callback state in `cli-storage` through `@mcp-layer/forward`. Replace the target placeholder with an OAuth-protected MCP server you are authorized to access. The provider discovers that server's issuer and creates or reuses a registration for that runtime; the example does not reuse the bundled capture's issuer-bound client ID. On first access, expect browser consent and a returned list of the server's tools.
 
 ```js
-class Memory {
-  #registration;
-  #tokens;
-  #verifier = '';
-  authorizationUrl;
+import open from 'open';
+import { Storage } from 'cli-storage';
+import { authorize } from '@mcp-layer/forward';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { apply, get } from '@mcp-layer/profiles';
 
-  /** @returns {string} Current application's callback URL. */
-  get redirectUrl() { return 'http://127.0.0.1:43871/callback'; }
+/** @param {URL} url SDK authorization destination. @returns {Promise<void>} Open the authorization page. */
+async function launch(url) { await open(url.href); }
 
-  /** @returns {{redirect_uris: string[]}} Current application's public registration metadata. */
-  get clientMetadata() { return { redirect_uris: [this.redirectUrl] }; }
-
-  /** @returns {object | undefined} Runtime registration and any current secret. */
-  clientInformation() { return this.#registration; }
-
-  /**
-   * @param {object} registration - SDK-issued current registration.
-   * @returns {void} Stores the runtime registration.
-   */
-  saveClientInformation(registration) { this.#registration = registration; }
-
-  /** @returns {object | undefined} Current session tokens. */
-  tokens() { return this.#tokens; }
-
-  /**
-   * @param {object} tokens - SDK-issued current tokens.
-   * @returns {void} Stores tokens for this runtime session.
-   */
-  saveTokens(tokens) { this.#tokens = tokens; }
-
-  /**
-   * @param {URL} url - SDK authorization URL for the application to present.
-   * @returns {void} Exposes the current interactive authorization destination.
-   */
-  redirectToAuthorization(url) { this.authorizationUrl = url; }
-
-  /**
-   * @param {string} verifier - SDK-generated session PKCE verifier.
-   * @returns {void} Stores the verifier for this runtime session.
-   */
-  saveCodeVerifier(verifier) { this.#verifier = verifier; }
-
-  /** @returns {string} Current runtime PKCE verifier. */
-  codeVerifier() { return this.#verifier; }
+const profile = get('claude-code');
+const target = 'https://mcp.example.com/mcp';
+const defaults = apply(profile);
+const provider = authorize({
+  target,
+  storage: new Storage({ namespace: 'my-client.oauth' }),
+  clientMetadata: profile.oauth.metadata,
+  fetch: defaults.fetch,
+  open: launch,
+});
+const runtime = apply(profile, { authProvider: provider, fetch: provider.fetch });
+const client = new Client(runtime.info);
+try {
+  await client.connect(new StreamableHTTPClientTransport(new URL(target), {
+    authProvider: runtime.authProvider,
+    fetch: runtime.fetch,
+  }));
+  console.log(await client.listTools());
+} finally {
+  await client.close();
+  await provider.close();
 }
-
-const provider = new Memory();
-const runtime = apply(profile, { authProvider: provider });
-// Pass runtime.authProvider and runtime.fetch to StreamableHTTPClientTransport.
 ```
-
-For production, implement the application's redirect flow, callback listener, expiry and invalidation policy, and session isolation in its provider. The SDK's [OAuth examples](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x/src/examples/client) cover the interactive lifecycle; a profile supplies public identity defaults only.
 
 </details>
 
@@ -310,7 +322,7 @@ Reusable fields come from `downstream` observations whose role is absent or `cli
 
 ## API Reference
 
-The package exports six named functions and the types below. There are no default exports or CLI dependencies. JavaScript is the source; declarations are generated with `pnpm --filter @mcp-layer/profiles build:types`.
+The package exports named functions and the types below, plus `run()` from `@mcp-layer/profiles/cli`. There are no default exports. JavaScript is the source; declarations are generated with `pnpm --filter @mcp-layer/profiles build:types`.
 
 ### `capture(options?: CaptureOptions): Recorder`
 
@@ -343,9 +355,32 @@ The package exports six named functions and the types below. There are no defaul
 
 The complete persisted capture shape is `{schema: 1, id?: string, client?: Identity, capturedAt: string, allowHeaders: string[], observations: Evidence[]}`. It contains sanitized evidence and public provenance only. The timestamp belongs to the capture, allowing deterministic derivation after importing JSON. It is a package artifact, not an MCP client configuration schema.
 
+### `listen(options?: ListenOptions): Promise<{url: string | undefined, close(): Promise<void>, closed: Promise<void>, finish(): Capture}>`
+
+Hosts an SDK controlled probe or observes a forwarding gateway. It returns `url` (undefined for stdio), idempotent asynchronous `close()`, a `closed` promise that settles after transport shutdown and optional artifact write, and `finish()` for the sanitized snapshot. Options include `client`, `capturedAt`, `allowHeaders`, `transport`, `host`, `port`, `baseUrl`, `oauth`, `storage`, `upstream`, `authorization`, `authProvider`, `headers`, `info`, `fetch`, `output`, and `signal`. Controlled OAuth requires caller-supplied `cli-storage`; the package creates no private store inside the listen API. Forwarded OAuth stays inside `@mcp-layer/forward`, which receives the recorder observation callback. Invalid transports or missing controlled OAuth storage throw a `LayerError` from `@mcp-layer/profiles`; SDK and forwarding errors retain their owning package errors.
+
+The controlled and forwarded transports use the [official MCP transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports); controlled OAuth uses the [official MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) and SDK provider interfaces.
+
+| Option | Type / default | Meaning |
+| --- | --- | --- |
+| `client`, `capturedAt`, `allowHeaders` | `Identity`, date string, `string[]` | Recorder declaration, timestamp, and public header additions. |
+| `transport`, `host`, `port`, `baseUrl` | `http|sse|stdio`, `127.0.0.1`, `0`, optional origin | SDK probe transport and local/public listener addresses. |
+| `oauth`, `storage` | `boolean | issuer options`, required for controlled OAuth | Configures the local official SDK issuer using caller storage. |
+| `upstream`, `authorization`, `authProvider` | URL, forward OAuth options, SDK provider | Enables observation through the official forward gateway. |
+| `headers`, `info`, `fetch` | Native header input, SDK Implementation, fetch | Identity overrides for forwarded upstream traffic. |
+| `output`, `signal` | Optional path and `AbortSignal` | Write a sanitized artifact on close or close on abort. |
+
+### `load(value?: string | Profile): Promise<Profile | undefined>`
+
+Loads a bundled profile ID/family, an explicit JSON path, or an in-memory profile. Every supplied profile is reconstructed from its sanitized evidence before return, so untrusted top-level reusable fields are never accepted as-is. Unknown IDs, invalid evidence, and unreadable files throw documented `LayerError` instances.
+
+### `run(argv: string[], options?: {open?: (url: URL) => Promise<void>}): Promise<void>` from `@mcp-layer/profiles/cli`
+
+Runs `capture`, `build`, `list`, `show`, or help without loading MCP client configuration. `argv` excludes the executable and script path. `options` is `{open?: (url: URL) => Promise<void>}`; `open(url)` performs the application's OAuth browser handoff, while the existing `open` package launches the browser when omitted. The promise resolves when the command completes or after a hosted runtime closes. File read/write errors use `ERR_PROFILES_ARTIFACT`; missing command inputs use `ERR_PROFILES_INPUT`; unknown commands use `ERR_PROFILES_COMMAND`. The standalone runner rejects an upstream profile that requires confidential OAuth client authentication because it has no runtime secret input; use a runtime SDK provider with `listen()` for confidential authentication.
+
 ### `derive(capture: Capture): Profile`
 
-Resanitizes the capture, selects downstream client evidence, validates public identity through the official SDK schemas, and returns the profile below. No network or filesystem access occurs. An explicit capture ID is retained; otherwise the ID is a client/version slug plus 12 hexadecimal SHA-256 characters over canonical public client identity, reusable headers, OAuth metadata, and issuer-bound IDs. Object key order and the current clock do not affect derivation.
+Resanitizes the capture, selects downstream client evidence, validates public identity through the official SDK schemas, and returns the profile below. No network or filesystem access occurs. An explicit capture ID is retained as a caller-assigned label; otherwise the ID is a client/version slug plus 12 hexadecimal SHA-256 characters over the complete canonical sanitized capture, excluding its ID field. The fingerprint includes declared client metadata, capture time, allowlist, every sanitized observation, provenance, and coverage evidence such as protocol versions and capabilities. Object key order does not affect it; observation order and capture time are part of the identity.
 
 | Profile field | Shape / behavior |
 | --- | --- |
@@ -365,7 +400,7 @@ Missing identity throws `ERR_PROFILES_IDENTITY`; contradictory identity throws `
 
 ### `list(): Profile[]` and `get(id: string): Profile`
 
-`list()` returns independent copies of bundled verified profiles. An exact ID passed to `get()` pins that capture. A client family name such as `get('claude-code')` resolves to its newest verified capture by `capturedAt`, with IDs breaking equal-timestamp ties. Unknown IDs or families throw `ERR_PROFILES_UNKNOWN`. The verified entry is `claude-code-2-1-325-7bd44ecf1368`. Custom profile files use `derive(capture)` or `apply(profile)` and are never silently registered in the bundled catalog. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the real-capture admission process.
+`list()` returns independent copies of bundled verified profiles. An exact ID passed to `get()` pins that capture. A client family name such as `get('claude-code')` resolves to its newest verified capture by `capturedAt`, with IDs breaking equal-timestamp ties. Unknown IDs or families throw `ERR_PROFILES_UNKNOWN`. The verified entry is `claude-code-2-1-325-49a14191cdf6`. Custom profile files use `derive(capture)` or `apply(profile)` and are never silently registered in the bundled catalog. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the real-capture admission process.
 
 ### `match(observation: Observation, options?: MatchOptions): Match`
 
@@ -390,6 +425,51 @@ An observed MCP identity must exactly match name and version. Every supplied reu
 Phase-specific HTTP identity applies only to requests made through the application's owned fetch wrapper. Browser traffic and requests owned by other runtimes remain outside its control.
 
 Profiles are reconstructed from sanitized evidence and checked against their stored HTTP, MCP, OAuth, and coverage fields before application. Edited or unsupported fields throw `ERR_PROFILES_PROFILE`; rederive a changed capture instead of editing reusable profile fields. Unknown IDs throw `ERR_PROFILES_UNKNOWN`. Invalid parts or runtime options throw `ERR_PROFILES_OPTIONS`. Network errors and delegated provider failures preserve the underlying implementation's error behavior. An incompatible issuer-bound callback or authentication method, or conflicting constraints declared for one issuer and client ID, throws `ERR_PROFILES_REGISTRATION`.
+
+<a id="error-101e96"></a>
+**`ERR_PROFILES_OAUTH_CREDENTIALS` — `run` (`#101E96`)**: the standalone runner cannot use a captured confidential OAuth client binding because it has no runtime secret input.
+
+Step-by-step resolution: use a public client binding with token endpoint authentication method `none`, or call `listen()` with an SDK provider that owns the required runtime authentication credentials.
+
+<a id="error-a4d796"></a>
+**`ERR_PROFILES_LISTEN_TRANSPORT` — `listen` (`#A4D796`)**: controlled capture accepts `http`, `sse`, or `stdio`; forwarding accepts only `http` or `stdio`, and controlled OAuth requires HTTP.
+
+Step-by-step resolution: set `transport` to a supported combination. To capture a forwarded SSE service, use its Streamable HTTP endpoint or configure a stdio bridge; this package does not translate forwarded SSE.
+
+<a id="error-10d914"></a>
+**`ERR_PROFILES_LISTEN_STORAGE` — `listen` (`#10D914`)**: supply an application-owned `cli-storage` instance when enabling controlled OAuth.
+
+Step-by-step resolution: construct `Storage` with an isolated namespace and pass it as `storage`. The library does not create a credential store implicitly.
+
+<a id="error-06897c"></a>
+**`ERR_PROFILES_INPUT` — `run` (`#06897C`)**: provide a profile selector for `show`.
+
+Step-by-step resolution: pass a bundled profile ID, family name, or JSON path to `show`.
+
+<a id="error-3f2b94"></a>
+**`ERR_PROFILES_INPUT` — `run` (`#3F2B94`)**: provide the required command input path and output path.
+
+Step-by-step resolution: pass a capture JSON path to `build` and `--output <profile.json>`.
+
+<a id="error-ffe78a"></a>
+**`ERR_PROFILES_INPUT` — `run` (`#FFE78A`)**: provide `--output <capture.json>` for a capture command.
+
+Step-by-step resolution: choose a writable output path and pass it with `--output`.
+
+<a id="error-05ed32"></a>
+**`ERR_PROFILES_COMMAND` — `run` (`#05ED32`)**: choose `capture`, `build`, `list`, or `show`.
+
+Step-by-step resolution: run `mcp-layer-profiles --help` and use one of the documented commands.
+
+<a id="error-6804e3"></a>
+**`ERR_PROFILES_ARTIFACT` — `read` (`#6804E3`)**: provide readable, valid JSON artifact input.
+
+Step-by-step resolution: check the path and JSON syntax, and use a sanitized capture for `build` or an evidence-backed profile for `show`.
+
+<a id="error-20163d"></a>
+**`ERR_PROFILES_ARTIFACT` — `write` (`#20163D`)**: provide a writable file path for the sanitized artifact.
+
+Step-by-step resolution: choose a writable output file and ensure its parent directory exists.
 
 ## Errors
 

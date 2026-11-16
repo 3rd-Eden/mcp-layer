@@ -141,7 +141,6 @@ export function route(positionals) {
   if (first === 'servers') {
     return { surface: 'servers', action: second === '' ? 'list' : second ?? 'list', target: third };
   }
-  if (first === 'profiles') return { surface: 'profiles', action: second ?? 'list', target: third };
   if (first === 'forward') return { surface: 'forward', action: 'run', target: second ?? null };
   return { surface: 'help', action: 'help', target: null };
 }
