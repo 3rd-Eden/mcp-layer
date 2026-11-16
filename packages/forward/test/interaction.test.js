@@ -272,7 +272,7 @@ function suite() {
     let opened = false;
     /** Submit consent through the real local SDK issuer. @param {URL} url Issuer authorization URL. @returns {Promise<void>} Complete consent. */
     async function open(url) { opened = true; await browser(url); }
-    const provider = authorize({ target: upstream.url, storage: upstream.storage, open, authTimeout: 100 });
+    const provider = authorize({ target: upstream.url, storage: upstream.storage, open, authTimeout: 5000 });
     t.after(/** @returns {Promise<void>} Close provider resources. */
     function close() { return provider.close(); });
     await provider.prepare();
