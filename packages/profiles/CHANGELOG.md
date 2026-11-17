@@ -1,0 +1,16 @@
+# @mcp-layer/profiles
+
+## 0.2.0
+
+### Minor Changes
+
+- f9b16af: Add sanitized client-identity captures and evidence-backed profiles, with HTTP/MCP/OAuth application and advisory matching. The profiles package owns the capture runner, artifact loading, and standalone capture/build/list/show tooling. Add Streamable HTTP forwarding, a stdio bridge, and separate downstream/upstream OAuth providers using cli-storage for every stored record and process lock. Integrate runtime profile/OAuth options and forwarding into the main CLI and existing SDK transports.
+
+  Profile selection and OAuth overrides are runtime options. Shared MCP configuration keys and resolution order are unchanged. Captures retain issuer/redirect constraints; credentials, capabilities, protocol negotiation, and session state are never replayed from profiles. The catalog accepts only verifiable capture contributions.
+
+- 1750567: Add the verified Codex CLI 0.142.3 native app-server profile and sanitized capture.
+
+### Patch Changes
+
+- Updated dependencies [f9b16af]
+  - @mcp-layer/forward@0.2.0
