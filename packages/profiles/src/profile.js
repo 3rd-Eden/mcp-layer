@@ -2,11 +2,12 @@ import { createHash } from 'node:crypto';
 import { LayerError } from '@mcp-layer/error';
 import { OAuthClientMetadataSchema } from '@modelcontextprotocol/sdk/shared/auth.js';
 import claudeCode from './catalog/claude-code.json' with { type: 'json' };
+import codex from './catalog/codex.json' with { type: 'json' };
 import { capture, identity } from './capture.js';
 import { clean, implementation, reusable } from './clean.js';
 
 /** @type {import('./types.js').Profile[]} */
-const catalog = [claudeCode];
+const catalog = [claudeCode, codex];
 const metadata = ['client_name', 'software_id', 'software_version', 'client_uri', 'logo_uri', 'tos_uri', 'policy_uri', 'token_endpoint_auth_method'];
 
 /**

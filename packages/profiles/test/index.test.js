@@ -315,6 +315,52 @@ function suite() {
   }
   /** @returns {void} Register catalog and matching scenarios. */
   function catalog() {
+    /** @returns {Promise<void>} Verify Codex's sanitized native app-server capture. */
+    async function codexVerified() {
+      const actual = JSON.parse(await readFile(new URL('./fixtures/codex.capture.json', import.meta.url), 'utf8'));
+      const profile = derive(actual);
+      const bundled = get('codex-mcp-client-0-142-3-d60a9c87e322');
+      assert.deepEqual(get('codex-mcp-client'), bundled);
+      assert.deepEqual(profile, bundled);
+      assert.deepEqual(list().map(
+        /** @param {import('../src/index.js').Profile} value - Bundled entry. @returns {string} Profile ID. */
+        function id(value) { return value.id; }), ['claude-code-2-1-325-49a14191cdf6', bundled.id]);
+      assert.deepEqual(bundled.client, {
+        name: 'codex-mcp-client', version: '0.142.3', platform: 'darwin-arm64', title: 'Codex',
+      });
+      assert.deepEqual(bundled.coverage.phases, ['authorization', 'discovery', 'mcp', 'refresh', 'registration', 'token']);
+      assert.equal(bundled.coverage.observations, 24);
+      assert.deepEqual(bundled.http.headers, {});
+      assert.deepEqual(bundled.http.phases, undefined);
+      assert.deepEqual(bundled.oauth.metadata, { client_name: 'Codex', token_endpoint_auth_method: 'none' });
+      assert.equal(bundled.oauth.clients.length, 1);
+      assert.match(bundled.oauth.clients[0].issuer, /^http:\/\/127\.0\.0\.1:\d+\/$/);
+      assert.equal(bundled.oauth.clients[0].authMethod, 'none');
+      assert.match(bundled.oauth.clients[0].redirectUris[0], /^http:\/\/127\.0\.0\.1:\d+\/callback\/[A-Za-z0-9_-]+$/);
+      assert.deepEqual(bundled.mcp.observed.protocolVersions, ['2024-11-05', '2025-06-18']);
+      assert.deepEqual(bundled.mcp.observed.capabilities, [{ elicitation: {} }]);
+      assert.equal(bundled.evidence.some(
+        /** @param {import('../src/index.js').Evidence} evidence - Sanitized observation. @returns {boolean} Whether this is native initialize. */
+        function initialized(evidence) { return evidence.phase === 'mcp' && evidence.message?.method === 'initialize'; }), true);
+      assert.doesNotMatch(JSON.stringify(bundled), /Bearer [A-Za-z0-9._-]{12,}|fixture-secret-|"(?:access_token|refresh_token|code_verifier|code|state)":"(?!\[redacted\])/);
+      assert.equal(Object.hasOwn(bundled.http.headers, 'user-agent'), false);
+      assert.equal(bundled.evidence.filter(
+        /** @param {import('../src/index.js').Evidence} evidence - Sanitized observation. @returns {boolean} Whether browser helper identity is retained as evidence. */
+        function browserUserAgent(evidence) { return evidence.phase === 'authorization' && evidence.provenance?.role === 'browser' && evidence.headers['user-agent'] === 'node'; }).length, 2);
+      const initialized = actual.observations.find(
+        /** @param {import('../src/index.js').Observation} observation - Captured observation. @returns {boolean} Whether it contains native initialize. */
+        function isInitialize(observation) { return observation.phase === 'mcp' && observation.message?.method === 'initialize'; });
+      assert.ok(initialized);
+      const result = match(initialized);
+      assert.equal(result.status, 'matched');
+      assert.equal(result.candidates[0].id, bundled.id);
+      assert.deepEqual(apply(bundled).info, {
+        name: 'codex-mcp-client', title: 'Codex', version: '0.142.3',
+      });
+      assert.throws(
+        /** @returns {void} Verify an unknown Codex version is rejected. */
+        function absent() { get('codex-mcp-client-unknown'); }, failure('ERR_PROFILES_UNKNOWN'));
+    }
     /** @returns {Promise<void>} Verify bundled entries rebuild from reviewed native captures. */
     async function verified() {
       const actual = JSON.parse(await readFile(new URL('./fixtures/claude-code.capture.json', import.meta.url), 'utf8'));
@@ -322,7 +368,9 @@ function suite() {
       const bundled = get('claude-code-2-1-325-49a14191cdf6');
       assert.deepEqual(get('claude-code'), bundled);
       assert.deepEqual(profile, bundled);
-      assert.deepEqual(list(), [bundled]);
+      assert.deepEqual(list().map(
+        /** @param {import('../src/index.js').Profile} value - Bundled entry. @returns {string} Profile ID. */
+        function id(value) { return value.id; }), [bundled.id, 'codex-mcp-client-0-142-3-d60a9c87e322']);
       assert.deepEqual(bundled.client, {
         name: 'claude-code', version: '2.1.325', platform: 'darwin-arm64',
         title: 'Claude Code', description: "Anthropic's agentic coding tool", websiteUrl: 'https://claude.com/claude-code',
@@ -371,6 +419,7 @@ function suite() {
       assert.equal(match(fixture.observations[3], { profiles: [profile] }).status, 'unknown');
       assert.equal(match({ ...fixture.observations[0], message: undefined, headers: { 'user-agent': 'unrelated' } }, { profiles: [profile] }).status, 'unknown');
     }
+    it('ships a real verified Codex native capture and deterministic catalog profile', codexVerified);
     it('ships a real verified Claude Code capture and deterministic catalog profile', verified);
     it('returns matched, ambiguous, and unknown for caller-owned profiles', candidates);
   }

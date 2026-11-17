@@ -1,0 +1,893 @@
+{
+  "schema": 1,
+  "id": "codex-mcp-client-0-142-3-d60a9c87e322",
+  "client": {
+    "name": "codex-mcp-client",
+    "version": "0.142.3",
+    "platform": "darwin-arm64",
+    "title": "Codex"
+  },
+  "capturedAt": "2026-11-16T21:36:00.129Z",
+  "evidence": [
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/register",
+      "method": "POST",
+      "body": {
+        "client_name": "Codex",
+        "redirect_uris": [
+          "http://127.0.0.1:50294/callback/D304lHMTg8ZM"
+        ],
+        "grant_types": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "token_endpoint_auth_method": "none",
+        "response_types": [
+          "code"
+        ],
+        "scope": "mcp"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "registration",
+      "perspective": "downstream",
+      "headers": {},
+      "redactions": [
+        {
+          "path": "body.client_id_issued_at",
+          "kind": "unclassified"
+        }
+      ],
+      "status": 201,
+      "body": {
+        "redirect_uris": [
+          "http://127.0.0.1:50294/callback/D304lHMTg8ZM"
+        ],
+        "token_endpoint_auth_method": "none",
+        "grant_types": [
+          "authorization_code",
+          "refresh_token"
+        ],
+        "response_types": [
+          "code"
+        ],
+        "client_name": "Codex",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160",
+        "client_id_issued_at": "[redacted]"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "authorization",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "accept-language": "[redacted]",
+        "connection": "[redacted]",
+        "host": "[redacted]",
+        "sec-fetch-mode": "[redacted]",
+        "user-agent": "node"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.accept-language",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.sec-fetch-mode",
+          "kind": "unclassified"
+        },
+        {
+          "path": "url.query.state",
+          "kind": "oauth"
+        },
+        {
+          "path": "url.query.code_challenge",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/authorize?response_type=code&client_id=fa6b0638-1718-4474-9ead-67b047285160&state=%5Bredacted%5D&code_challenge=%5Bredacted%5D&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A50294%2Fcallback%2FD304lHMTg8ZM&scope=mcp&resource=http%3A%2F%2F127.0.0.1%3A50282%2Fmcp",
+      "method": "GET",
+      "provenance": {
+        "role": "browser",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "authorization",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "accept-encoding": "[redacted]",
+        "accept-language": "[redacted]",
+        "connection": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "host": "[redacted]",
+        "sec-fetch-mode": "[redacted]",
+        "user-agent": "node"
+      },
+      "redactions": [
+        {
+          "path": "headers.accept-encoding",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.accept-language",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.connection",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.sec-fetch-mode",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.code_challenge",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.state",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.consent",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.decision",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/authorize",
+      "method": "POST",
+      "body": {
+        "response_type": "code",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160",
+        "redirect_uri": "http://127.0.0.1:50294/callback/D304lHMTg8ZM",
+        "code_challenge": "[redacted]",
+        "code_challenge_method": "S256",
+        "scope": "mcp",
+        "resource": "http://127.0.0.1:50282/mcp",
+        "state": "[redacted]",
+        "consent": "[redacted]",
+        "decision": "[redacted]"
+      },
+      "provenance": {
+        "role": "browser",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "token",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.code",
+          "kind": "oauth"
+        },
+        {
+          "path": "body.code_verifier",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "authorization_code",
+        "code": "[redacted]",
+        "code_verifier": "[redacted]",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160",
+        "redirect_uri": "http://127.0.0.1:50294/callback/D304lHMTg8ZM",
+        "resource": "http://127.0.0.1:50282/mcp"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "discovery",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "*/*",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2024-11-05"
+      },
+      "redactions": [
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "text/event-stream, application/json",
+        "authorization": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "message.id",
+          "kind": "identifier"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "POST",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": "[redacted]",
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {
+            "elicitation": {}
+          },
+          "clientInfo": {
+            "name": "codex-mcp-client",
+            "title": "Codex",
+            "version": "0.142.3"
+          }
+        }
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "text/event-stream, application/json",
+        "authorization": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-06-18",
+        "mcp-session-id": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "POST",
+      "message": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "text/event-stream, application/json",
+        "authorization": "[redacted]",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-06-18",
+        "mcp-session-id": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "GET",
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "mcp",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "text/event-stream, application/json",
+        "authorization": "[redacted]",
+        "content-length": "[redacted]",
+        "content-type": "application/json",
+        "host": "[redacted]",
+        "mcp-protocol-version": "2025-06-18",
+        "mcp-session-id": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.authorization",
+          "kind": "credential",
+          "scheme": "Bearer"
+        },
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.mcp-session-id",
+          "kind": "session"
+        },
+        {
+          "path": "message.id",
+          "kind": "identifier"
+        },
+        {
+          "path": "message.params._meta.progressToken",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/mcp",
+      "method": "POST",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": "[redacted]",
+        "method": "tools/list",
+        "params": {
+          "_meta": {
+            "progressToken": "[redacted]"
+          }
+        }
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    },
+    {
+      "phase": "refresh",
+      "perspective": "downstream",
+      "headers": {
+        "accept": "application/json",
+        "content-length": "[redacted]",
+        "content-type": "application/x-www-form-urlencoded",
+        "host": "[redacted]"
+      },
+      "redactions": [
+        {
+          "path": "headers.content-length",
+          "kind": "unclassified"
+        },
+        {
+          "path": "headers.host",
+          "kind": "unclassified"
+        },
+        {
+          "path": "body.refresh_token",
+          "kind": "oauth"
+        }
+      ],
+      "url": "http://127.0.0.1:50282/token",
+      "method": "POST",
+      "body": {
+        "grant_type": "refresh_token",
+        "refresh_token": "[redacted]",
+        "scope": "mcp",
+        "client_id": "fa6b0638-1718-4474-9ead-67b047285160"
+      },
+      "provenance": {
+        "role": "client",
+        "issuer": "http://127.0.0.1:50282/"
+      }
+    }
+  ],
+  "coverage": {
+    "phases": [
+      "authorization",
+      "discovery",
+      "mcp",
+      "refresh",
+      "registration",
+      "token"
+    ],
+    "perspectives": [
+      "downstream"
+    ],
+    "identity": "observed",
+    "observations": 24
+  },
+  "http": {
+    "headers": {},
+    "allowHeaders": []
+  },
+  "mcp": {
+    "clientInfo": {
+      "name": "codex-mcp-client",
+      "title": "Codex",
+      "version": "0.142.3"
+    },
+    "observed": {
+      "protocolVersions": [
+        "2024-11-05",
+        "2025-06-18"
+      ],
+      "capabilities": [
+        {
+          "elicitation": {}
+        }
+      ]
+    }
+  },
+  "oauth": {
+    "metadata": {
+      "client_name": "Codex",
+      "token_endpoint_auth_method": "none"
+    },
+    "clients": [
+      {
+        "issuer": "http://127.0.0.1:50282/",
+        "clientId": "fa6b0638-1718-4474-9ead-67b047285160",
+        "redirectUris": [
+          "http://127.0.0.1:50294/callback/D304lHMTg8ZM"
+        ],
+        "authMethod": "none"
+      }
+    ]
+  }
+}
