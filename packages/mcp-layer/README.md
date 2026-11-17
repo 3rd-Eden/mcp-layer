@@ -42,10 +42,12 @@ Running this script prints the number of discovered catalog items for the select
 | `config` | Discover and normalize MCP server configuration across host tools. | [`@mcp-layer/config` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/config/README.md) |
 | `connect` | Connect to MCP servers over stdio, Streamable HTTP, or SSE. | [`@mcp-layer/connect` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/connect/README.md) |
 | `error` | Create structured runtime errors with stable references and docs links. | [`@mcp-layer/error` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/error/README.md) |
+| `forward` | Relay MCP HTTP/stdio traffic and broker local downstream and upstream OAuth grants. | [`@mcp-layer/forward` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/forward/README.md) |
 | `gateway` | Reuse shared adapter runtime primitives for mapping, validation, resilience, and telemetry. | [`@mcp-layer/gateway` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/gateway/README.md) |
 | `graphql` | Expose MCP catalogs and operations through GraphQL. | [`@mcp-layer/graphql` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/graphql/README.md) |
 | `manager` | Manage authenticated and shared MCP sessions with reuse and limits. | [`@mcp-layer/manager` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/manager/README.md) |
 | `openapi` | Generate OpenAPI 3.1 documents from MCP catalogs. | [`@mcp-layer/openapi` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/openapi/README.md) |
+| `profiles` | Capture, match, and apply verified HTTP, MCP, and OAuth identity fields. | [`@mcp-layer/profiles` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/profiles/README.md) |
 | `rest` | Expose MCP sessions as REST endpoints with Fastify. | [`@mcp-layer/rest` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/rest/README.md) |
 | `schema` | Extract and normalize tools, resources, prompts, and templates into a consistent catalog. | [`@mcp-layer/schema` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/schema/README.md) |
 | `session` | Use the shared session abstraction across connectors and adapters. | [`@mcp-layer/session` README](https://github.com/3rd-Eden/mcp-layer/blob/main/packages/session/README.md) |

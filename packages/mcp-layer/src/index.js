@@ -35,6 +35,12 @@ export * as connect from '@mcp-layer/connect';
 export * as error from '@mcp-layer/error';
 
 /**
+ * Package namespace from `@mcp-layer/forward`.
+ * @type {typeof import('@mcp-layer/forward')}
+ */
+export * as forward from '@mcp-layer/forward';
+
+/**
  * Package namespace from `@mcp-layer/gateway`.
  * @type {typeof import('@mcp-layer/gateway')}
  */
@@ -57,6 +63,12 @@ export * as manager from '@mcp-layer/manager';
  * @type {typeof import('@mcp-layer/openapi')}
  */
 export * as openapi from '@mcp-layer/openapi';
+
+/**
+ * Package namespace from `@mcp-layer/profiles`.
+ * @type {typeof import('@mcp-layer/profiles')}
+ */
+export * as profiles from '@mcp-layer/profiles';
 
 /**
  * Package namespace from `@mcp-layer/rest`.

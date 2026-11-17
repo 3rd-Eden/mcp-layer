@@ -45,12 +45,17 @@
     "@mcp-layer/config": "workspace:*",
     "@mcp-layer/connect": "workspace:*",
     "@mcp-layer/error": "workspace:*",
+    "@mcp-layer/forward": "workspace:*",
+    "@mcp-layer/profiles": "workspace:*",
     "@mcp-layer/schema": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@socketregistry/yocto-spinner": "^1.0.25",
     "argh": "^1.0.0",
     "cli-table3": "^0.6.5",
+    "cli-storage": "^1.0.0",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.1",
+    "open": "^10.2.0",
     "terminal-image": "^4.3.0"
   },
   "devDependencies": {

@@ -28,6 +28,7 @@ MCP Layer is a collection of focused packages that help you discover server conf
 | [`@mcp-layer/config`](packages/config/README.md) | Discover and normalize MCP server config files across host tools. |
 | [`@mcp-layer/session`](packages/session/README.md) | Shared `Session` handle used by connect/attach and adapters. |
 | [`@mcp-layer/connect`](packages/connect/README.md) | Connect to stdio, Streamable HTTP, or SSE MCP servers. |
+| [`@mcp-layer/profiles`](packages/profiles/README.md) | Capture, identify, and apply evidence-backed HTTP, MCP, and OAuth client identity. |
 | [`@mcp-layer/attach`](packages/attach/README.md) | Attach to in-process MCP SDK servers. |
 | [`@mcp-layer/schema`](packages/schema/README.md) | Extract and normalize tool/resource/prompt/template catalogs. |
 | [`@mcp-layer/gateway`](packages/gateway/README.md) | Shared adapter runtime primitives for validation, resilience, telemetry, and mapping. |
@@ -38,6 +39,7 @@ MCP Layer is a collection of focused packages that help you discover server conf
 | Package | Purpose |
 | --- | --- |
 | [`@mcp-layer/cli`](packages/cli/README.md) | Build CLI surfaces from MCP catalogs. |
+| [`@mcp-layer/forward`](packages/forward/README.md) | Stream HTTP/stdio traffic and broker separate downstream and upstream OAuth grants. |
 | [`@mcp-layer/openapi`](packages/openapi/README.md) | Generate OpenAPI 3.1 specs from extracted catalogs. |
 | [`@mcp-layer/rest`](packages/rest/README.md) | Expose MCP sessions through Fastify REST routes. |
 | [`@mcp-layer/graphql`](packages/graphql/README.md) | Expose MCP catalogs through GraphQL. |
@@ -139,10 +141,12 @@ import {
   config,
   connect,
   error,
+  forward,
   gateway,
   graphql,
   manager,
   openapi,
+  profiles,
   rest,
   schema,
   session,
@@ -161,10 +165,12 @@ Each namespace value is the module namespace of its underlying package (`typeof 
 | `config` | `typeof import('@mcp-layer/config')` | [`packages/config/README.md`](packages/config/README.md) |
 | `connect` | `typeof import('@mcp-layer/connect')` | [`packages/connect/README.md`](packages/connect/README.md) |
 | `error` | `typeof import('@mcp-layer/error')` | [`packages/error/README.md`](packages/error/README.md) |
+| `forward` | `typeof import('@mcp-layer/forward')` | [`packages/forward/README.md`](packages/forward/README.md) |
 | `gateway` | `typeof import('@mcp-layer/gateway')` | [`packages/gateway/README.md`](packages/gateway/README.md) |
 | `graphql` | `typeof import('@mcp-layer/graphql')` | [`packages/graphql/README.md`](packages/graphql/README.md) |
 | `manager` | `typeof import('@mcp-layer/manager')` | [`packages/manager/README.md`](packages/manager/README.md) |
 | `openapi` | `typeof import('@mcp-layer/openapi')` | [`packages/openapi/README.md`](packages/openapi/README.md) |
+| `profiles` | `typeof import('@mcp-layer/profiles')` | [`packages/profiles/README.md`](packages/profiles/README.md) |
 | `rest` | `typeof import('@mcp-layer/rest')` | [`packages/rest/README.md`](packages/rest/README.md) |
 | `schema` | `typeof import('@mcp-layer/schema')` | [`packages/schema/README.md`](packages/schema/README.md) |
 | `session` | `typeof import('@mcp-layer/session')` | [`packages/session/README.md`](packages/session/README.md) |
@@ -179,6 +185,24 @@ For package-specific runtime error references and remediation steps:
 - [`@mcp-layer/config` runtime error reference](packages/config/README.md#runtime-error-reference)
 - [`@mcp-layer/rest` runtime error reference](packages/rest/README.md#runtime-error-reference)
 - [`mcp-layer` package error behavior](packages/mcp-layer/README.md#error-behavior)
+
+## Captured client identities and OAuth forwarding
+
+Use [`profiles`](packages/profiles/README.md) to record the HTTP headers, MCP `clientInfo`, and public OAuth metadata actually observed from a client. The recorder sanitizes credentials before returning observations or exporting artifacts. Derivation keeps original client observations separate from browser and forwarding identities. Matching is advisory and does not establish authorization or credential ownership.
+
+The profiles package owns its capture runner, portable artifacts, and capture/build/inspection tooling. Its `mcp-layer-profiles` command starts a loopback endpoint, then builds a reusable profile after the client has connected and capture is stopped. A profile can be used by Node Fetch, official SDK clients, `connect`, or an SDK server's outbound connections. Selecting one applies all three identity sections by default; `--profile-parts` selects a subset.
+
+```sh
+mcp-layer-profiles capture --output ./capture.json
+mcp-layer-profiles build ./capture.json --output ./profile.json
+mcp-layer --profile ./profile.json --server example tools list
+```
+
+Only independently verifiable captures belong in the bundled catalog. The catalog includes Claude Code 2.1.325 and Codex CLI 0.142.3 on macOS arm64. Claude's capture covers OAuth discovery, registration, consent, token exchange, refresh, revocation, and authenticated MCP requests. Codex's capture uses its native `codex app-server --stdio` OAuth and MCP flow; native task logout succeeded, but no revocation request was observed. Codex sent no reusable HTTP `User-Agent`, and the capture made no model request. The profile docs link the official [Codex app-server](https://developers.openai.com/codex/app-server) and [MCP configuration](https://developers.openai.com/codex/mcp) guides. Follow the [capture contribution guide](packages/profiles/CONTRIBUTING.md) to inspect the evidence and reproduce either client. Config connector support does not imply a verified network identity.
+
+[`forward`](packages/forward/README.md) provides a Streamable HTTP gateway and stdio bridge, with a full local OAuth issuer and a separate upstream SDK OAuth client. OAuth IDs retain issuer/redirect constraints; credentials and protocol/session values always come from the active flow. All runtime storage, encryption, files, native credentials, and process locks are implemented by the independent [`cli-storage`](https://github.com/3rd-Eden/cli-storage) package. `forward` owns only the OAuth record identities and read/write/refresh lifecycle.
+
+Use the [profiles API and tooling documentation](packages/profiles/README.md) for capture transports and contribution artifacts. The [main CLI](packages/cli/README.md) consumes profiles through runtime options and provides forwarding. No profile keys are written into shared MCP configuration. Protocol behavior follows [MCP transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) and [MCP authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
 ## Standards and portability
 

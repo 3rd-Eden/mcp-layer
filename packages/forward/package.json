@@ -1,0 +1,46 @@
+{
+  "name": "@mcp-layer/forward",
+  "version": "0.1.0",
+  "description": "Streaming MCP forwarding and OAuth providers backed by cli-storage.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3rd-Eden/mcp-layer"
+  },
+  "license": "MIT",
+  "main": "src/index.js",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "types",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build:types",
+    "test": "node --test --test-timeout=30000 --experimental-test-coverage \"./test/**/*.test.js\""
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@mcp-layer/error": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@types/express": "^5.0.6",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5"
+  },
+  "devDependencies": {
+    "@mcp-layer/test-server": "workspace:*",
+    "cli-storage": "^1.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "fixture-rich-client",
+  "version": "1.2.3",
+  "title": "Fixture Rich Client",
+  "description": "A synthetic application for public implementation metadata tests.",
+  "websiteUrl": "https://client.example/",
+  "icons": [
+    {
+      "src": "https://client.example/icon.png",
+      "mimeType": "image/png",
+      "sizes": ["32x32", "64x64"],
+      "theme": "light"
+    }
+  ]
+}
