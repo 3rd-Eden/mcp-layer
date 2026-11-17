@@ -1,6 +1,6 @@
 {
   "name": "@mcp-layer/profiles",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sanitized, evidence-based MCP client identity profiles for official SDK consumers.",
   "repository": {
     "type": "git",
